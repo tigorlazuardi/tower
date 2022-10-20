@@ -70,20 +70,20 @@ func (e *entry) SetKey(key string) ErrorBuilder {
 }
 
 /*
-	Signals the Tower library that this error should be logged.
+Signals the Tower library that this error should be logged.
 
-	You should call this method after calling the Set methods, after you have set all the other values for the error.
-	Because they need to be set before the error is logged.
+You should call this method after calling the Set methods, after you have set all the other values for the error.
+Because they need to be set before the error is logged.
 */
 func (e entry) LogError(ctx context.Context) ErrorBuilder {
 	panic("not implemented") // TODO: Implement
 }
 
 /*
-	Signals the Tower library that this error should be send to Messengers.
+Signals the Tower library that this error should be send to Messengers.
 
-	You should call this method after calling the Set methods, after you have set all the other values for the error.
-	Because they need to be set before the error is send to messengers.
+You should call this method after calling the Set methods, after you have set all the other values for the error.
+Because they need to be set before the error is send to messengers.
 */
 func (e entry) NotifyError(ctx context.Context) ErrorBuilder {
 	panic("not implemented") // TODO: Implement

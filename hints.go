@@ -4,37 +4,47 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type CodeHinter interface {
-	// Gets the error code for this error.
-	CodeHint() int
+type BodyCodeHint interface {
+	// Gets the Body Code for the type.
+	BodyCode() int
 }
 
-type MessageHinter interface {
-	// Gets the error message for this error.
-	MessageHint() string
+type HTTPCodeHint interface {
+	// Gets HTTP Status Code for the type.
+	HTTPCode() int
 }
 
-type CallHinter interface {
-	// Gets the origin location where this error is created.
-	CallHint() Caller
+type CodeHint interface {
+	// Gets the original code of the type.
+	Code() int
 }
 
-type ContextHinter interface {
-	// Gets the context for this error.
-	ContextHint() []zapcore.ObjectMarshaler
+type CallerHint interface {
+	// Gets the caller of this type.
+	Caller() Caller
 }
 
-type HTTPCodeHinter interface {
-	// Gets the HTTP status code for this error.
-	HTTPCodeHint() int
+type MessageHint interface {
+	// Gets the Message of the type.
+	Message() string
 }
 
-type BodyCodeHinter interface {
-	// Gets the body code for this error.
-	BodyCodeHint() int
+type KeyHint interface {
+	// Gets the key for this message.
+	Key() string
 }
 
-type KeyHinter interface {
-	// Gets the hint for the message key.
-	KeyHint() string
+type ContextHint interface {
+	// Gets the context of this this type.
+	Context() []zapcore.ObjectMarshaler
+}
+
+type ServiceHint interface {
+	// Gets the service information.
+	Service() Service
+}
+
+type LevelHint interface {
+	// Gets the level of this message.
+	Level() zapcore.Level
 }

@@ -2,7 +2,6 @@ package tower
 
 import (
 	"context"
-	"errors"
 
 	"go.uber.org/zap/zapcore"
 )
@@ -19,9 +18,9 @@ ErrorBuilder is an interface to create customizable error.
 
 It's not recommended to cast an error to this interface, because:
 
-	1. The implementation for the error is not guaranteed to be thread safe.
-	2. This api exposes mutable references to the error, which can cause point 1.
-	3. What you want most likely only read access to the error values, which this interface will not give.
+ 1. The implementation for the error is not guaranteed to be thread safe.
+ 2. This api exposes mutable references to the error, which can cause point 1.
+ 3. What you want most likely only read access to the error values, which this interface will not give.
 */
 type ErrorBuilder interface {
 	error
@@ -119,12 +118,12 @@ Error is an interface providing read only values to the error, and because it's 
 */
 type Error interface {
 	error
-	CodeHinter
-	HTTPCodeHinter
-	BodyCodeHinter
-	MessageHinter
-	CallHinter
-	ContextHinter
+	CodeHint
+	HTTPCodeHint
+	BodyCodeHint
+	MessageHint
+	CallerHint
+	ContextHint
 	ErrorUnwrapper
 
 	/*
@@ -141,44 +140,4 @@ type Error interface {
 type ErrorUnwrapper interface {
 	// Returns the error that is wrapped by this error. To be used by errors.Is and errors.As functions from errors library.
 	Unwrap() error
-}
-
-/*
-Search in the error stack wether there is an error with the same code hint as the given code.
-
-This api will check against three sources of code hints:
-
-	1. The CodeHinter interface
-	2. The HTTPCodeHinter interface
-	3. The BodyCodeHinter interface
-
-If any of the three sources return the same code as the given code, the api then tries to assert the error as `tower.Error` type.
-On fail to assert, checks the next error on the stack.
-
-If the error with such code and able to be asserted to `tower.Error` is not found, returns nil.
-*/
-func SearchCode(err error, code int) Error {
-	if err == nil {
-		return nil
-	}
-
-	if hint, ok := err.(CodeHinter); ok && hint.CodeHint() == code {
-		if err, ok := err.(Error); ok {
-			return err
-		}
-	}
-
-	if hint, ok := err.(HTTPCodeHinter); ok && hint.HTTPCodeHint() == code {
-		if err, ok := err.(Error); ok {
-			return err
-		}
-	}
-
-	if hint, ok := err.(BodyCodeHinter); ok && hint.BodyCodeHint() == code {
-		if err, ok := err.(Error); ok {
-			return err
-		}
-	}
-
-	return SearchCode(errors.Unwrap(err), code)
 }

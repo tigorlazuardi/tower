@@ -1,5 +1,7 @@
 package tower
 
+import "context"
+
 type Messenger interface {
 	// Returns the name of the Messenger.
 	Name() string
@@ -8,6 +10,6 @@ type Messenger interface {
 
 	// Waits until all message in the queue or until given channel is received.
 	//
-	// Implementer must exit the function as soon as possible when this cancel receives the item.
-	Wait(cancel <-chan struct{}) error
+	// Implementer must exit the function as soon as possible when this ctx is canceled.
+	Wait(ctx context.Context) error
 }

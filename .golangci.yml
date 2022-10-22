@@ -1,0 +1,71 @@
+run:
+  skip-dirs:
+    - mocks
+
+  skip-files:
+    - ".*test\\.go$"
+
+linters:
+  disable-all: true
+  enable:
+    # unused
+    - unused
+
+    # bugs
+    - errcheck
+    - govet
+    - staticcheck
+    - typecheck
+    - bodyclose
+    # - contextcheck
+    # - errorlint
+    # - exhaustive
+    - exportloopref
+    - forcetypeassert
+    - durationcheck
+    - gosec
+    - makezero
+    - noctx
+
+    # style
+    - gosimple
+    - unconvert
+    - wastedassign
+    - revive
+
+    # complexity
+    - cyclop
+
+    # format
+    - gci
+    - gofmt
+    - gofumpt
+    - godot
+    - whitespace
+
+linters-settings:
+  cyclop:
+    max-complexity: 30
+    skip-tests: true
+  revive:
+    ignore-generated-header: true
+    severity: warning
+    enable-all-rules: false
+    rules:
+      - name: atomic
+        disabled: false
+      - name: context-keys-type
+        disabled: false
+      - name: time-equal
+        disabled: false
+      - name: unexported-return
+        disabled: false
+      - name: errorf
+        disabled: false
+      - name: context-as-argument
+        disabled: false
+      - name: exported
+        disabled: false
+
+issues:
+  fix: true

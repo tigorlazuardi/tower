@@ -45,11 +45,11 @@ func GetBodyCode(err error) (code int) {
 }
 
 /*
-Search for any error in the stack that implements BodyCodeHint and return that value.
+Search for any error in the stack that implements CodeHint and return that value.
 
 The API searches from the outermost error, and will return the first value it found.
 
-Return 5500 if there's no error that implements BodyCodeHint in the stack.
+Return 5500 if there's no error that implements CodeHint in the stack.
 
 Used by Tower to search Body Code.
 */
@@ -63,6 +63,27 @@ func GetCodeHint(err error) (code int) {
 	}
 
 	return GetCodeHint(errors.Unwrap(err))
+}
+
+/*
+Search for any error in the stack that implements MessageHint and return that value.
+
+The API searches from the outermost error, and will return the first value it found.
+
+Return empty string if there's no error that implements MessageHint in the stack.
+
+Used by Tower to search Message in the error.
+*/
+func GetMessage(err error) (message string) {
+	if err == nil {
+		return ""
+	}
+
+	if ch, ok := err.(MessageHint); ok { //nolint:errorlint
+		return ch.Message()
+	}
+
+	return GetMessage(errors.Unwrap(err))
 }
 
 /*

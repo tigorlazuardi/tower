@@ -9,10 +9,9 @@ import (
 )
 
 type ErrorGeneratorContext struct {
-	Err     error
-	Caller  Caller
-	Service Service
-	Tower   *Tower
+	Err    error
+	Caller Caller
+	Tower  *Tower
 }
 
 type ErrorGenerator interface {
@@ -23,6 +22,20 @@ type ErrorGeneratorFunc func(*ErrorGeneratorContext) ErrorBuilder
 
 func (f ErrorGeneratorFunc) ContructError(ctx *ErrorGeneratorContext) ErrorBuilder {
 	return f(ctx)
+}
+
+func defaultErrorGenerator(ctx *ErrorGeneratorContext) ErrorBuilder {
+	return &errorEntry{
+		caller:  ctx.Caller,
+		key:     ctx.Caller.String(),
+		message: GetMessage(ctx.Err),
+		service: ctx.Tower.service,
+		data:    []any{},
+		error:   ctx.Err,
+		level:   zap.ErrorLevel,
+		code:    GetCodeHint(ctx.Err),
+		tower:   ctx.Tower,
+	}
 }
 
 type ErrorEntry interface {

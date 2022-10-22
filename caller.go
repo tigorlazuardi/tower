@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
+	"unicode"
 
 	"go.uber.org/zap/zapcore"
 )
@@ -53,6 +55,39 @@ func (c Caller) ShortSource() string {
 	}
 
 	return strings.Join(s, sep)
+}
+
+// Format this key with symbols other than letters, digits, `-` and `.` to `_`.
+func (c Caller) FormatAsKey() string {
+	s := &strings.Builder{}
+	strLine := strconv.Itoa(c.Line)
+	s.Grow(len(c.File) + 1 + len(strLine))
+	replaceSymbols(s, c.File, '_')
+	s.WriteRune('_')
+	s.WriteString(strLine)
+	return s.String()
+}
+
+// Sets this caller as `file_path:line` format.
+func (c Caller) String() string {
+	s := &strings.Builder{}
+	strLine := strconv.Itoa(c.Line)
+	s.Grow(len(c.File) + 1 + len(strLine))
+	s.WriteString(c.File)
+	s.WriteRune(':')
+	s.WriteString(strLine)
+	return s.String()
+}
+
+func replaceSymbols(builder *strings.Builder, s string, rep rune) {
+	for _, c := range s {
+		switch {
+		case unicode.In(c, unicode.Digit, unicode.Letter), c == '-', c == '.':
+			builder.WriteRune(c)
+		default:
+			builder.WriteRune(rep)
+		}
+	}
 }
 
 // Gets the caller information for who calls this function. A value of 1 will return this GetCaller location.

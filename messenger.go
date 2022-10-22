@@ -13,3 +13,15 @@ type Messenger interface {
 	// Implementer must exit the function as soon as possible when this ctx is canceled.
 	Wait(ctx context.Context) error
 }
+
+type Messengers map[string]Messenger
+
+func (c Messengers) Clone() Messengers {
+	clone := make(Messengers, len(c))
+
+	for k, v := range c {
+		clone[k] = v
+	}
+
+	return clone
+}

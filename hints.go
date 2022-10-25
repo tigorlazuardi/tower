@@ -1,9 +1,5 @@
 package tower
 
-import (
-	"go.uber.org/zap/zapcore"
-)
-
 type BodyCodeHint interface {
 	// Gets the Body Code for the type.
 	BodyCode() int
@@ -36,7 +32,7 @@ type KeyHint interface {
 
 type ContextHint interface {
 	// Gets the context of this this type.
-	Context() []zapcore.ObjectMarshaler
+	Context() []any
 }
 
 type ServiceHint interface {
@@ -46,5 +42,5 @@ type ServiceHint interface {
 
 type LevelHint interface {
 	// Gets the level of this message.
-	Level() zapcore.Level
+	Level() Level
 }

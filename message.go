@@ -34,10 +34,10 @@ type MessageContext interface {
 }
 
 type MessageOption interface {
-	Apply(OptionBuilder)
+	Apply(MessageOptionBuilder)
 }
 
-type OptionBuilder interface {
+type MessageOptionBuilder interface {
 	// Sender Asks the messages to be send, ignoring any delays and cooldowns.
 	SetSkipMessageVerification(b bool)
 	// Also send Message to these Messengers. Implementers should extends tower's already registered Messengers.
@@ -58,7 +58,7 @@ type OptionBuilder interface {
 	MessageCooldown(time.Duration)
 }
 
-type Option interface {
+type MessageParameter interface {
 	SkipVerification() bool
 	// When Tower sees that this Value is not nil, Tower will only triggers this Messenger.
 	SpecificMessenger() Messenger
@@ -69,18 +69,18 @@ type Option interface {
 }
 
 type OptionGenerator interface {
-	GenerateOption(t *Tower, opts ...MessageOption) Option
+	GenerateOption(t *Tower, opts ...MessageOption) MessageParameter
 }
 
 var _ OptionGenerator = (OptionGeneratorFunc)(nil)
 
-type OptionGeneratorFunc func(t *Tower, opts ...MessageOption) Option
+type OptionGeneratorFunc func(t *Tower, opts ...MessageOption) MessageParameter
 
-func (o OptionGeneratorFunc) GenerateOption(t *Tower, opts ...MessageOption) Option {
+func (o OptionGeneratorFunc) GenerateOption(t *Tower, opts ...MessageOption) MessageParameter {
 	return o(t, opts...)
 }
 
-func generateOption(t *Tower, opts ...MessageOption) Option {
+func generateOption(t *Tower, opts ...MessageOption) MessageParameter {
 	o := &option{tower: t}
 	for _, v := range opts {
 		v.Apply(o)
@@ -89,8 +89,8 @@ func generateOption(t *Tower, opts ...MessageOption) Option {
 }
 
 var (
-	_ Option        = (*option)(nil)
-	_ OptionBuilder = (*option)(nil)
+	_ MessageParameter     = (*option)(nil)
+	_ MessageOptionBuilder = (*option)(nil)
 )
 
 type option struct {
@@ -197,15 +197,15 @@ func (o option) Cooldown() time.Duration {
 	return o.cooldown
 }
 
-type MessageOptionFunc func(OptionBuilder)
+type MessageOptionFunc func(MessageOptionBuilder)
 
-func (f MessageOptionFunc) Apply(opt OptionBuilder) {
+func (f MessageOptionFunc) Apply(opt MessageOptionBuilder) {
 	f(opt)
 }
 
 // Asks the Messengers to Skip cooldown verifications and just send the message.
 func SkipMessageVerification(b bool) MessageOption {
-	return MessageOptionFunc(func(ob OptionBuilder) {
+	return MessageOptionFunc(func(ob MessageOptionBuilder) {
 		ob.SetSkipMessageVerification(b)
 	})
 }
@@ -217,7 +217,7 @@ If name is not found, Tower returns to default behaviour.
 Note: OnlyMessengerWithName option will conflict with other Messenger setters option, and thus only the latest option will be set.
 */
 func OnlyMessengerWithName(name string) MessageOption {
-	return MessageOptionFunc(func(ob OptionBuilder) {
+	return MessageOptionFunc(func(ob MessageOptionBuilder) {
 		ob.OnlyMessengerWithName(name)
 	})
 }
@@ -228,7 +228,7 @@ Asks Tower to only send only to this Messenger.
 Note: OnlyThisMessenger option will conflict with other Messenger setters option, and thus only the latest option will be set.
 */
 func OnlyThisMessenger(m Messenger) MessageOption {
-	return MessageOptionFunc(func(ob OptionBuilder) {
+	return MessageOptionFunc(func(ob MessageOptionBuilder) {
 		ob.OnlyThisMessenger(m)
 	})
 }
@@ -239,7 +239,7 @@ Asks Tower to only send messages to Messengers whose name begins with given s.
 Note: MessengerPrefix option will conflict with other Messenger setters option, and thus only the latest option will be set.
 */
 func MessengerPrefix(s string) MessageOption {
-	return MessageOptionFunc(func(ob OptionBuilder) {
+	return MessageOptionFunc(func(ob MessageOptionBuilder) {
 		ob.MessengerPrefix(s)
 	})
 }
@@ -250,7 +250,7 @@ Asks Tower to only send messages to Messengers whose name ends with given s.
 Note: MessengerSuffix option will conflict with other Messenger setters option, and thus only the latest option will be set.
 */
 func MessengerSuffix(s string) MessageOption {
-	return MessageOptionFunc(func(ob OptionBuilder) {
+	return MessageOptionFunc(func(ob MessageOptionBuilder) {
 		ob.MessengerSuffix(s)
 	})
 }
@@ -261,7 +261,7 @@ Asks Tower to only send messages to Messengers whose name contains given s.
 Note: MessengerNameContains option will conflict with other Messenger setters option, and thus only the latest option will be set.
 */
 func MessengerNameContains(s string) MessageOption {
-	return MessageOptionFunc(func(ob OptionBuilder) {
+	return MessageOptionFunc(func(ob MessageOptionBuilder) {
 		ob.MessengerNameContains(s)
 	})
 }
@@ -270,7 +270,7 @@ func MessengerNameContains(s string) MessageOption {
 Sets the Cooldown for this Message.
 */
 func MessageCooldown(dur time.Duration) MessageOption {
-	return MessageOptionFunc(func(ob OptionBuilder) {
+	return MessageOptionFunc(func(ob MessageOptionBuilder) {
 		ob.MessageCooldown(dur)
 	})
 }
@@ -281,7 +281,7 @@ Asks Tower to send messages to currenty registered and also send those messeges 
 Note: MessengerNameContains option will conflict with other Messenger setters option, and thus only the latest option will be set.
 */
 func ExtraMessengers(messengers ...Messenger) MessageOption {
-	return MessageOptionFunc(func(ob OptionBuilder) {
+	return MessageOptionFunc(func(ob MessageOptionBuilder) {
 		ob.ExtraMessengers(messengers...)
 	})
 }

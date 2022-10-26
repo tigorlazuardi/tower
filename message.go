@@ -39,26 +39,23 @@ type MessageOption interface {
 
 type OptionBuilder interface {
 	// Sender Asks the messages to be send, ignoring any delays and cooldowns.
-	SetSkipVerification(b bool)
-	// Sender asks the messengers to respect private marshaling.
-	// If the Messenger does not support it, revert to default behaviour.
-	//
-	// Tower already warns the user to implement tower.PrivateMarshalJSON, so the Messenger should check for that implementation.
-	SetPrivate(b bool)
+	SetSkipMessageVerification(b bool)
 	// Also send Message to these Messengers. Implementers should extends tower's already registered Messengers.
-	AddMessengers(...Messenger)
+	ExtraMessengers(...Messenger)
 	// Senders Asks only to send to Messenger with this name. If found, SpecificMessenger must return this Messenger, otherwise that Error return nil.
-	Only(name string)
+	OnlyMessengerWithName(name string)
 	// Sender asks to send very specifically to this Messenger.
 	OnlyThisMessenger(m Messenger)
+	// Sender asks to send very specifically to these Messenger.
+	OnlyTheseMessengers(...Messenger)
 	// Only sends to Messenger with the following prefix in its name.
-	Prefix(prefix string)
+	MessengerPrefix(prefix string)
 	// Only sends to Messenger with the following suffix.
-	Suffix(suffix string)
+	MessengerSuffix(suffix string)
 	// Only sends to Messenger that contains the following string.
-	Contains(contains string)
+	MessengerNameContains(contains string)
 	// Sender asks the cooldown for this message to be this duration.
-	SetCooldown(time.Duration)
+	MessageCooldown(time.Duration)
 }
 
 type Option interface {
@@ -67,7 +64,7 @@ type Option interface {
 	SpecificMessenger() Messenger
 	// When Tower sees the returned value is higher than 0, Tower will only send Messages to these Messengers.
 	Messengers() Messengers
-	Private() bool
+	// Returns 0 if sender does not set any custom base cooldown.
 	Cooldown() time.Duration
 }
 
@@ -100,76 +97,88 @@ type option struct {
 	skipVerification  bool
 	specificMessenger Messenger
 	messengers        Messengers
-	private           bool
 	cooldown          time.Duration
 	tower             *Tower
 }
 
 // Sender Asks the messages to be send, ignoring any delays and cooldowns.
-func (o *option) SetSkipVerification(b bool) {
-	o.skipVerification = true
+func (o *option) SetSkipMessageVerification(b bool) {
+	o.skipVerification = b
 }
 
-// Sender asks the messengers to respect private marshaling.
-func (o *option) SetPrivate(b bool) {
-	o.private = b
+// Senders Asks only to send to Messenger with this name. If found, SpecificMessenger must return this Messenger, otherwise that Error return nil.
+func (o *option) OnlyMessengerWithName(name string) {
+	o.specificMessenger = o.tower.GetMessengerByName(name)
+	o.messengers = nil
+}
+
+// Sender asks to send very specifically to these Messenger.
+func (o *option) OnlyTheseMessengers(m ...Messenger) {
+	o.specificMessenger = nil
+	mm := make(Messengers, len(m))
+	for _, v := range m {
+		mm[v.Name()] = v
+	}
+	o.messengers = mm
+}
+
+// Only sends to Messenger with the following prefix in its name.
+func (o *option) MessengerPrefix(prefix string) {
+	o.specificMessenger = nil
+	messengers := o.tower.GetMessengers()
+	mm := make(Messengers, len(messengers))
+	for k, v := range messengers {
+		if strings.HasPrefix(k, prefix) {
+			mm[k] = v
+		}
+	}
+	o.messengers = mm
+}
+
+// Only sends to Messenger with the following suffix.
+func (o *option) MessengerSuffix(suffix string) {
+	o.specificMessenger = nil
+	messengers := o.tower.GetMessengers()
+	mm := make(Messengers, len(messengers))
+	for k, v := range messengers {
+		if strings.HasSuffix(k, suffix) {
+			mm[k] = v
+		}
+	}
+	o.messengers = mm
+}
+
+// Only sends to Messenger that contains the following string.
+func (o *option) MessengerNameContains(contains string) {
+	o.specificMessenger = nil
+	messengers := o.tower.GetMessengers()
+	mm := make(Messengers, len(messengers))
+	for k, v := range messengers {
+		if strings.Contains(k, contains) {
+			mm[k] = v
+		}
+	}
+	o.messengers = mm
+}
+
+// Sender asks the cooldown for this message to be this duration.
+func (o *option) MessageCooldown(dur time.Duration) {
+	o.cooldown = dur
 }
 
 // Sender asks to send very specifically to this Messenger.
 func (o *option) OnlyThisMessenger(m Messenger) {
 	o.specificMessenger = m
-}
-
-// Only sends to Messenger with the following prefix.
-func (o *option) Prefix(prefix string) {
-	msg := make(Messengers, len(o.tower.messengers))
-	for k, v := range o.tower.messengers {
-		if strings.HasPrefix(k, prefix) {
-			msg[k] = v
-		}
-	}
-}
-
-// Only sends to Messenger with the following suffix.
-func (o *option) Suffix(suffix string) {
-	msg := make(Messengers, len(o.tower.messengers))
-	for k, v := range o.tower.messengers {
-		if strings.HasSuffix(k, suffix) {
-			msg[k] = v
-		}
-	}
-}
-
-// Only sends to Messenger that contains the following string.
-func (o *option) Contains(contains string) {
-	msg := make(Messengers, len(o.tower.messengers))
-	for k, v := range o.tower.messengers {
-		if strings.Contains(k, contains) {
-			msg[k] = v
-		}
-	}
-}
-
-// Sender asks to send very specifically to this Messenger.
-func (o *option) SetSpecificMessenger(m Messenger) {
-	o.specificMessenger = m
+	o.messengers = nil
 }
 
 // Also send Message to these Messengers.
-func (o *option) AddMessengers(m ...Messenger) {
+func (o *option) ExtraMessengers(m ...Messenger) {
+	o.specificMessenger = nil
+	o.messengers = o.tower.GetMessengers()
 	for _, v := range m {
 		o.messengers[v.Name()] = v
 	}
-}
-
-// Senders Asks only to send to Messenger with this name.
-func (o *option) Only(name string) {
-	o.specificMessenger = o.tower.GetMessengerByName(name)
-}
-
-// Sender asks the cooldown for this message to be this duration.
-func (o *option) SetCooldown(d time.Duration) {
-	o.cooldown = d
 }
 
 func (o option) SkipVerification() bool {
@@ -184,10 +193,6 @@ func (o option) Messengers() Messengers {
 	return o.messengers
 }
 
-func (o option) Private() bool {
-	return o.private
-}
-
 func (o option) Cooldown() time.Duration {
 	return o.cooldown
 }
@@ -199,14 +204,84 @@ func (f MessageOptionFunc) Apply(opt OptionBuilder) {
 }
 
 // Asks the Messengers to Skip cooldown verifications and just send the message.
-func SkipVerification(b bool) MessageOption {
+func SkipMessageVerification(b bool) MessageOption {
 	return MessageOptionFunc(func(ob OptionBuilder) {
-		ob.SetSkipVerification(b)
+		ob.SetSkipMessageVerification(b)
 	})
 }
 
-func Private(b bool) MessageOption {
+/*
+Asks Tower to only send only to the Messenger with this name.
+If name is not found, Tower returns to default behaviour.
+
+Note: OnlyMessengerWithName option will conflict with other Messenger setters option, and thus only the latest option will be set.
+*/
+func OnlyMessengerWithName(name string) MessageOption {
 	return MessageOptionFunc(func(ob OptionBuilder) {
-		ob.SetPrivate(b)
+		ob.OnlyMessengerWithName(name)
+	})
+}
+
+/*
+Asks Tower to only send only to this Messenger.
+
+Note: OnlyThisMessenger option will conflict with other Messenger setters option, and thus only the latest option will be set.
+*/
+func OnlyThisMessenger(m Messenger) MessageOption {
+	return MessageOptionFunc(func(ob OptionBuilder) {
+		ob.OnlyThisMessenger(m)
+	})
+}
+
+/*
+Asks Tower to only send messages to Messengers whose name begins with given s.
+
+Note: MessengerPrefix option will conflict with other Messenger setters option, and thus only the latest option will be set.
+*/
+func MessengerPrefix(s string) MessageOption {
+	return MessageOptionFunc(func(ob OptionBuilder) {
+		ob.MessengerPrefix(s)
+	})
+}
+
+/*
+Asks Tower to only send messages to Messengers whose name ends with given s.
+
+Note: MessengerSuffix option will conflict with other Messenger setters option, and thus only the latest option will be set.
+*/
+func MessengerSuffix(s string) MessageOption {
+	return MessageOptionFunc(func(ob OptionBuilder) {
+		ob.MessengerSuffix(s)
+	})
+}
+
+/*
+Asks Tower to only send messages to Messengers whose name contains given s.
+
+Note: MessengerNameContains option will conflict with other Messenger setters option, and thus only the latest option will be set.
+*/
+func MessengerNameContains(s string) MessageOption {
+	return MessageOptionFunc(func(ob OptionBuilder) {
+		ob.MessengerNameContains(s)
+	})
+}
+
+/*
+Sets the Cooldown for this Message.
+*/
+func MessageCooldown(dur time.Duration) MessageOption {
+	return MessageOptionFunc(func(ob OptionBuilder) {
+		ob.MessageCooldown(dur)
+	})
+}
+
+/*
+Asks Tower to send messages to currenty registered and also send those messeges to these Messengers.
+
+Note: MessengerNameContains option will conflict with other Messenger setters option, and thus only the latest option will be set.
+*/
+func ExtraMessengers(messengers ...Messenger) MessageOption {
+	return MessageOptionFunc(func(ob OptionBuilder) {
+		ob.ExtraMessengers(messengers...)
 	})
 }

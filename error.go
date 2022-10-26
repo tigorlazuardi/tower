@@ -61,6 +61,12 @@ type ErrorBuilder interface {
 	Message(s string, args ...any) ErrorBuilder
 
 	/*
+		Sets the origin error for ErrorBuilder. Very unlikely to need to set this because tower.Wrap already wraps the error.
+		But the api is available to set the origin error.
+	*/
+	Error(err error) ErrorBuilder
+
+	/*
 		Sets additional data that will enrich how the error will look.
 
 		`tower.Fields` is a type that is well integrated with built in Messengers.
@@ -141,6 +147,11 @@ func (e *errorBuilder) Caller(c Caller) ErrorBuilder {
 
 func (e *errorBuilder) Code(i int) ErrorBuilder {
 	e.code = i
+	return e
+}
+
+func (e *errorBuilder) Error(err error) ErrorBuilder {
+	e.origin = err
 	return e
 }
 

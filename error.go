@@ -23,8 +23,28 @@ func (f ErrorGeneratorFunc) ContructError(ctx *ErrorGeneratorContext) ErrorBuild
 }
 
 func defaultErrorGenerator(ctx *ErrorGeneratorContext) ErrorBuilder {
-	// TODO: Implement
-	return nil
+	var (
+		code    int
+		message string
+	)
+	if ch, ok := ctx.Err.(CodeHint); ok {
+		code = ch.Code()
+	}
+	if msg, ok := ctx.Err.(MessageHint); ok {
+		message = msg.Message()
+	} else {
+		message = ctx.Err.Error()
+	}
+	return &errorBuilder{
+		code:    code,
+		message: message,
+		caller:  ctx.Caller,
+		context: []any{},
+		key:     "",
+		level:   ErrorLevel,
+		origin:  ctx.Err,
+		tower:   ctx.Tower,
+	}
 }
 
 /*

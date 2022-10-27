@@ -8,7 +8,14 @@
 - update docs
 
 ### Feat
+- renamed Option to MessageParameter
+- update options
 - general update
+- more updates
+- update messenger spec
+- added messenger
+- general update
+- **error:** properly implemented defaultErrorGenerator
 
 ### Refactor
 - moved caller from hints file to caller file

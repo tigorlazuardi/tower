@@ -1,14 +1,14 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
-### Chore
-- comment linter for wip
-- format comments
+### Code Refactoring
+- moved caller from hints file to caller file
 
 ### Docs
 - update docs
+- **changelog:** changed the format
 
-### Feat
+### Features
 - added auto changelog
 - renamed Option to MessageParameter
 - update options
@@ -19,8 +19,9 @@
 - general update
 - **error:** properly implemented defaultErrorGenerator
 
-### Refactor
-- moved caller from hints file to caller file
+### Miscellaneous
+- comment linter for wip
+- format comments
 
 
 <a name="v0.1.0"></a>

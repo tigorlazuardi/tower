@@ -9,6 +9,7 @@
 - update docs
 
 ### Feat
+- added auto changelog
 - renamed Option to MessageParameter
 - update options
 - general update

@@ -6,6 +6,12 @@ doc: doc-binaries
 	@./bin/go/git-chglog -o CHANGELOG.md
 	@PYTHONPATH="$$(pwd)/bin/python:$$PYTHONPATH" ./bin/python/bin/markdown-pp README.mdpp -o README.md
 
+doc-amend: doc
+	@git add ./CHANGELOG.md || true
+	@git add ./README.md || true
+	@git add ./README.mdpp || true
+	@git commit --amend --no-edit
+
 test-binaries:
 	@test -f "./bin/go/gotest" || GOBIN="$$(pwd)/bin/go" go install github.com/rakyll/gotest@v0.0.6
 
@@ -25,4 +31,9 @@ test: test-binaries
 
 test-integration: test-binaries
 	@IN_TEST=true ./bin/go/gotest -v ./...
+
+git-hook:
+	@test -f "./bin/go/lefthook" || GOBIN="$$(pwd)/bin/go" go install github.com/evilmartians/lefthook@v1.1.3
+	@./bin/go/lefthook install
+
 

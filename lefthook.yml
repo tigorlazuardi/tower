@@ -1,0 +1,13 @@
+pre-commit:
+    parallel: true
+    commands:
+        lint:
+            glob: '*.go'
+            run: echo {staged_files} > /dev/null && make lint
+        test:
+            glob: '*.go'
+            run: echo {staged_files} > /dev/null && make test
+post-commit:
+    commands:
+        doc:
+            run: LEFTHOOK=0 make doc-amend # Need that env to prevent recursive call

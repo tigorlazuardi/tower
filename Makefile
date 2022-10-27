@@ -33,7 +33,7 @@ test-integration: test-binaries
 	@IN_TEST=true ./bin/go/gotest -v ./...
 
 commitlint: install-commitlint
-	@NODE_PATH="./bin/node/lib/node_modules:$NODE_PATH" ./bin/node/bin/commitlint -e ./.git/COMMIT_EDITMSG
+	@NODE_PATH="./bin/node/lib/node_modules:$NODE_PATH" ./bin/node/bin/commitlint --from HEAD~1 --to HEAD
 
 install-commitlint:
 	@npm install -g --prefix ./bin/node @commitlint/cli @commitlint/config-conventional

@@ -3,6 +3,7 @@
 
 ### Code Refactoring
 - moved caller from hints file to caller file
+- **lefthook:** lefthook now uses make command
 
 ### Docs
 - update docs

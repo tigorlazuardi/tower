@@ -2,7 +2,7 @@ pre-commit:
     parallel: true
     commands:
         commitlint:
-            run: make install-commitlint && NODE_PATH="./bin/node/lib/node_modules:$NODE_PATH" ./bin/node/bin/commitlint --from HEAD~1 --to HEAD
+            run: make commitlint
         lint:
             glob: '*.go'
             run: echo {staged_files} > /dev/null && make lint

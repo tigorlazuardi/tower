@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Chore
+- comment linter for wip
 - format comments
 
 ### Docs

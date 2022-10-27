@@ -8,7 +8,7 @@ import (
 
 type Discord struct {
 	name  string
-	token string
+	token string //nolint wip
 }
 
 // Returns the name of the Messenger.

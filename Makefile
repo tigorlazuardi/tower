@@ -32,6 +32,13 @@ test: test-binaries
 test-integration: test-binaries
 	@IN_TEST=true ./bin/go/gotest -v ./...
 
+commitlint: install-commitlint
+	@NODE_PATH="./bin/node/lib/node_modules:$NODE_PATH" ./bin/node/bin/commitlint -e ./.git/COMMIT_EDITMSG
+
+install-commitlint:
+	@npm install -g --prefix ./bin/node @commitlint/cli @commitlint/config-conventional
+	@test -f "./commitlint.config.js" || echo "module.exports = {extends: ['@commitlint/config-conventional']}" > commitlint.config.js
+
 git-hook:
 	@test -f "./bin/go/lefthook" || GOBIN="$$(pwd)/bin/go" go install github.com/evilmartians/lefthook@v1.1.3
 	@./bin/go/lefthook install

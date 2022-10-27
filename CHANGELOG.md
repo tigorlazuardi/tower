@@ -17,6 +17,7 @@
 - update messenger spec
 - added messenger
 - general update
+- **commitlint:** added commitlint integration
 - **error:** properly implemented defaultErrorGenerator
 
 ### Miscellaneous

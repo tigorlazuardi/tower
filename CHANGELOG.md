@@ -10,17 +10,18 @@
 - **changelog:** changed the format
 
 ### Features
+- more updates
 - added auto changelog
 - renamed Option to MessageParameter
 - update options
 - general update
-- more updates
 - update messenger spec
 - added messenger
 - general update
 - **commitlint:** added commitlint integration
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
+- **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation
 
 ### Miscellaneous

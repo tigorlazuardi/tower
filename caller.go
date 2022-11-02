@@ -1,14 +1,11 @@
 package tower
 
 import (
-	"fmt"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
 	"unicode"
-
-	"go.uber.org/zap/zapcore"
 )
 
 const sep = string(os.PathSeparator)
@@ -22,12 +19,6 @@ type Caller struct {
 func (c Caller) Function() *runtime.Func {
 	f := runtime.FuncForPC(c.PC)
 	return f
-}
-
-func (c Caller) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("source", fmt.Sprintf("%s:%d", c.File, c.Line))
-	enc.AddString("origin", c.ShortOrigin())
-	return nil
 }
 
 func (c Caller) getOrigin() []string {

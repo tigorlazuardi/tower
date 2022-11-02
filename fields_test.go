@@ -1,4 +1,4 @@
-package tower
+package tower_test
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/tigorlazuardi/tower"
 )
 
 type errorTest struct {
@@ -38,11 +38,11 @@ func (d displayTest) Display() string {
 
 func TestFields_WriteDisplay(t *testing.T) {
 	type args struct {
-		w LineWriter
+		w tower.LineWriter
 	}
 	tests := []struct {
 		name string
-		f    Fields
+		f    tower.Fields
 		args args
 		want string
 	}{
@@ -53,18 +53,18 @@ func TestFields_WriteDisplay(t *testing.T) {
 				"wtf": 123,
 			},
 			args: args{
-				w: NewLineWriterBuilder().Separator("\n").Build(),
+				w: tower.NewLineWriterBuilder().Separator("\n").Build(),
 			},
 			want: "foo: bar\nwtf: 123",
 		},
 		{
 			name: "expected result - complex",
 			f: map[string]any{
-				"display_writer": Fields{
+				"display_writer": tower.Fields{
 					"bar":   2000,
 					"baz":   "www",
 					"bytes": bytes.Repeat([]byte(`baz`), 20),
-					"buzz": Fields{
+					"buzz": tower.Fields{
 						"light": "year",
 					},
 				},
@@ -78,7 +78,7 @@ func TestFields_WriteDisplay(t *testing.T) {
 				"function":    func() {},
 			},
 			args: args{
-				w: NewLineWriterBuilder().Separator("\n").Prefix(">> ").Build(),
+				w: tower.NewLineWriterBuilder().Separator("\n").Prefix(">> ").Build(),
 			},
 			want: strings.TrimSpace(`
 >> bytes:
@@ -116,7 +116,10 @@ func TestFields_WriteDisplay(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.f.WriteDisplay(tt.args.w)
-			assert.Equal(t, tt.want, tt.args.w.String())
+			got := tt.args.w.String()
+			if got != tt.want {
+				t.Errorf("got and want is not equal.\n\nwant:\n%s\n\ngot:\n%s\n", tt.want, got)
+			}
 		})
 	}
 }

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-
-	"golang.org/x/exp/constraints"
 )
 
 type Fields map[string]any
@@ -216,7 +214,7 @@ func isJson(b []byte) bool {
 	return json.Unmarshal(b, &js) == nil
 }
 
-func getSortedKeys[K constraints.Ordered, V any](m map[K]V) []K {
+func getSortedKeys[K Ordered, V any](m map[K]V) []K {
 	keys := make([]K, len(m))
 	i := 0
 	for k := range m {

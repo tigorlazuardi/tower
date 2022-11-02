@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Code Refactoring
+- removed constraints lib
 - moved caller from hints file to caller file
 - **lefthook:** lefthook now uses make command
 

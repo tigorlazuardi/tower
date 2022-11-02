@@ -73,4 +73,22 @@ type EntryBuilder interface {
 	Notify(ctx context.Context, opts ...MessageOption) Entry
 }
 
-type Entry interface{}
+type Entry interface {
+	CodeHint
+	HTTPCodeHint
+	MessageHint
+	CallerHint
+	ContextHint
+	LevelHint
+	ErrorUnwrapper
+	ErrorWriter
+
+	/*
+		Logs this error.
+	*/
+	Log(ctx context.Context) Error
+	/*
+		Notifies this error to Messengers.
+	*/
+	Notify(ctx context.Context, opts ...MessageOption) Error
+}

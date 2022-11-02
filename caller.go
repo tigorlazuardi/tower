@@ -21,9 +21,13 @@ func (c Caller) Function() *runtime.Func {
 	return f
 }
 
-func (c Caller) getOrigin() []string {
+func (c Caller) Origin() string {
 	f := runtime.FuncForPC(c.PC)
-	return strings.Split(f.Name(), "/")
+	return f.Name()
+}
+
+func (c Caller) getOrigin() []string {
+	return strings.Split(c.Origin(), "/")
 }
 
 // Gets only the latest four items maximum in the package path.

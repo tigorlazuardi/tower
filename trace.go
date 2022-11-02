@@ -2,16 +2,18 @@ package tower
 
 import "context"
 
-type noopTrace struct{}
+// Tracer that does nothing.
+type NoopTracer struct{}
 
-func (noopTrace) GetTraceID() string {
+func (NoopTracer) GetTraceID() string {
 	return ""
 }
 
-func (noopTrace) GetTransactionID() string {
+func (NoopTracer) GetTransactionID() string {
 	return ""
 }
 
+// A common captured interface of Trace identifications.
 type Trace interface {
 	GetTraceID() string
 	GetTransactionID() string
@@ -25,8 +27,4 @@ type TraceCaptureFunc func(ctx context.Context) Trace
 
 func (t TraceCaptureFunc) CaptureTrace(ctx context.Context) Trace {
 	return t(ctx)
-}
-
-func noopCapturer(ctx context.Context) Trace {
-	return noopTrace{}
 }

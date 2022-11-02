@@ -13,7 +13,6 @@ type Tower struct {
 	logger           Logger
 	errorConstructor ErrorGenerator
 	service          Service
-	traceCapturer    TraceCapturer
 	optionGenerator  OptionGenerator
 }
 
@@ -29,7 +28,6 @@ func NewTower(service Service) *Tower {
 		logger:           NoopLogger{},
 		errorConstructor: ErrorGeneratorFunc(defaultErrorGenerator),
 		service:          service,
-		traceCapturer:    TraceCaptureFunc(noopCapturer),
 		optionGenerator:  OptionGeneratorFunc(generateOption),
 	}
 }

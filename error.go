@@ -3,7 +3,6 @@ package tower
 import (
 	"context"
 	"fmt"
-	"strings"
 )
 
 type ErrorGeneratorContext struct {
@@ -222,6 +221,7 @@ type Error interface {
 	ContextHint
 	LevelHint
 	ErrorUnwrapper
+	ErrorWriter
 
 	/*
 		Logs this error.
@@ -243,40 +243,55 @@ type implError struct {
 }
 
 func (e implError) Error() string {
-	s := strings.Builder{}
-	e.WriteError(&s)
+	s := NewLineWriterBuilder().Separator(" => ").Build()
+	e.WriteError(s)
 	return s.String()
 }
 
 // Writes the error.Error to the writer instead of being allocated as value.
-func (e implError) WriteError(w Writer) {
+func (e implError) WriteError(w LineWriter) {
+	w.WriteIndent()
 	msg := e.inner.message
 	if e.inner.origin == nil {
 		if len(msg) > 0 {
+			w.WritePrefix()
 			_, _ = w.WriteString(msg)
-			_, _ = w.WriteString(" => ")
+			w.WriteSuffix()
+			w.WriteSeparator()
 		}
+		w.WritePrefix()
 		_, _ = w.WriteString("[nil]")
+		w.WriteSuffix()
 		return
 	}
 
 	errMsg := e.inner.origin.Error()
 	if ew, ok := e.inner.origin.(ErrorWriter); ok {
 		if mh, ok := e.inner.origin.(MessageHint); ok && msg != mh.Message() && msg != errMsg {
+			w.WritePrefix()
 			_, _ = w.WriteString(msg)
-			_, _ = w.WriteString(" => ")
+			w.WriteSuffix()
+			w.WriteSeparator()
 		} else if msg != errMsg {
+			w.WritePrefix()
 			_, _ = w.WriteString(msg)
-			_, _ = w.WriteString(" => ")
+			w.WriteSeparator()
+			w.WriteSuffix()
 		}
+		w.WritePrefix()
 		ew.WriteError(w)
+		w.WriteSuffix()
 		return
 	}
 	if msg != errMsg {
+		w.WritePrefix()
 		_, _ = w.WriteString(msg)
-		_, _ = w.WriteString(" => ")
+		w.WriteSuffix()
+		w.WriteSeparator()
 	}
+	w.WritePrefix()
 	_, _ = w.WriteString(errMsg)
+	w.WriteSuffix()
 }
 
 // Gets the original code of the type.

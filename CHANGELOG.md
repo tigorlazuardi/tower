@@ -20,6 +20,7 @@
 - general update
 - **commitlint:** added commitlint integration
 - **error:** properly implemented defaultErrorGenerator
+- **writer:** added writer implementation
 
 ### Miscellaneous
 - comment linter for wip

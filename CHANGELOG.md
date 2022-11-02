@@ -20,6 +20,7 @@
 - general update
 - **commitlint:** added commitlint integration
 - **error:** properly implemented defaultErrorGenerator
+- **fields:** major fields update
 - **writer:** added writer implementation
 
 ### Miscellaneous

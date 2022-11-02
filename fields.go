@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
+
+	"golang.org/x/exp/constraints"
 )
 
 type Fields map[string]any
@@ -77,23 +80,22 @@ func (f Fields) Display() string {
 	return s.String()
 }
 
-func isJson(b []byte) bool {
-	var js json.RawMessage
-	return json.Unmarshal(b, &js) == nil
-}
-
 // Writes the Display() string to the writer instead of being allocated as value.
 func (f Fields) WriteDisplay(w LineWriter) {
-	i := 0
-	for k, v := range f {
+	keys := getSortedKeys(f)
+	for i, k := range keys {
+		v := f[k]
 		if i > 0 {
 			w.WriteSeparator()
 		}
 		i++
 		w.WritePrefix()
 		w.WriteIndent()
-		_, _ = w.WriteString(k)
-		_, _ = w.WriteString(":")
+		// support for 0 length keys. For debugging utilities.
+		if len(k) > 0 {
+			_, _ = w.WriteString(k)
+			_, _ = w.WriteString(":")
+		}
 		switch v := v.(type) {
 		case DisplayWriter:
 			w.WriteSeparator()
@@ -112,9 +114,10 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			w.WriteSeparator()
 			v.WriteError(NewLineWriterBuilder().Writer(w).Indent("    ").Build())
 		case error:
+			indented := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
 			buf := &bytes.Buffer{}
 			enc := json.NewEncoder(buf)
-			enc.SetIndent(w.GetIndentation(), "    ")
+			enc.SetIndent(w.GetPrefix()+indented.GetIndentation(), "    ")
 			enc.SetEscapeHTML(false)
 			err := enc.Encode(v)
 			if err != nil {
@@ -123,24 +126,43 @@ func (f Fields) WriteDisplay(w LineWriter) {
 				content := buf.Bytes()
 				strip := bytes.TrimSpace(content)
 				if !(len(strip) == 2 && (string(strip) == "{}" || string(strip) == "[]")) {
+					indented.WriteSeparator()
+					indented.WritePrefix()
+					indented.WriteIndent()
+					_, _ = indented.Write(bytes.TrimSpace(content))
 					w.WriteSeparator()
-					w.WriteIndent()
-					_, _ = w.Write(content)
-					w.WriteSeparator()
+					w.WritePrefix()
 					w.WriteIndent()
 					_, _ = w.WriteString(k)
 					_, _ = w.WriteString("_summary")
 					_, _ = w.WriteString(":")
 				}
 			}
-			_, _ = w.WriteString(" ")
-			_, _ = w.WriteString(v.Error())
+			str := v.Error()
+			if len(str) > 50 {
+				indented.WriteSeparator()
+				indented.WritePrefix()
+				indented.WriteIndent()
+			} else {
+				_, _ = w.WriteString(" ")
+			}
+			_, _ = w.WriteString(str)
 		case fmt.Stringer:
-			_, _ = w.WriteString(" ")
+			str := v.String()
+			if len(str) > 50 {
+				w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
+				w.WriteSeparator()
+				w.WritePrefix()
+				w.WriteIndent()
+			} else {
+				_, _ = w.WriteString(" ")
+			}
 			_, _ = w.WriteString(v.String())
 		case string:
 			if len(v) > 50 {
+				w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
 				w.WriteSeparator()
+				w.WritePrefix()
 				w.WriteIndent()
 			} else {
 				_, _ = w.WriteString(" ")
@@ -148,19 +170,19 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			_, _ = w.WriteString(v)
 		case []byte:
 			if isJson(v) {
+				w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
 				w.WriteSeparator()
+				w.WritePrefix()
 				w.WriteIndent()
 				buf := &bytes.Buffer{}
-				err := json.Indent(buf, v, w.GetIndentation(), "    ")
-				if err != nil {
-					_, _ = w.WriteString(err.Error())
-					continue
-				}
+				_ = json.Indent(buf, v, w.GetPrefix()+w.GetIndentation(), "    ")
 				_, _ = io.Copy(w, buf)
 				continue
 			}
 			if len(v) > 50 {
+				w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
 				w.WriteSeparator()
+				w.WritePrefix()
 				w.WriteIndent()
 			} else {
 				_, _ = w.WriteString(" ")
@@ -170,16 +192,37 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			_, _ = w.WriteString(" ")
 			_, _ = fmt.Fprintf(w, "%v", v)
 		default:
+			w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
 			w.WriteSeparator()
+			w.WritePrefix()
 			w.WriteIndent()
-			enc := json.NewEncoder(w)
-			enc.SetIndent(w.GetIndentation(), "    ")
+			buf := &bytes.Buffer{}
+			enc := json.NewEncoder(buf)
+			enc.SetIndent(w.GetPrefix()+w.GetIndentation(), "    ")
 			enc.SetEscapeHTML(false)
 			err := enc.Encode(v)
 			if err != nil {
 				_, _ = w.WriteString(err.Error())
+			} else {
+				_, _ = w.Write(bytes.TrimSpace(buf.Bytes()))
 			}
 		}
 		w.WriteSuffix()
 	}
+}
+
+func isJson(b []byte) bool {
+	var js json.RawMessage
+	return json.Unmarshal(b, &js) == nil
+}
+
+func getSortedKeys[K constraints.Ordered, V any](m map[K]V) []K {
+	keys := make([]K, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	return keys
 }

@@ -11,15 +11,16 @@
 - **changelog:** changed the format
 
 ### Features
+- update options
 - general update
 - general update
 - added messenger
 - update messenger spec
-- added auto changelog
 - more updates
+- added auto changelog
 - renamed Option to MessageParameter
-- update options
 - **commitlint:** added commitlint integration
+- **discord:** updated discord element
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
 - **towerzap:** added towerzap implementations

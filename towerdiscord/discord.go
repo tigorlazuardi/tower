@@ -1,4 +1,4 @@
-package discord
+package towerdiscord
 
 import (
 	"context"
@@ -7,8 +7,9 @@ import (
 )
 
 type Discord struct {
-	name  string
-	token string //nolint wip
+	name    string
+	token   string //nolint wip
+	webhook string
 }
 
 // Returns the name of the Messenger.

@@ -1,6 +1,6 @@
 module github.com/tigorlazuardi/tower-go/towerzap
 
-go 1.19
+go 1.18
 
 require (
 	github.com/tigorlazuardi/tower v0.1.0

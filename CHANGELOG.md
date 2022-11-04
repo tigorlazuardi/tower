@@ -33,6 +33,7 @@
 - **writer:** added writer implementation
 
 ### Miscellaneous
+- update gitignore
 - comment linter for wip
 - format comments
 

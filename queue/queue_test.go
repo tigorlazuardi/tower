@@ -9,8 +9,8 @@ import (
 	"github.com/tigorlazuardi/tower-go/queue"
 )
 
-func TestQueue(t *testing.T) {
-	queue := queue.NewQueue[int]()
+func TestLockFreeQueue(t *testing.T) {
+	queue := queue.New[int]()
 	count := uint64(0)
 	wg := sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -40,12 +40,19 @@ func TestQueue(t *testing.T) {
 	}
 }
 
-func BenchmarkQueue(b *testing.B) {
-	queue := queue.NewQueue[int]()
+func BenchmarkLockFreeQueue(b *testing.B) {
+	queue := queue.New[int]()
+	wg := sync.WaitGroup{}
+	wg.Add(b.N * 2)
 	for i := 0; i < b.N; i++ {
-		queue.Enqueue(i)
+		go func(i int) {
+			queue.Enqueue(i)
+			wg.Done()
+		}(i)
+		go func() {
+			queue.Dequeue()
+			wg.Done()
+		}()
 	}
-	for i := 0; i < b.N; i++ {
-		queue.Dequeue()
-	}
+	wg.Wait()
 }

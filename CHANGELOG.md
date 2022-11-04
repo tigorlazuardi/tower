@@ -13,16 +13,17 @@
 ### Features
 - update options
 - general update
-- general update
 - added messenger
 - update messenger spec
 - more updates
 - added auto changelog
+- general update
 - renamed Option to MessageParameter
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
+- **queue:** added queue
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

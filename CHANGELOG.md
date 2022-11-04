@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+- **queue:** go dependency changed to 1.18
+
 ### Code Refactoring
 - removed constraints lib
 - moved caller from hints file to caller file

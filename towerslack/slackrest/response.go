@@ -1,5 +1,10 @@
 package slackrest
 
-type Response struct{}
+type ErrorResponse struct {
+	Ok  bool   `json:"ok"`
+	Err string `json:"error"`
+}
 
-type ErrorResponse struct{}
+func (err *ErrorResponse) Error() string {
+	return err.Err
+}

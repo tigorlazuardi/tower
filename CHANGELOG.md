@@ -15,19 +15,21 @@
 
 ### Features
 - general update
-- update options
-- added auto changelog
-- general update
 - added messenger
 - update messenger spec
-- renamed Option to MessageParameter
 - more updates
+- general update
+- update options
+- renamed Option to MessageParameter
+- added auto changelog
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
-- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **queue:** added queue
+- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
+- **slack:** added post message
+- **slack:** added slack
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

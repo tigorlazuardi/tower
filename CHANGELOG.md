@@ -14,6 +14,7 @@
 - **changelog:** changed the format
 
 ### Features
+- added auto changelog
 - general update
 - added messenger
 - update messenger spec
@@ -21,15 +22,15 @@
 - general update
 - update options
 - renamed Option to MessageParameter
-- added auto changelog
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
 - **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
-- **slack:** added post message
+- **slack:** update
 - **slack:** added slack
+- **slack:** added post message
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

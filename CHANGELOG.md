@@ -28,9 +28,10 @@
 - **fields:** major fields update
 - **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
-- **slack:** update
 - **slack:** added slack
 - **slack:** added post message
+- **slack:** update
+- **towerslack:** start building template
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

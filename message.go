@@ -31,6 +31,8 @@ type MessageContext interface {
 	Err() error
 	// If true, Sender asks for this message to always be send.
 	SkipVerification() bool
+	// Gets the tower instance that created this MessageContext
+	Tower() *Tower
 }
 
 type MessageOption interface {

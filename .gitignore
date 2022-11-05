@@ -1,5 +1,8 @@
 __debug_bin
 bin/
+.env
 
 *.test
 *.profile
+
+go.work.sum

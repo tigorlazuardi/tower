@@ -35,6 +35,7 @@
 - **writer:** added writer implementation
 
 ### Miscellaneous
+- cleanup uneeded sum files
 - update gitignore
 - comment linter for wip
 - format comments

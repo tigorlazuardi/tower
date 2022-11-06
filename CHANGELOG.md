@@ -14,7 +14,6 @@
 - **changelog:** changed the format
 
 ### Features
-- added auto changelog
 - general update
 - added messenger
 - update messenger spec
@@ -22,6 +21,8 @@
 - general update
 - update options
 - renamed Option to MessageParameter
+- added auto changelog
+- **blocks:** added more blocks
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
 - **error:** properly implemented defaultErrorGenerator

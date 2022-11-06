@@ -15,5 +15,8 @@ func (b Blocks) IsNil() bool {
 }
 
 type Block interface {
+	// Prep this block for Marshaling.
 	Build() gojay.MarshalerJSONObject
+	// Removes all the element and release the associated elements into their own pool for reuse.
+	Release()
 }

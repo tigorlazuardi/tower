@@ -14,22 +14,23 @@
 - **changelog:** changed the format
 
 ### Features
+- more updates
 - update options
-- renamed Option to MessageParameter
+- added auto changelog
 - general update
 - added messenger
-- added auto changelog
 - update messenger spec
-- more updates
 - general update
+- renamed Option to MessageParameter
 - **blocks:** added section block
 - **blocks:** added more blocks
+- **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
-- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **queue:** added queue
+- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **slack:** added slack
 - **slack:** added post message
 - **slack:** update

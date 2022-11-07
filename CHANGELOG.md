@@ -14,16 +14,16 @@
 - **changelog:** changed the format
 
 ### Features
-- update options
-- renamed Option to MessageParameter
 - general update
-- general update
-- added auto changelog
 - added messenger
 - update messenger spec
 - more updates
-- **blocks:** added more blocks
+- general update
+- update options
+- renamed Option to MessageParameter
+- added auto changelog
 - **blocks:** added section block
+- **blocks:** added more blocks
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
@@ -31,9 +31,10 @@
 - **fields:** major fields update
 - **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
-- **slack:** update
-- **slack:** added slack
 - **slack:** added post message
+- **slack:** added dynamic build key
+- **slack:** added slack
+- **slack:** update
 - **slack:** implemented towerslack handle message
 - **tower:** added wrap method
 - **towerslack:** start building template

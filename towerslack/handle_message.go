@@ -3,6 +3,7 @@ package towerslack
 import (
 	"context"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/tigorlazuardi/tower"
@@ -11,12 +12,7 @@ import (
 
 func (s Slack) handleMessage(msg tower.MessageContext) {
 	// TODO: Implement hooks
-	key := msg.Key()
-	if key == "" {
-		f := msg.Caller()
-		key = f.FormatAsKey()
-	}
-
+	key := s.buildKey(msg)
 	ctx := msg.Ctx()
 
 	// use tickers to account for lags.
@@ -97,6 +93,26 @@ func (s Slack) postMessage(ctx context.Context, msg tower.MessageContext) error 
 func (s Slack) deleteGlobalKeyAfterOneSec(ctx context.Context) {
 	<-time.NewTimer(time.Second).C
 	s.cache.Delete(ctx, s.globalKey)
+}
+
+func (s Slack) buildKey(msg tower.MessageContext) string {
+	builder := strings.Builder{}
+	builder.WriteString(s.Name())
+	builder.WriteString(s.cache.Separator())
+	service := msg.Service()
+	builder.WriteString(service.Environment)
+	builder.WriteString(s.cache.Separator())
+	builder.WriteString(service.Name)
+	builder.WriteString(s.cache.Separator())
+	builder.WriteString(service.Type)
+	builder.WriteString(s.cache.Separator())
+
+	key := msg.Key()
+	if key == "" {
+		key = msg.Caller().FormatAsKey()
+	}
+	builder.WriteString(key)
+	return builder.String()
 }
 
 func (s Slack) getAndSetIter(ctx context.Context, key string) int {

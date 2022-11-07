@@ -26,13 +26,10 @@ func (s Slack) handleMessage(msg tower.MessageContext) {
 	}
 	ticker.Stop()
 	if err := s.cache.Set(ctx, s.globalKey, []byte("locked"), time.Second*30); err != nil {
-		// TODO Add error logging using tower.
-		_ = err
+		_ = msg.Tower().Wrap(err).Message("failed to set global lock to cache").Log(ctx)
 	}
 	if msg.SkipVerification() {
-		if err := s.postMessage(ctx, msg); err != nil {
-			_ = err
-		}
+		_ = s.postMessage(ctx, msg)
 		return
 	}
 	if s.cache.Exist(ctx, key) {
@@ -43,12 +40,18 @@ func (s Slack) handleMessage(msg tower.MessageContext) {
 	iterKey := key + s.cache.Separator() + "iter"
 	iter := s.getAndSetIter(ctx, iterKey)
 	err := s.postMessage(ctx, msg)
-	if err != nil {
-		_ = err
-	}
-
-	if err := s.cache.Set(ctx, key, []byte(msg.Message()), s.countCooldown(iter)); err != nil {
-		_ = err
+	if err == nil {
+		message := msg.Message()
+		if msg.Err() != nil {
+			message = msg.Err().Error()
+		}
+		if err := s.cache.Set(ctx, key, []byte(message), s.countCooldown(iter)); err != nil {
+			_ = msg.Tower().
+				Wrap(err).
+				Message("failed to set message key to cache").
+				Context(tower.F{"key": key, "payload": message}).
+				Log(ctx)
+		}
 	}
 }
 
@@ -80,9 +83,13 @@ func (s Slack) postMessage(ctx context.Context, msg tower.MessageContext) error 
 	resp, err := slackrest.PostMessage(ctx, s.client, s.token, payload)
 	go s.deleteGlobalKeyAfterOneSec(ctx)
 	if err != nil {
-		// TODO: Implement tower wrap.
-		return err
+		return msg.Tower().
+			Wrap(err).
+			Message("failed to post message to slack").
+			Context(tower.F{"payload_message": msg.Message()}).
+			Log(ctx)
 	}
+	// TODO: Implement attachments upload.
 	_, _ = resp, attachments
 	return nil
 }

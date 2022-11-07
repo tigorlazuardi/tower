@@ -10,6 +10,9 @@ import (
 
 type Fields map[string]any
 
+// Alias to tower.Fields.
+type F = Fields
+
 var (
 	_ Display       = (Fields)(nil)
 	_ DisplayWriter = (Fields)(nil)

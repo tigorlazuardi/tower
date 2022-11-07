@@ -2,7 +2,6 @@ package tower
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -32,6 +31,30 @@ func NewTower(service Service) *Tower {
 	}
 }
 
+// Wraps this error. The returned ErrorBuilder may be appended with values.
+func (t *Tower) Wrap(err error) ErrorBuilder {
+	caller, _ := GetCaller(2)
+	return t.errorConstructor.ContructError(&ErrorGeneratorContext{
+		Err:    err,
+		Caller: caller,
+		Tower:  t,
+	})
+}
+
+// Shorthand for tower.Wrap(err).Message(message).Freeze()
+//
+// Useful when just wanting to add extra simple messages to the error chain.
+func (t *Tower) WrapFreeze(err error, message string) Error {
+	caller, _ := GetCaller(2)
+	return t.errorConstructor.ContructError(&ErrorGeneratorContext{
+		Err:    err,
+		Caller: caller,
+		Tower:  t,
+	}).
+		Message(message).
+		Freeze()
+}
+
 // Returns a CLONE of the registered messengers.
 func (t Tower) GetMessengers() Messengers {
 	return t.messengers.Clone()
@@ -57,17 +80,21 @@ func (t *Tower) SetLogger(log Logger) {
 	t.logger = log
 }
 
+// Implements tower.Logger interface. So The Tower instance itself may be used as Logger Engine.
 func (t Tower) Log(ctx context.Context, entry Entry) {
 	t.logger.Log(ctx, entry)
 }
 
+// Implements tower.Logger interface. So The Tower instance itself may be used as Logger Engine.
 func (t Tower) LogError(ctx context.Context, err Error) {
 	t.logger.LogError(ctx, err)
 }
 
-// Returns the name of the Tower.
+// Implements tower.Messenger interface. So The Tower instance itself may be used as Logger Engine.
+//
+// Returns the service registered in the format of "service_name-service_type-service_environment".
 func (t Tower) Name() string {
-	return fmt.Sprintf("%s-%s-%s", t.service.Name, t.service.Type, t.service.Environment)
+	return t.service.String()
 }
 
 // Sends notification to all messengers in Tower's known messengers.

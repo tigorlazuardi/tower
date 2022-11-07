@@ -15,15 +15,15 @@
 
 ### Features
 - update options
-- general update
-- added auto changelog
 - renamed Option to MessageParameter
 - general update
+- general update
+- added auto changelog
 - added messenger
 - update messenger spec
 - more updates
-- **blocks:** added section block
 - **blocks:** added more blocks
+- **blocks:** added section block
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
@@ -31,10 +31,11 @@
 - **fields:** major fields update
 - **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
-- **slack:** added post message
-- **slack:** added slack
-- **slack:** implemented towerslack handle message
 - **slack:** update
+- **slack:** added slack
+- **slack:** added post message
+- **slack:** implemented towerslack handle message
+- **tower:** added wrap method
 - **towerslack:** start building template
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies

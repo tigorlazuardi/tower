@@ -1,13 +1,70 @@
 package towerslack
 
 import (
+	"context"
+	"strconv"
+	"time"
+
 	"github.com/tigorlazuardi/tower"
 	"github.com/tigorlazuardi/tower-go/towerslack/slackrest"
 )
 
 func (s Slack) handleMessage(msg tower.MessageContext) {
 	// TODO: Implement hooks
+	key := msg.Key()
+	if key == "" {
+		f := msg.Caller()
+		key = f.FormatAsKey()
+	}
 
+	ctx := msg.Ctx()
+
+	// use tickers to account for lags.
+	ticker := time.NewTicker(time.Millisecond * 300)
+	for s.cache.Exist(ctx, s.globalKey) {
+		<-ticker.C
+	}
+	ticker.Stop()
+	if err := s.cache.Set(ctx, s.globalKey, []byte("locked"), time.Second*30); err != nil {
+		// TODO Add error logging using tower.
+		_ = err
+	}
+	if msg.SkipVerification() {
+		if err := s.postMessage(ctx, msg); err != nil {
+			_ = err
+		}
+		return
+	}
+	if s.cache.Exist(ctx, key) {
+		s.cache.Delete(ctx, s.globalKey)
+		return
+	}
+
+	iterKey := key + s.cache.Separator() + "iter"
+	iter := s.getAndSetIter(ctx, iterKey)
+	err := s.postMessage(ctx, msg)
+	if err != nil {
+		_ = err
+	}
+
+	if err := s.cache.Set(ctx, key, []byte(msg.Message()), s.countCooldown(iter)); err != nil {
+		_ = err
+	}
+}
+
+func (s Slack) countCooldown(iter int) time.Duration {
+	mult := (iter * iter) / 2
+	if mult < 1 {
+		mult = 1
+	}
+	cooldown := s.cooldown * time.Duration(mult)
+	if cooldown > time.Hour*24 {
+		cooldown = time.Hour * 24
+	}
+	return s.cooldown * time.Duration(mult)
+}
+
+func (s Slack) postMessage(ctx context.Context, msg tower.MessageContext) error {
 	payload := slackrest.MessagePayloadPool.Get().(*slackrest.MessagePayload) //nolint
 	payload.Reset()
 	defer func() {
@@ -18,19 +75,32 @@ func (s Slack) handleMessage(msg tower.MessageContext) {
 	payload.Blocks = blocks
 	payload.Text = msg.Message()
 	payload.Mrkdwn = true
-
-	// TODO(urgent): Implement rate limit and global locks.
-
-	ctx, cancel := s.setOperationContext(msg.Ctx())
+	ctx, cancel := s.setOperationContext(ctx)
 	defer cancel()
 	resp, err := slackrest.PostMessage(ctx, s.client, s.token, payload)
+	go s.deleteGlobalKeyAfterOneSec(ctx)
 	if err != nil {
 		// TODO: Implement tower wrap.
-		return
+		return err
 	}
-	_ = resp
+	_, _ = resp, attachments
+	return nil
+}
 
-	// TODO: implement unlocks.
-	// Implement file uploads and thread replies.
-	_ = attachments
+func (s Slack) deleteGlobalKeyAfterOneSec(ctx context.Context) {
+	<-time.NewTimer(time.Second).C
+	s.cache.Delete(ctx, s.globalKey)
+}
+
+func (s Slack) getAndSetIter(ctx context.Context, key string) int {
+	var iter int
+	iterByte, err := s.cache.Get(ctx, key)
+	if err == nil {
+		iter, _ = strconv.Atoi(string(iterByte))
+	}
+	iter += 1
+	iterByte = []byte(strconv.Itoa(iter))
+	nextCooldown := s.cooldown*time.Duration(iter) + s.cooldown
+	_ = s.cache.Set(ctx, key, iterByte, nextCooldown)
+	return iter
 }

@@ -18,6 +18,8 @@ type Cacher interface {
 	Delete(ctx context.Context, key string)
 	// Checks if Key exist in cache.
 	Exist(ctx context.Context, key string) bool
+	// Accepted separator value for the Cacher implementor.
+	Separator() string
 }
 
 type cacheValue struct {
@@ -102,4 +104,8 @@ func (m *MemoryCache) checkGC() {
 			m.mu.Unlock()
 		}()
 	}
+}
+
+func (m *MemoryCache) Separator() string {
+	return "_"
 }

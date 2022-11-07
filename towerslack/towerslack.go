@@ -2,10 +2,12 @@ package towerslack
 
 import (
 	"context"
+	"sync/atomic"
 	"time"
 
 	"github.com/tigorlazuardi/tower"
 	"github.com/tigorlazuardi/tower-go/queue"
+	"github.com/tigorlazuardi/tower/cache"
 )
 
 type Slack struct {
@@ -18,6 +20,11 @@ type Slack struct {
 	slackTimeout time.Duration
 	template     Templater
 	client       Client
+	cache        cache.Cacher
+	working      int32
+	sem          chan struct{}
+	globalKey    string
+	cooldown     time.Duration
 }
 
 // Returns the name of the Messenger.
@@ -31,6 +38,28 @@ func (s Slack) Name() string {
 // Sends notification.
 func (s Slack) SendMessage(msg tower.MessageContext) {
 	s.queue.Enqueue(msg)
+	s.work()
+}
+
+func (s *Slack) work() {
+	if !s.isWorking() {
+		atomic.AddInt32(&s.working, 1)
+		go func() {
+			for s.queue.Len() > 0 {
+				msg := s.queue.Dequeue()
+				s.sem <- struct{}{}
+				go func() {
+					s.handleMessage(msg)
+					<-s.sem
+				}()
+			}
+			atomic.AddInt32(&s.working, -1)
+		}()
+	}
+}
+
+func (s Slack) isWorking() bool {
+	return atomic.LoadInt32(&s.working) == 1
 }
 
 // Waits until all message in the queue or until given channel is received.

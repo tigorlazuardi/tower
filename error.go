@@ -5,23 +5,23 @@ import (
 	"fmt"
 )
 
-type ErrorGeneratorContext struct {
+type ErrorConstructorContext struct {
 	Err    error
 	Caller Caller
 	Tower  *Tower
 }
 
-type ErrorGenerator interface {
-	ContructError(*ErrorGeneratorContext) ErrorBuilder
+type ErrorConstructor interface {
+	ContructError(*ErrorConstructorContext) ErrorBuilder
 }
 
-type ErrorGeneratorFunc func(*ErrorGeneratorContext) ErrorBuilder
+type ErrorConstructorFunc func(*ErrorConstructorContext) ErrorBuilder
 
-func (f ErrorGeneratorFunc) ContructError(ctx *ErrorGeneratorContext) ErrorBuilder {
+func (f ErrorConstructorFunc) ContructError(ctx *ErrorConstructorContext) ErrorBuilder {
 	return f(ctx)
 }
 
-func defaultErrorGenerator(ctx *ErrorGeneratorContext) ErrorBuilder {
+func defaultErrorGenerator(ctx *ErrorConstructorContext) ErrorBuilder {
 	var (
 		code    int
 		message string
@@ -309,10 +309,8 @@ func (e implError) HTTPCode() int {
 		if code >= 200 && code <= 599 {
 			return code
 		}
-		return 500
-	default:
-		return 500
 	}
+	return 500
 }
 
 // Gets the Message of the type.
@@ -343,12 +341,13 @@ func (e implError) Unwrap() error {
 Logs this error.
 */
 func (e implError) Log(ctx context.Context) Error {
-	panic("not implemented") // TODO: Implement
+	e.inner.tower.LogError(ctx, e)
+	return e
 }
 
 /*
 Notifies this error to Messengers.
 */
 func (e implError) Notify(ctx context.Context, opts ...MessageOption) Error {
-	panic("not implemented") // TODO: Implement
+	panic("implement me")
 }

@@ -10,7 +10,8 @@ import (
 type Tower struct {
 	messengers       Messengers
 	logger           Logger
-	errorConstructor ErrorGenerator
+	errorConstructor ErrorConstructor
+	entryConstructor EntryConstructor
 	service          Service
 	optionGenerator  OptionGenerator
 }
@@ -25,7 +26,8 @@ func NewTower(service Service) *Tower {
 	return &Tower{
 		messengers:       Messengers{},
 		logger:           NoopLogger{},
-		errorConstructor: ErrorGeneratorFunc(defaultErrorGenerator),
+		errorConstructor: ErrorConstructorFunc(defaultErrorGenerator),
+		entryConstructor: EntryConstructorFunc(defaultEntryConstructor),
 		service:          service,
 		optionGenerator:  OptionGeneratorFunc(generateOption),
 	}
@@ -34,7 +36,7 @@ func NewTower(service Service) *Tower {
 // Wraps this error. The returned ErrorBuilder may be appended with values.
 func (t *Tower) Wrap(err error) ErrorBuilder {
 	caller, _ := GetCaller(2)
-	return t.errorConstructor.ContructError(&ErrorGeneratorContext{
+	return t.errorConstructor.ContructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
 		Tower:  t,
@@ -46,7 +48,7 @@ func (t *Tower) Wrap(err error) ErrorBuilder {
 // Useful when just wanting to add extra simple messages to the error chain.
 func (t *Tower) WrapFreeze(err error, message string) Error {
 	caller, _ := GetCaller(2)
-	return t.errorConstructor.ContructError(&ErrorGeneratorContext{
+	return t.errorConstructor.ContructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
 		Tower:  t,

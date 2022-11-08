@@ -52,7 +52,7 @@ func (c Caller) ShortSource() string {
 	return strings.Join(s, sep)
 }
 
-// Format this key with symbols other than letters, digits, `-` and `.` to `_`.
+// Like .String(), but runes other than letters, digits, `-` and `.` are set to `_`.
 func (c Caller) FormatAsKey() string {
 	s := &strings.Builder{}
 	strLine := strconv.Itoa(c.Line)

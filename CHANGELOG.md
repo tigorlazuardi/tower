@@ -15,23 +15,24 @@
 
 ### Features
 - general update
+- added exported functions
 - general update
+- added messenger
+- update messenger spec
+- more updates
 - update options
 - renamed Option to MessageParameter
-- added exported functions
 - added auto changelog
-- more updates
-- update messenger spec
-- added messenger
 - **blocks:** added section block
 - **blocks:** added more blocks
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
+- **entry:** added Entry implementations
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
-- **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
+- **queue:** added queue
 - **slack:** added slack
 - **slack:** added post message
 - **slack:** update

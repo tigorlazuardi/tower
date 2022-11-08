@@ -1,6 +1,9 @@
 package tower
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 type EntryBuilder interface {
 	/*
@@ -29,7 +32,7 @@ type EntryBuilder interface {
 
 		Example:
 
-			tower.Wrap(err).Code(400).Context(tower.F{"foo": "bar"}).Freeze()
+			tower.NewEntry(msg).Code(200).Context(tower.F{"foo": "bar"}).Freeze()
 	*/
 	Context(ctx interface{}) EntryBuilder
 
@@ -80,15 +83,155 @@ type Entry interface {
 	CallerHint
 	ContextHint
 	LevelHint
-	ErrorUnwrapper
-	ErrorWriter
 
 	/*
-		Logs this error.
+		Logs this entry.
 	*/
-	Log(ctx context.Context) Error
+	Log(ctx context.Context) Entry
 	/*
-		Notifies this error to Messengers.
+		Notifies this entry to Messengers.
 	*/
-	Notify(ctx context.Context, opts ...MessageOption) Error
+	Notify(ctx context.Context, opts ...MessageOption) Entry
+}
+
+type EntryConstructorContext struct {
+	Caller  Caller
+	Message string
+	Tower   *Tower
+}
+
+type EntryConstructor interface {
+	ConstructEntry(*EntryConstructorContext) EntryBuilder
+}
+
+var _ EntryConstructor = (EntryConstructorFunc)(nil)
+
+type EntryConstructorFunc func(*EntryConstructorContext) EntryBuilder
+
+func (f EntryConstructorFunc) ConstructEntry(ctx *EntryConstructorContext) EntryBuilder {
+	return f(ctx)
+}
+
+func defaultEntryConstructor(ctx *EntryConstructorContext) EntryBuilder {
+	return &entryBuilder{
+		message: ctx.Message,
+		caller:  ctx.Caller,
+		context: []any{},
+		level:   InfoLevel,
+		tower:   ctx.Tower,
+	}
+}
+
+type entryBuilder struct {
+	code    int
+	message string
+	caller  Caller
+	context []any
+	key     string
+	level   Level
+	tower   *Tower
+}
+
+func (e *entryBuilder) Code(i int) EntryBuilder {
+	e.code = i
+	return e
+}
+
+func (e *entryBuilder) Message(s string, args ...any) EntryBuilder {
+	if len(args) > 0 {
+		e.message = fmt.Sprintf(s, args...)
+	} else {
+		e.message = s
+	}
+	return e
+}
+
+func (e *entryBuilder) Context(ctx interface{}) EntryBuilder {
+	e.context = append(e.context, ctx)
+	return e
+}
+
+func (e *entryBuilder) Key(key string, args ...any) EntryBuilder {
+	e.key = key
+	return e
+}
+
+func (e *entryBuilder) Caller(c Caller) EntryBuilder {
+	e.caller = c
+	return e
+}
+
+func (e *entryBuilder) Level(lvl Level) EntryBuilder {
+	e.level = lvl
+	return e
+}
+
+func (e *entryBuilder) Freeze() Entry {
+	return implEntry{e}
+}
+
+func (e *entryBuilder) Log(ctx context.Context) Entry {
+	return e.Freeze().Log(ctx)
+}
+
+func (e *entryBuilder) Notify(ctx context.Context, opts ...MessageOption) Entry {
+	return e.Freeze().Notify(ctx, opts...)
+}
+
+type implEntry struct {
+	inner *entryBuilder
+}
+
+// Gets the original code of the type.
+func (e implEntry) Code() int {
+	return e.inner.code
+}
+
+// Gets HTTP Status Code for the type.
+func (e implEntry) HTTPCode() int {
+	switch {
+	case e.inner.code >= 200 && e.inner.code <= 599:
+		return e.inner.code
+	case e.inner.code > 999:
+		code := e.inner.code % 1000
+		if code >= 200 && code <= 599 {
+			return code
+		}
+	}
+	return 200
+}
+
+// Gets the Message of the type.
+func (e implEntry) Message() string {
+	return e.inner.message
+}
+
+// Gets the caller of this type.
+func (e implEntry) Caller() Caller {
+	return e.inner.caller
+}
+
+// Gets the context of this this type.
+func (e implEntry) Context() []any {
+	return e.inner.context
+}
+
+// Gets the level of this message.
+func (e implEntry) Level() Level {
+	return e.inner.level
+}
+
+/*
+Logs this entry.
+*/
+func (e implEntry) Log(ctx context.Context) Entry {
+	e.inner.tower.Log(ctx, e)
+	return e
+}
+
+/*
+Notifies this entry to Messengers.
+*/
+func (e implEntry) Notify(ctx context.Context, opts ...MessageOption) Entry {
+	panic("not implemented") // TODO: Implement
 }

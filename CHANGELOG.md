@@ -45,6 +45,7 @@
 - **writer:** added writer implementation
 
 ### Miscellaneous
+- rename interface to a better name
 - cleanup uneeded sum files
 - update gitignore
 - comment linter for wip

@@ -15,7 +15,7 @@ type FileAttachment struct {
 	ForceBucket   bool
 }
 
-type Templater interface {
+type TemplateBuilder interface {
 	// Avoid long side effects as much as possible when building the template (like request to DB). It may blocks up the queue,
 	// because towerslack limits the goroutine it will spin up to consume message queue.
 	//
@@ -30,7 +30,7 @@ type Templater interface {
 	BuildTemplate(msg tower.MessageContext) (blocks block.Blocks, attachments []FileAttachment)
 }
 
-var _ Templater = (TemplateFunc)(nil)
+var _ TemplateBuilder = (TemplateFunc)(nil)
 
 type TemplateFunc func(msg tower.MessageContext) (block.Blocks, []FileAttachment)
 

@@ -18,7 +18,7 @@ type Slack struct {
 	name         string
 	queue        *queue.Queue[tower.MessageContext]
 	slackTimeout time.Duration
-	template     Templater
+	template     TemplateBuilder
 	client       Client
 	cache        cache.Cacher
 	working      int32

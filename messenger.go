@@ -6,7 +6,7 @@ type Messenger interface {
 	// Returns the name of the Messenger.
 	Name() string
 	// Sends notification.
-	SendMessage(ctx MessageContext)
+	SendMessage(ctx context.Context, msg MessageContext)
 
 	// Waits until all message in the queue or until given channel is received.
 	//

@@ -10,13 +10,15 @@ import (
 	"github.com/tigorlazuardi/tower/cache"
 )
 
+var _ tower.Messenger = (*Slack)(nil)
+
 type Slack struct {
 	rootContext  context.Context
 	token        string
 	channel      string
 	tracer       tower.TraceCapturer
 	name         string
-	queue        *queue.Queue[tower.MessageContext]
+	queue        *queue.Queue[tower.KeyValue[context.Context, tower.MessageContext]]
 	slackTimeout time.Duration
 	template     TemplateBuilder
 	client       Client
@@ -36,8 +38,9 @@ func (s Slack) Name() string {
 }
 
 // Sends notification.
-func (s Slack) SendMessage(msg tower.MessageContext) {
-	s.queue.Enqueue(msg)
+func (s Slack) SendMessage(ctx context.Context, msg tower.MessageContext) {
+	job := tower.KeyValue[context.Context, tower.MessageContext]{Key: ctx, Value: msg}
+	s.queue.Enqueue(job)
 	s.work()
 }
 
@@ -46,10 +49,11 @@ func (s *Slack) work() {
 		atomic.AddInt32(&s.working, 1)
 		go func() {
 			for s.queue.Len() > 0 {
-				msg := s.queue.Dequeue()
+				job := s.queue.Dequeue()
 				s.sem <- struct{}{}
 				go func() {
-					s.handleMessage(msg)
+					ctx := tower.DetachedContext(job.Key)
+					s.handleMessage(ctx, job.Value)
 					<-s.sem
 				}()
 			}

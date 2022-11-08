@@ -10,10 +10,9 @@ import (
 	"github.com/tigorlazuardi/tower-go/towerslack/slackrest"
 )
 
-func (s Slack) handleMessage(msg tower.MessageContext) {
+func (s Slack) handleMessage(ctx context.Context, msg tower.MessageContext) {
 	// TODO: Implement hooks
 	key := s.buildKey(msg)
-	ctx := msg.Ctx()
 
 	// use tickers to account for lags.
 	ticker := time.NewTicker(time.Millisecond * 300)

@@ -14,15 +14,16 @@
 - **changelog:** changed the format
 
 ### Features
-- added auto changelog
 - general update
-- added exported functions
+- general update
 - added messenger
+- added exported functions
 - update messenger spec
 - more updates
-- general update
 - update options
 - renamed Option to MessageParameter
+- added auto changelog
+- **Messenger:** changed signature so ctx can be modified
 - **blocks:** added section block
 - **blocks:** added more blocks
 - **cache:** added cacher interface
@@ -34,11 +35,11 @@
 - **message-option:** simplified the api
 - **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
-- **slack:** added dynamic build key
-- **slack:** update
 - **slack:** implemented towerslack handle message
-- **slack:** added slack
 - **slack:** added post message
+- **slack:** added slack
+- **slack:** update
+- **slack:** added dynamic build key
 - **tower:** added wrap method
 - **towerslack:** start building template
 - **towerzap:** added towerzap implementations

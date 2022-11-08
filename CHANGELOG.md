@@ -14,15 +14,15 @@
 - **changelog:** changed the format
 
 ### Features
+- added auto changelog
 - general update
 - added exported functions
-- general update
 - added messenger
 - update messenger spec
 - more updates
+- general update
 - update options
 - renamed Option to MessageParameter
-- added auto changelog
 - **blocks:** added section block
 - **blocks:** added more blocks
 - **cache:** added cacher interface
@@ -31,13 +31,14 @@
 - **entry:** added Entry implementations
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
-- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
+- **message-option:** simplified the api
 - **queue:** added queue
-- **slack:** added slack
-- **slack:** added post message
+- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
+- **slack:** added dynamic build key
 - **slack:** update
 - **slack:** implemented towerslack handle message
-- **slack:** added dynamic build key
+- **slack:** added slack
+- **slack:** added post message
 - **tower:** added wrap method
 - **towerslack:** start building template
 - **towerzap:** added towerzap implementations

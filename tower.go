@@ -8,12 +8,12 @@ import (
 )
 
 type Tower struct {
-	messengers       Messengers
-	logger           Logger
-	errorConstructor ErrorConstructor
-	entryConstructor EntryConstructor
-	service          Service
-	optionGenerator  OptionGenerator
+	messengers           Messengers
+	logger               Logger
+	errorConstructor     ErrorConstructor
+	entryConstructor     EntryConstructor
+	service              Service
+	defaultMessageOption []MessageOption
 }
 
 var (
@@ -29,7 +29,6 @@ func NewTower(service Service) *Tower {
 		errorConstructor: ErrorConstructorFunc(defaultErrorGenerator),
 		entryConstructor: EntryConstructorFunc(defaultEntryConstructor),
 		service:          service,
-		optionGenerator:  OptionGeneratorFunc(generateOption),
 	}
 }
 
@@ -82,6 +81,30 @@ func (t *Tower) SetLogger(log Logger) {
 	t.logger = log
 }
 
+func (t *Tower) Notify(ctx context.Context, entry Entry, parameters ...MessageOption) {
+	opts := &option{}
+	for _, v := range t.defaultMessageOption {
+		v.apply(opts)
+	}
+	for _, v := range parameters {
+		v.apply(opts)
+	}
+	// TODO: Add message context builder for entry.
+	panic("implement me")
+}
+
+func (t *Tower) NotifyError(ctx context.Context, err Error, parameters ...MessageOption) {
+	opts := &option{}
+	for _, v := range t.defaultMessageOption {
+		v.apply(opts)
+	}
+	for _, v := range parameters {
+		v.apply(opts)
+	}
+	// TODO: Add message context builder for Error.
+	panic("implement me")
+}
+
 // Implements tower.Logger interface. So The Tower instance itself may be used as Logger Engine.
 func (t Tower) Log(ctx context.Context, entry Entry) {
 	t.logger.Log(ctx, entry)
@@ -99,11 +122,13 @@ func (t Tower) Name() string {
 	return t.service.String()
 }
 
+// Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
+//
 // Sends notification to all messengers in Tower's known messengers.
 // use GetMessengers or GetMessengerByName to get specific messenger.
-func (t Tower) SendMessage(ctx MessageContext) {
+func (t Tower) SendMessage(ctx context.Context, msg MessageContext) {
 	for _, v := range t.messengers {
-		v.SendMessage(ctx)
+		v.SendMessage(ctx, msg)
 	}
 }
 
@@ -122,6 +147,8 @@ func (m multierror) Error() string {
 	return s.String()
 }
 
+// Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
+//
 // Waits until all message in the queue or until given channel is received.
 //
 // Implementer must exit the function as soon as possible when this ctx is canceled.

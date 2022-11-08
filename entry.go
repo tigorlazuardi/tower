@@ -233,5 +233,6 @@ func (e implEntry) Log(ctx context.Context) Entry {
 Notifies this entry to Messengers.
 */
 func (e implEntry) Notify(ctx context.Context, opts ...MessageOption) Entry {
-	panic("not implemented") // TODO: Implement
+	e.inner.tower.Notify(ctx, e, opts...)
+	return e
 }

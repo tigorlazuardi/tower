@@ -349,5 +349,6 @@ func (e implError) Log(ctx context.Context) Error {
 Notifies this error to Messengers.
 */
 func (e implError) Notify(ctx context.Context, opts ...MessageOption) Error {
-	panic("implement me")
+	e.inner.tower.NotifyError(ctx, e, opts...)
+	return e
 }

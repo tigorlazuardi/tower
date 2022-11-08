@@ -14,18 +14,19 @@
 - **changelog:** changed the format
 
 ### Features
-- general update
-- general update
-- added messenger
-- added exported functions
-- update messenger spec
-- more updates
 - update options
-- renamed Option to MessageParameter
+- added exported functions
 - added auto changelog
+- updated implementations for todos
+- renamed Option to MessageParameter
+- added messenger
+- update messenger spec
+- general update
+- general update
+- more updates
 - **Messenger:** changed signature so ctx can be modified
-- **blocks:** added section block
 - **blocks:** added more blocks
+- **blocks:** added section block
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **discord:** updated discord element
@@ -36,10 +37,10 @@
 - **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **slack:** implemented towerslack handle message
-- **slack:** added post message
-- **slack:** added slack
-- **slack:** update
 - **slack:** added dynamic build key
+- **slack:** added slack
+- **slack:** added post message
+- **slack:** update
 - **tower:** added wrap method
 - **towerslack:** start building template
 - **towerzap:** added towerzap implementations

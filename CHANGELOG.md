@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **error:** fix missing code hints
 - **queue:** go dependency changed to 1.18
 
 ### Code Refactoring
@@ -14,16 +15,16 @@
 - **changelog:** changed the format
 
 ### Features
+- renamed Option to MessageParameter
+- updated implementations for todos
+- added auto changelog
+- more updates
 - update options
 - added exported functions
-- added auto changelog
-- updated implementations for todos
-- renamed Option to MessageParameter
+- general update
 - added messenger
 - update messenger spec
 - general update
-- general update
-- more updates
 - **Messenger:** changed signature so ctx can be modified
 - **blocks:** added more blocks
 - **blocks:** added section block
@@ -34,13 +35,14 @@
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
 - **message-option:** simplified the api
-- **queue:** added queue
+- **query:** added query methods
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
-- **slack:** implemented towerslack handle message
-- **slack:** added dynamic build key
+- **queue:** added queue
 - **slack:** added slack
 - **slack:** added post message
 - **slack:** update
+- **slack:** implemented towerslack handle message
+- **slack:** added dynamic build key
 - **tower:** added wrap method
 - **towerslack:** start building template
 - **towerzap:** added towerzap implementations

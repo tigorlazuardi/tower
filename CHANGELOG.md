@@ -15,10 +15,10 @@
 - **changelog:** changed the format
 
 ### Features
-- renamed Option to MessageParameter
-- updated implementations for todos
-- added auto changelog
 - more updates
+- added auto changelog
+- updated implementations for todos
+- renamed Option to MessageParameter
 - update options
 - added exported functions
 - general update
@@ -30,6 +30,7 @@
 - **blocks:** added section block
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
+- **context-builder:** added context builder impls
 - **discord:** updated discord element
 - **entry:** added Entry implementations
 - **error:** properly implemented defaultErrorGenerator

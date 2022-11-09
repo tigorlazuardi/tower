@@ -2,18 +2,20 @@ package tower
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 	"sync"
 )
 
 type Tower struct {
-	messengers           Messengers
-	logger               Logger
-	errorConstructor     ErrorConstructor
-	entryConstructor     EntryConstructor
-	service              Service
-	defaultMessageOption []MessageOption
+	messengers                 Messengers
+	logger                     Logger
+	errorConstructor           ErrorConstructor
+	entryConstructor           EntryConstructor
+	service                    Service
+	defaultMessageOption       []MessageOption
+	errorMessageContextBuilder ErrorMessageContextBuilder
 }
 
 var (
@@ -24,16 +26,20 @@ var (
 // Creates New Tower Instance. Using Built in Generator Engines.
 func NewTower(service Service) *Tower {
 	return &Tower{
-		messengers:       Messengers{},
-		logger:           NoopLogger{},
-		errorConstructor: ErrorConstructorFunc(defaultErrorGenerator),
-		entryConstructor: EntryConstructorFunc(defaultEntryConstructor),
-		service:          service,
+		messengers:                 Messengers{},
+		logger:                     NoopLogger{},
+		errorConstructor:           ErrorConstructorFunc(defaultErrorGenerator),
+		entryConstructor:           EntryConstructorFunc(defaultEntryConstructor),
+		errorMessageContextBuilder: ErrorMessageContextBuilderFunc(defaultErrorMessageContextBuilder),
+		service:                    service,
 	}
 }
 
 // Wraps this error. The returned ErrorBuilder may be appended with values.
 func (t *Tower) Wrap(err error) ErrorBuilder {
+	if err == nil {
+		err = errors.New("<nil>")
+	}
 	caller, _ := GetCaller(2)
 	return t.errorConstructor.ContructError(&ErrorConstructorContext{
 		Err:    err,

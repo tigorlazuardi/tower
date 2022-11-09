@@ -3,6 +3,7 @@ package tower
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 type ErrorConstructorContext struct {
@@ -22,24 +23,17 @@ func (f ErrorConstructorFunc) ContructError(ctx *ErrorConstructorContext) ErrorB
 }
 
 func defaultErrorGenerator(ctx *ErrorConstructorContext) ErrorBuilder {
-	var (
-		code    int
-		message string
-	)
-	if ch, ok := ctx.Err.(CodeHint); ok {
-		code = ch.Code()
-	}
-	if msg, ok := ctx.Err.(MessageHint); ok {
-		message = msg.Message()
+	var message string
+	if msg := Query.GetMessage(ctx.Err); msg != "" {
+		message = msg
 	} else {
 		message = ctx.Err.Error()
 	}
 	return &errorBuilder{
-		code:    code,
+		code:    Query.GetCodeHint(ctx.Err),
 		message: message,
 		caller:  ctx.Caller,
 		context: []any{},
-		key:     "",
 		level:   ErrorLevel,
 		origin:  ctx.Err,
 		tower:   ctx.Tower,
@@ -127,6 +121,13 @@ type ErrorBuilder interface {
 	Level(lvl Level) ErrorBuilder
 
 	/*
+		Sets the time for this error.
+
+		In tower's built-in implementation, this is already set to when tower.Wrap is called.
+	*/
+	Time(t time.Time) ErrorBuilder
+
+	/*
 		Freeze this ErrorBuilder, preventing further mutations and set this ErrorBuilder into proper error.
 
 		The returned Error is safe for multithreaded usage because of it's immutable nature.
@@ -152,6 +153,7 @@ type errorBuilder struct {
 	level   Level
 	origin  error
 	tower   *Tower
+	time    time.Time
 }
 
 func (e *errorBuilder) Level(lvl Level) ErrorBuilder {
@@ -197,6 +199,11 @@ func (e *errorBuilder) Key(key string, args ...any) ErrorBuilder {
 	return e
 }
 
+func (e *errorBuilder) Time(t time.Time) ErrorBuilder {
+	e.time = t
+	return e
+}
+
 func (e *errorBuilder) Freeze() Error {
 	return implError{inner: e}
 }
@@ -222,6 +229,7 @@ type Error interface {
 	LevelHint
 	ErrorUnwrapper
 	ErrorWriter
+	TimeHint
 
 	/*
 		Logs this error.
@@ -330,6 +338,10 @@ func (e implError) Context() []any {
 
 func (e implError) Level() Level {
 	return e.inner.level
+}
+
+func (e implError) Time() time.Time {
+	return e.inner.time
 }
 
 // Returns the error that is wrapped by this error. To be used by errors.Is and errors.As functions from errors library.

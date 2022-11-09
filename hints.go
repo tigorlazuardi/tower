@@ -1,5 +1,7 @@
 package tower
 
+import "time"
+
 type BodyCodeHint interface {
 	// Gets the Body Code for the type.
 	BodyCode() int
@@ -43,4 +45,8 @@ type ServiceHint interface {
 type LevelHint interface {
 	// Gets the level of this message.
 	Level() Level
+}
+
+type TimeHint interface {
+	Time() time.Time
 }

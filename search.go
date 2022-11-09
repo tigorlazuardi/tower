@@ -2,6 +2,13 @@ package tower
 
 import "errors"
 
+// Groupings for Query and Query functions.
+//
+// Methods and functions under Query are utilities to search values in the error stack.
+const Query query = 0
+
+type query uint8
+
 /*
 Search for any error in the stack that implements HTTPCodeHint and return that value.
 
@@ -11,7 +18,7 @@ Return 500 if there's no error that implements HTTPCodeHint in the stack.
 
 Used by Tower to search HTTP Code.
 */
-func GetHTTPCode(err error) (code int) {
+func (query) GetHTTPCode(err error) (code int) {
 	if err == nil {
 		return 500
 	}
@@ -20,7 +27,7 @@ func GetHTTPCode(err error) (code int) {
 		return ch.HTTPCode()
 	}
 
-	return GetHTTPCode(errors.Unwrap(err))
+	return Query.GetHTTPCode(errors.Unwrap(err))
 }
 
 /*
@@ -32,7 +39,7 @@ Return 5500 if there's no error that implements BodyCodeHint in the stack.
 
 Used by Tower to search Body Code.
 */
-func GetBodyCode(err error) (code int) {
+func (query) GetBodyCode(err error) (code int) {
 	if err == nil {
 		return 5500
 	}
@@ -41,7 +48,7 @@ func GetBodyCode(err error) (code int) {
 		return ch.BodyCode()
 	}
 
-	return GetBodyCode(errors.Unwrap(err))
+	return Query.GetBodyCode(errors.Unwrap(err))
 }
 
 /*
@@ -53,7 +60,7 @@ Return 5500 if there's no error that implements CodeHint in the stack.
 
 Used by Tower to search Body Code.
 */
-func GetCodeHint(err error) (code int) {
+func (query) GetCodeHint(err error) (code int) {
 	if err == nil {
 		return 5500
 	}
@@ -62,7 +69,7 @@ func GetCodeHint(err error) (code int) {
 		return ch.Code()
 	}
 
-	return GetCodeHint(errors.Unwrap(err))
+	return Query.GetCodeHint(errors.Unwrap(err))
 }
 
 /*
@@ -74,7 +81,7 @@ Return empty string if there's no error that implements MessageHint in the stack
 
 Used by Tower to search Message in the error.
 */
-func GetMessage(err error) (message string) {
+func (query) GetMessage(err error) (message string) {
 	if err == nil {
 		return ""
 	}
@@ -83,7 +90,7 @@ func GetMessage(err error) (message string) {
 		return ch.Message()
 	}
 
-	return GetMessage(errors.Unwrap(err))
+	return Query.GetMessage(errors.Unwrap(err))
 }
 
 /*
@@ -97,7 +104,7 @@ Given Code will be tested and the tower.Error is returned if:
 
 Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements those three and have the code.
 */
-func SearchCode(err error, code int) Error {
+func (query) SearchCode(err error, code int) Error {
 	if err == nil {
 		return nil
 	}
@@ -123,7 +130,7 @@ func SearchCode(err error, code int) Error {
 		}
 	}
 
-	return SearchCode(errors.Unwrap(err), code)
+	return Query.SearchCode(errors.Unwrap(err), code)
 }
 
 /*
@@ -133,7 +140,7 @@ Given Code will be tested and the tower.Error is returned if any of the error in
 
 Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements CodeHint.
 */
-func SearchCodeHint(err error, code int) Error {
+func (query) SearchCodeHint(err error, code int) Error {
 	if err == nil {
 		return nil
 	}
@@ -144,7 +151,7 @@ func SearchCodeHint(err error, code int) Error {
 		}
 	}
 
-	return SearchCodeHint(errors.Unwrap(err), code)
+	return Query.SearchCodeHint(errors.Unwrap(err), code)
 }
 
 /*
@@ -154,7 +161,7 @@ Given Code will be tested and the tower.Error is returned if any of the error in
 
 Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements HTTPCodeHint.
 */
-func SearchHTTPCode(err error, code int) Error {
+func (query) SearchHTTPCode(err error, code int) Error {
 	if err == nil {
 		return nil
 	}
@@ -165,7 +172,7 @@ func SearchHTTPCode(err error, code int) Error {
 		}
 	}
 
-	return SearchHTTPCode(errors.Unwrap(err), code)
+	return Query.SearchHTTPCode(errors.Unwrap(err), code)
 }
 
 /*
@@ -175,7 +182,7 @@ Given Code will be tested and the tower.Error is returned if any of the error in
 
 Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements BodyCodeHint.
 */
-func SearchBodyCode(err error, code int) Error {
+func (query) SearchBodyCode(err error, code int) Error {
 	if err == nil {
 		return nil
 	}
@@ -186,5 +193,37 @@ func SearchBodyCode(err error, code int) Error {
 		}
 	}
 
-	return SearchHTTPCode(errors.Unwrap(err), code)
+	return Query.SearchBodyCode(errors.Unwrap(err), code)
+}
+
+// Gets the error stack by checking CallerHint.
+//
+// Tower recursively checks the given error if it implements CallerHint until all the error in the stack are checked.
+func (query) GetStack(err error) []Caller {
+	in := make([]Caller, 0, 10)
+	return getStackList(err, in)
+}
+
+func getStackList(err error, input []Caller) []Caller {
+	if err == nil {
+		return input
+	}
+	if ch, ok := err.(CallerHint); ok { //nolint:errorlint
+		return append(input, ch.Caller())
+	}
+	return getStackList(errors.Unwrap(err), input)
+}
+
+// Gets the outermost tower.Error instance in the error stack.
+// Returns nil if no tower.Error instance found in the stack.
+func (query) GetError(err error) Error {
+	if err == nil {
+		return nil
+	}
+
+	if e, ok := err.(Error); ok { //nolint:errorlint
+		return e
+	}
+
+	return Query.GetError(errors.Unwrap(err))
 }

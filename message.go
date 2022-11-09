@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+type MessageContextBuilder interface {
+	BuildMessageContext(entry Entry, param MessageParameter) MessageContext
+}
+
+type ErrorMessageContextBuilder interface {
+	BuildErrorMessageContext(err Error, param MessageParameter) MessageContext
+}
+
 type MessageContext interface {
 	BodyCodeHint
 	HTTPCodeHint
@@ -25,8 +33,19 @@ type MessageContext interface {
 	Tower() *Tower
 }
 
+type errorMessageContext struct {
+	inner Error
+	time  time.Time
+}
+
 type MessageOption interface {
 	apply(*option)
+}
+
+type MessageParameter interface {
+	SkipVerification() bool
+	Cooldown() time.Duration
+	Tower() *Tower
 }
 
 type option struct {
@@ -35,86 +54,6 @@ type option struct {
 	messengers        Messengers
 	cooldown          time.Duration
 	tower             *Tower
-}
-
-// Sender Asks the messages to be send, ignoring any delays and cooldowns.
-func (o *option) SetSkipMessageVerification(b bool) {
-	o.skipVerification = b
-}
-
-// Senders Asks only to send to Messenger with this name. If found, SpecificMessenger must return this Messenger, otherwise that Error return nil.
-func (o *option) OnlyMessengerWithName(name string) {
-	o.specificMessenger = o.tower.GetMessengerByName(name)
-	o.messengers = nil
-}
-
-// Sender asks to send very specifically to these Messenger.
-func (o *option) OnlyTheseMessengers(m ...Messenger) {
-	o.specificMessenger = nil
-	mm := make(Messengers, len(m))
-	for _, v := range m {
-		mm[v.Name()] = v
-	}
-	o.messengers = mm
-}
-
-// Only sends to Messenger with the following prefix in its name.
-func (o *option) MessengerPrefix(prefix string) {
-	o.specificMessenger = nil
-	messengers := o.tower.GetMessengers()
-	mm := make(Messengers, len(messengers))
-	for k, v := range messengers {
-		if strings.HasPrefix(k, prefix) {
-			mm[k] = v
-		}
-	}
-	o.messengers = mm
-}
-
-// Only sends to Messenger with the following suffix.
-func (o *option) MessengerSuffix(suffix string) {
-	o.specificMessenger = nil
-	messengers := o.tower.GetMessengers()
-	mm := make(Messengers, len(messengers))
-	for k, v := range messengers {
-		if strings.HasSuffix(k, suffix) {
-			mm[k] = v
-		}
-	}
-	o.messengers = mm
-}
-
-// Only sends to Messenger that contains the following string.
-func (o *option) MessengerNameContains(contains string) {
-	o.specificMessenger = nil
-	messengers := o.tower.GetMessengers()
-	mm := make(Messengers, len(messengers))
-	for k, v := range messengers {
-		if strings.Contains(k, contains) {
-			mm[k] = v
-		}
-	}
-	o.messengers = mm
-}
-
-// Sender asks the cooldown for this message to be this duration.
-func (o *option) MessageCooldown(dur time.Duration) {
-	o.cooldown = dur
-}
-
-// Sender asks to send very specifically to this Messenger.
-func (o *option) OnlyThisMessenger(m Messenger) {
-	o.specificMessenger = m
-	o.messengers = nil
-}
-
-// Also send Message to these Messengers.
-func (o *option) ExtraMessengers(m ...Messenger) {
-	o.specificMessenger = nil
-	o.messengers = o.tower.GetMessengers()
-	for _, v := range m {
-		o.messengers[v.Name()] = v
-	}
 }
 
 func (o option) SkipVerification() bool {
@@ -146,7 +85,7 @@ func (f MessageOptionFunc) apply(opt *option) {
 // Asks the Messengers to Skip cooldown verifications and just send the message.
 func SkipMessageVerification(b bool) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
-		ob.SetSkipMessageVerification(b)
+		ob.skipVerification = b
 	})
 }
 
@@ -158,7 +97,8 @@ Note: OnlyMessengerWithName option will conflict with other Messenger setters op
 */
 func OnlyMessengerWithName(name string) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
-		ob.OnlyMessengerWithName(name)
+		ob.specificMessenger = ob.tower.GetMessengerByName(name)
+		ob.messengers = nil
 	})
 }
 
@@ -169,7 +109,19 @@ Note: OnlyThisMessenger option will conflict with other Messenger setters option
 */
 func OnlyThisMessenger(m Messenger) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
-		ob.OnlyThisMessenger(m)
+		ob.messengers = nil
+		ob.specificMessenger = m
+	})
+}
+
+func OnlyTheseMessengers(m ...Messenger) MessageOption {
+	return MessageOptionFunc(func(ob *option) {
+		ob.specificMessenger = nil
+		mm := make(Messengers, len(m))
+		for _, v := range m {
+			mm[v.Name()] = v
+		}
+		ob.messengers = mm
 	})
 }
 
@@ -180,7 +132,15 @@ Note: MessengerPrefix option will conflict with other Messenger setters option, 
 */
 func MessengerPrefix(s string) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
-		ob.MessengerPrefix(s)
+		ob.specificMessenger = nil
+		messengers := ob.tower.GetMessengers()
+		mm := make(Messengers, len(messengers))
+		for k, v := range messengers {
+			if strings.HasPrefix(k, s) {
+				mm[k] = v
+			}
+		}
+		ob.messengers = mm
 	})
 }
 
@@ -191,7 +151,15 @@ Note: MessengerSuffix option will conflict with other Messenger setters option, 
 */
 func MessengerSuffix(s string) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
-		ob.MessengerSuffix(s)
+		ob.specificMessenger = nil
+		messengers := ob.tower.GetMessengers()
+		mm := make(Messengers, len(messengers))
+		for k, v := range messengers {
+			if strings.HasSuffix(k, s) {
+				mm[k] = v
+			}
+		}
+		ob.messengers = mm
 	})
 }
 
@@ -202,7 +170,15 @@ Note: MessengerNameContains option will conflict with other Messenger setters op
 */
 func MessengerNameContains(s string) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
-		ob.MessengerNameContains(s)
+		ob.specificMessenger = nil
+		messengers := ob.tower.GetMessengers()
+		mm := make(Messengers, len(messengers))
+		for k, v := range messengers {
+			if strings.Contains(k, s) {
+				mm[k] = v
+			}
+		}
+		ob.messengers = mm
 	})
 }
 
@@ -211,7 +187,7 @@ Sets the Cooldown for this Message.
 */
 func MessageCooldown(dur time.Duration) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
-		ob.MessageCooldown(dur)
+		ob.cooldown = dur
 	})
 }
 
@@ -222,6 +198,10 @@ Note: MessengerNameContains option will conflict with other Messenger setters op
 */
 func ExtraMessengers(messengers ...Messenger) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
-		ob.ExtraMessengers(messengers...)
+		ob.specificMessenger = nil
+		ob.messengers = ob.tower.GetMessengers()
+		for _, v := range messengers {
+			ob.messengers[v.Name()] = v
+		}
 	})
 }

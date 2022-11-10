@@ -221,7 +221,6 @@ Error is an interface providing read only values to the error, and because it's 
 */
 type Error interface {
 	error
-	BodyCodeHint
 	CallerHint
 	CodeHint
 	ContextHint
@@ -344,11 +343,6 @@ func (e implError) Level() Level {
 
 func (e implError) Time() time.Time {
 	return e.inner.time
-}
-
-// Gets the Body Code for the type.
-func (e implError) BodyCode() int {
-	return e.inner.code
 }
 
 func (e implError) Key() string {

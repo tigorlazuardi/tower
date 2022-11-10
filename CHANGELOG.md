@@ -6,6 +6,7 @@
 - **queue:** go dependency changed to 1.18
 
 ### Code Refactoring
+- removed body code hint because it's purpose is ambiguous
 - removed constraints lib
 - moved caller from hints file to caller file
 - **lefthook:** lefthook now uses make command

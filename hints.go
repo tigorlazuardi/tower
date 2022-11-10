@@ -2,11 +2,6 @@ package tower
 
 import "time"
 
-type BodyCodeHint interface {
-	// Gets the Body Code for the type.
-	BodyCode() int
-}
-
 type HTTPCodeHint interface {
 	// Gets HTTP Status Code for the type.
 	HTTPCode() int

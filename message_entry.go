@@ -23,11 +23,6 @@ type messageContext struct {
 	param MessageParameter
 }
 
-// Gets the Body Code for the type.
-func (m messageContext) BodyCode() int {
-	return m.inner.BodyCode()
-}
-
 // Gets HTTP Status Code for the type.
 func (m messageContext) HTTPCode() int {
 	return m.inner.HTTPCode()

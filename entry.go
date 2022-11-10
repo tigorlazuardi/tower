@@ -81,7 +81,6 @@ type EntryBuilder interface {
 }
 
 type Entry interface {
-	BodyCodeHint
 	CallerHint
 	CodeHint
 	ContextHint

@@ -31,27 +31,6 @@ func (query) GetHTTPCode(err error) (code int) {
 }
 
 /*
-Search for any error in the stack that implements BodyCodeHint and return that value.
-
-The API searches from the outermost error, and will return the first value it found.
-
-Return 5500 if there's no error that implements BodyCodeHint in the stack.
-
-Used by Tower to search Body Code.
-*/
-func (query) GetBodyCode(err error) (code int) {
-	if err == nil {
-		return 5500
-	}
-
-	if ch, ok := err.(BodyCodeHint); ok { //nolint:errorlint
-		return ch.BodyCode()
-	}
-
-	return Query.GetBodyCode(errors.Unwrap(err))
-}
-
-/*
 Search for any error in the stack that implements CodeHint and return that value.
 
 The API searches from the outermost error, and will return the first value it found.
@@ -100,7 +79,6 @@ Given Code will be tested and the tower.Error is returned if:
 
  1. Any of the error in the stack implements CodeHint interface, matches the given code, and can be casted to tower.Error.
  2. Any of the error in the stack implements HTTPCodeHint interface, matches the given code, and can be casted to tower.Error.
- 3. Any of the error in the stack implements BodyCodeHint interface, matches the given code, and can be casted to tower.Error.
 
 Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements those three and have the code.
 */
@@ -119,12 +97,6 @@ func (query) SearchCode(err error, code int) Error {
 	}
 
 	if ch, ok := err.(HTTPCodeHint); ok && ch.HTTPCode() == code { //nolint:errorlint
-		if err, ok := err.(Error); ok { //nolint:errorlint
-			return err
-		}
-	}
-
-	if ch, ok := err.(BodyCodeHint); ok && ch.BodyCode() == code { //nolint:errorlint
 		if err, ok := err.(Error); ok { //nolint:errorlint
 			return err
 		}
@@ -173,27 +145,6 @@ func (query) SearchHTTPCode(err error, code int) Error {
 	}
 
 	return Query.SearchHTTPCode(errors.Unwrap(err), code)
-}
-
-/*
-Search the error stack for given code.
-
-Given Code will be tested and the tower.Error is returned if any of the error in the stack implements BodyCodeHint interface, matches the given code, and can be casted to tower.Error.
-
-Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements BodyCodeHint.
-*/
-func (query) SearchBodyCode(err error, code int) Error {
-	if err == nil {
-		return nil
-	}
-
-	if ch, ok := err.(BodyCodeHint); ok && ch.BodyCode() == code { //nolint:errorlint
-		if err, ok := err.(Error); ok { //nolint:errorlint
-			return err
-		}
-	}
-
-	return Query.SearchBodyCode(errors.Unwrap(err), code)
 }
 
 // Gets the error stack by checking CallerHint.

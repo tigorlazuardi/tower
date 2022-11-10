@@ -6,7 +6,6 @@ import (
 )
 
 type MessageContext interface {
-	BodyCodeHint
 	HTTPCodeHint
 	CodeHint
 	MessageHint

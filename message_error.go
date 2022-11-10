@@ -25,11 +25,6 @@ type errorMessageContext struct {
 	param MessageParameter
 }
 
-// Gets the Body Code for the type.
-func (e errorMessageContext) BodyCode() int {
-	return e.inner.BodyCode()
-}
-
 // Gets HTTP Status Code for the type.
 func (e errorMessageContext) HTTPCode() int {
 	return e.inner.HTTPCode()

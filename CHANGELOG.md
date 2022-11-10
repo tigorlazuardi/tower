@@ -14,6 +14,7 @@
 ### Docs
 - update docs
 - **changelog:** changed the format
+- **wrap:** update the docs on wrap
 
 ### Features
 - update messenger spec

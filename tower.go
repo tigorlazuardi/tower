@@ -39,7 +39,7 @@ func NewTower(service Service) *Tower {
 	}
 }
 
-// Wraps this error. The returned ErrorBuilder may be appended with values.
+// Like exported tower.Wrap, but at the scope of this Tower's instance instead.
 func (t *Tower) Wrap(err error) ErrorBuilder {
 	if err == nil {
 		err = errors.New("<nil>")
@@ -49,6 +49,16 @@ func (t *Tower) Wrap(err error) ErrorBuilder {
 		Err:    err,
 		Caller: caller,
 		Tower:  t,
+	})
+}
+
+// Creates a new EntryBuilder. The returned EntryBuilder may be appended with values.
+func (t *Tower) NewEntry(msg string) EntryBuilder {
+	caller, _ := GetCaller(2)
+	return t.entryConstructor.ConstructEntry(&EntryConstructorContext{
+		Caller:  caller,
+		Tower:   t,
+		Message: msg,
 	})
 }
 

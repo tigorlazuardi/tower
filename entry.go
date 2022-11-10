@@ -3,6 +3,7 @@ package tower
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 type EntryBuilder interface {
@@ -54,6 +55,9 @@ type EntryBuilder interface {
 	*/
 	Caller(c Caller) EntryBuilder
 
+	// Sets the time for this entry. By default, it's already set when you call tower.NewEntry.
+	Time(time.Time) EntryBuilder
+
 	/*
 		Sets the level for this entry.
 
@@ -77,12 +81,16 @@ type EntryBuilder interface {
 }
 
 type Entry interface {
-	CodeHint
-	HTTPCodeHint
-	MessageHint
+	BodyCodeHint
 	CallerHint
+	CodeHint
 	ContextHint
+	HTTPCodeHint
+	KeyHint
 	LevelHint
+	MessageHint
+	ServiceHint
+	TimeHint
 
 	/*
 		Logs this entry.
@@ -119,6 +127,7 @@ func defaultEntryConstructor(ctx *EntryConstructorContext) EntryBuilder {
 		context: []any{},
 		level:   InfoLevel,
 		tower:   ctx.Tower,
+		time:    time.Now(),
 	}
 }
 
@@ -129,11 +138,17 @@ type entryBuilder struct {
 	context []any
 	key     string
 	level   Level
+	time    time.Time
 	tower   *Tower
 }
 
 func (e *entryBuilder) Code(i int) EntryBuilder {
 	e.code = i
+	return e
+}
+
+func (e *entryBuilder) Time(t time.Time) EntryBuilder {
+	e.time = t
 	return e
 }
 
@@ -187,6 +202,18 @@ func (e implEntry) Code() int {
 	return e.inner.code
 }
 
+func (e implEntry) BodyCode() int {
+	return e.inner.code
+}
+
+func (e implEntry) Time() time.Time {
+	return e.inner.time
+}
+
+func (e implEntry) Service() Service {
+	return e.inner.tower.GetService()
+}
+
 // Gets HTTP Status Code for the type.
 func (e implEntry) HTTPCode() int {
 	switch {
@@ -204,6 +231,10 @@ func (e implEntry) HTTPCode() int {
 // Gets the Message of the type.
 func (e implEntry) Message() string {
 	return e.inner.message
+}
+
+func (e implEntry) Key() string {
+	return e.inner.key
 }
 
 // Gets the caller of this type.

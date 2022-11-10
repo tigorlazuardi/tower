@@ -3,19 +3,22 @@ package tower
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 )
 
+// An instance of Tower.
 type Tower struct {
 	messengers                 Messengers
 	logger                     Logger
 	errorConstructor           ErrorConstructor
 	entryConstructor           EntryConstructor
 	service                    Service
-	defaultMessageOption       []MessageOption
+	defaultNotifyOption        []MessageOption
 	errorMessageContextBuilder ErrorMessageContextBuilder
+	messageContextBuilder      MessageContextBuilder
 }
 
 var (
@@ -31,6 +34,7 @@ func NewTower(service Service) *Tower {
 		errorConstructor:           ErrorConstructorFunc(defaultErrorGenerator),
 		entryConstructor:           EntryConstructorFunc(defaultEntryConstructor),
 		errorMessageContextBuilder: ErrorMessageContextBuilderFunc(defaultErrorMessageContextBuilder),
+		messageContextBuilder:      MessageContextBuilderFunc(defaultMessageContextBuilder),
 		service:                    service,
 	}
 }
@@ -46,6 +50,33 @@ func (t *Tower) Wrap(err error) ErrorBuilder {
 		Caller: caller,
 		Tower:  t,
 	})
+}
+
+// Sets how the ErrorBuilder will be constructed.
+func (t *Tower) SetErrorConstructor(c ErrorConstructor) {
+	t.errorConstructor = c
+}
+
+// Sets how the Message Context will be built from tower.Error.
+func (t *Tower) SetErrorMessageContextBuilder(b ErrorMessageContextBuilder) {
+	t.errorMessageContextBuilder = b
+}
+
+// Sets how the Message Context will be built from tower.Entry.
+func (t *Tower) SetMessageContextBuilder(b MessageContextBuilder) {
+	t.messageContextBuilder = b
+}
+
+// Sets how the EntryBuilder will be constructed.
+func (t *Tower) SetEntryConstructor(c EntryConstructor) {
+	t.entryConstructor = c
+}
+
+// Sets the default options for Notify and NotifyError.
+// When Notify or NotifyError is called, the default options will be applied first,
+// then followed by the options passed in on premise by the user.
+func (t *Tower) SetDefaultNotifyOption(opts ...MessageOption) {
+	t.defaultNotifyOption = opts
 }
 
 // Shorthand for tower.Wrap(err).Message(message).Freeze()
@@ -87,28 +118,46 @@ func (t *Tower) SetLogger(log Logger) {
 	t.logger = log
 }
 
-func (t *Tower) Notify(ctx context.Context, entry Entry, parameters ...MessageOption) {
-	opts := &option{}
-	for _, v := range t.defaultMessageOption {
-		v.apply(opts)
-	}
-	for _, v := range parameters {
-		v.apply(opts)
-	}
-	// TODO: Add message context builder for entry.
-	panic("implement me")
+// Sends the Entry to Messengers.
+func (t Tower) Notify(ctx context.Context, entry Entry, parameters ...MessageOption) {
+	opts := t.createOption(parameters...)
+	msg := t.messageContextBuilder.BuildMessageContext(entry, opts)
+	t.sendNotif(ctx, msg, opts)
 }
 
-func (t *Tower) NotifyError(ctx context.Context, err Error, parameters ...MessageOption) {
+// Sends the Error to Messengers.
+func (t Tower) NotifyError(ctx context.Context, err Error, parameters ...MessageOption) {
+	opts := t.createOption(parameters...)
+	msg := t.errorMessageContextBuilder.BuildErrorMessageContext(err, opts)
+	t.sendNotif(ctx, msg, opts)
+}
+
+func (t Tower) createOption(parameters ...MessageOption) *option {
 	opts := &option{}
-	for _, v := range t.defaultMessageOption {
+	for _, v := range t.defaultNotifyOption {
 		v.apply(opts)
 	}
 	for _, v := range parameters {
 		v.apply(opts)
 	}
-	// TODO: Add message context builder for Error.
-	panic("implement me")
+	return opts
+}
+
+func (t Tower) sendNotif(ctx context.Context, msg MessageContext, opts *option) {
+	ctx = DetachedContext(ctx)
+	if opts.specificMessenger != nil {
+		go opts.specificMessenger.SendMessage(ctx, msg)
+		return
+	}
+	if len(opts.messengers) > 0 {
+		for _, messenger := range opts.messengers {
+			go messenger.SendMessage(ctx, msg)
+		}
+		return
+	}
+	for _, messenger := range t.messengers {
+		go messenger.SendMessage(ctx, msg)
+	}
 }
 
 // Implements tower.Logger interface. So The Tower instance itself may be used as Logger Engine.
@@ -121,11 +170,11 @@ func (t Tower) LogError(ctx context.Context, err Error) {
 	t.logger.LogError(ctx, err)
 }
 
-// Implements tower.Messenger interface. So The Tower instance itself may be used as Logger Engine.
+// Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
 //
-// Returns the service registered in the format of "service_name-service_type-service_environment".
+// Returns the service registered in the format of "tower-service_name-service_type-service_environment".
 func (t Tower) Name() string {
-	return t.service.String()
+	return "tower-" + t.service.String()
 }
 
 // Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
@@ -169,8 +218,8 @@ func (t Tower) Wait(ctx context.Context) error {
 			err := messenger.Wait(ctx)
 			if err != nil {
 				mu.Lock()
-				defer mu.Unlock()
-				errs = append(errs, err)
+				errs = append(errs, fmt.Errorf("failed on waiting messages to finish from '%s': %w", messenger.Name(), err))
+				mu.Unlock()
 			}
 		}(v)
 	}

@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/tigorlazuardi/tower"
+	"io"
 	"net/http"
 	"sync"
 
@@ -24,13 +26,9 @@ var MessagePayloadPool *sync.Pool
 
 type MessageParseOption string
 
-const (
-	MessageParseNone MessageParseOption = "none"
-	MessageParseFull MessageParseOption = "full"
-)
-
 // See https://api.slack.com/methods/chat.postMessage for details.
 type MessagePayload struct {
+	Channel        string                      `json:"channel"`
 	Text           string                      `json:"text"`
 	Blocks         block.Blocks                `json:"blocks"`
 	Attachments    []gojay.MarshalerJSONObject `json:"attachments"`
@@ -68,6 +66,7 @@ func (m *MessagePayload) Reset() {
 	m.UnfurlLinks = false
 	m.UnfurlMedia = false
 	m.Username = ""
+	m.Channel = ""
 }
 
 func (m MessagePayload) MarshalJSONObject(enc *gojay.Encoder) {
@@ -133,7 +132,12 @@ func PostMessage(ctx context.Context, client Client, token string, payload *Mess
 	if err != nil {
 		return resp, fmt.Errorf("failed to receive response from slack: %w", err)
 	}
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			_ = tower.WrapFreeze(err, "failed to close response body").Log(ctx)
+		}
+	}(res.Body)
 	if res.StatusCode >= 400 {
 		errResp := &ErrorResponse{}
 		err = gojay.NewDecoder(res.Body).DecodeObject(errResp)

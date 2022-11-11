@@ -284,8 +284,8 @@ func (e implError) WriteError(w LineWriter) {
 		} else if msg != errMsg {
 			w.WritePrefix()
 			_, _ = w.WriteString(msg)
-			w.WriteSeparator()
 			w.WriteSuffix()
+			w.WriteSeparator()
 		}
 		w.WritePrefix()
 		ew.WriteError(w)

@@ -10,7 +10,7 @@ import (
 	"github.com/tigorlazuardi/tower-go/towerslack/slackrest"
 )
 
-func (s Slack) handleMessage(ctx context.Context, msg tower.MessageContext) {
+func (s SlackBot) handleMessage(ctx context.Context, msg tower.MessageContext) {
 	// TODO: Implement hooks
 	key := s.buildKey(msg)
 
@@ -50,7 +50,7 @@ func (s Slack) handleMessage(ctx context.Context, msg tower.MessageContext) {
 	}
 }
 
-func (s Slack) countCooldown(iter int) time.Duration {
+func (s SlackBot) countCooldown(iter int) time.Duration {
 	mult := (iter * iter) / 2
 	if mult < 1 {
 		mult = 1
@@ -62,17 +62,18 @@ func (s Slack) countCooldown(iter int) time.Duration {
 	return s.cooldown * time.Duration(mult)
 }
 
-func (s Slack) postMessage(ctx context.Context, msg tower.MessageContext) error {
+func (s SlackBot) postMessage(ctx context.Context, msg tower.MessageContext) error {
 	payload := slackrest.MessagePayloadPool.Get().(*slackrest.MessagePayload) //nolint
 	payload.Reset()
 	defer func() {
 		slackrest.MessagePayloadPool.Put(payload)
 	}()
 
-	blocks, attachments := s.template.BuildTemplate(msg)
+	blocks, attachments := s.template.BuildTemplate(ctx, msg)
 	payload.Blocks = blocks
 	payload.Text = msg.Message()
 	payload.Mrkdwn = true
+	payload.Channel = s.channel
 	ctx, cancel := s.setOperationContext(ctx)
 	defer cancel()
 	resp, err := slackrest.PostMessage(ctx, s.client, s.token, payload)
@@ -89,12 +90,12 @@ func (s Slack) postMessage(ctx context.Context, msg tower.MessageContext) error 
 	return nil
 }
 
-func (s Slack) deleteGlobalKeyAfterOneSec(ctx context.Context) {
+func (s SlackBot) deleteGlobalKeyAfterOneSec(ctx context.Context) {
 	<-time.NewTimer(time.Second).C
 	s.cache.Delete(ctx, s.globalKey)
 }
 
-func (s Slack) buildKey(msg tower.MessageContext) string {
+func (s SlackBot) buildKey(msg tower.MessageContext) string {
 	builder := strings.Builder{}
 	builder.WriteString(s.Name())
 	builder.WriteString(s.cache.Separator())
@@ -114,7 +115,7 @@ func (s Slack) buildKey(msg tower.MessageContext) string {
 	return builder.String()
 }
 
-func (s Slack) getAndSetIter(ctx context.Context, key string) int {
+func (s SlackBot) getAndSetIter(ctx context.Context, key string) int {
 	var iter int
 	iterByte, err := s.cache.Get(ctx, key)
 	if err == nil {

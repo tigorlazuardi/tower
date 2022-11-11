@@ -30,10 +30,19 @@ type cacheValue struct {
 var _ Cacher = (*MemoryCache)(nil)
 
 type MemoryCache struct {
-	mu              *sync.RWMutex
-	state           map[string]*cacheValue
-	length          int
-	lastRebalancing time.Time
+	mu            *sync.RWMutex
+	state         map[string]*cacheValue
+	length        int
+	lastRebalance time.Time
+}
+
+func NewMemoryCache() *MemoryCache {
+	return &MemoryCache{
+		mu:            &sync.RWMutex{},
+		state:         make(map[string]*cacheValue),
+		length:        0,
+		lastRebalance: time.Now(),
+	}
 }
 
 // Sets the Cache key and value.
@@ -91,7 +100,7 @@ func (m *MemoryCache) Delete(ctx context.Context, key string) {
 
 func (m *MemoryCache) checkGC() {
 	now := time.Now()
-	if now.After(m.lastRebalancing.Add(time.Minute*5)) && m.length > 1000 {
+	if now.After(m.lastRebalance.Add(time.Minute*5)) && m.length > 1000 {
 		go func() {
 			m.mu.Lock()
 			n := make(map[string]*cacheValue, len(m.state))
@@ -99,7 +108,7 @@ func (m *MemoryCache) checkGC() {
 				n[k] = v
 			}
 			m.state = n
-			m.lastRebalancing = time.Now()
+			m.lastRebalance = time.Now()
 			m.length = len(n)
 			m.mu.Unlock()
 		}()

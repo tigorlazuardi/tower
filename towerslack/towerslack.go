@@ -2,6 +2,8 @@ package towerslack
 
 import (
 	"context"
+	"net/http"
+	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -10,9 +12,9 @@ import (
 	"github.com/tigorlazuardi/tower/cache"
 )
 
-var _ tower.Messenger = (*Slack)(nil)
+var _ tower.Messenger = (*SlackBot)(nil)
 
-type Slack struct {
+type SlackBot struct {
 	rootContext  context.Context
 	token        string
 	channel      string
@@ -29,22 +31,82 @@ type Slack struct {
 	cooldown     time.Duration
 }
 
-// Returns the name of the Messenger.
-func (s Slack) Name() string {
+// NewSlackBot Creates New Slackbot Instance.
+func NewSlackBot(rootContext context.Context, token string, channel string) *SlackBot {
+	s := &SlackBot{
+		rootContext:  rootContext,
+		token:        token,
+		channel:      channel,
+		tracer:       tower.NoopTracer{},
+		queue:        queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
+		slackTimeout: time.Second * 10,
+		client:       http.DefaultClient,
+		cache:        cache.NewMemoryCache(),
+		working:      0,
+		sem:          make(chan struct{}, runtime.NumCPU()/3+2),
+		globalKey:    "global",
+		cooldown:     time.Minute * 15,
+	}
+	s.template = TemplateFunc(s.defaultTemplate)
+	return s
+}
+
+func (s *SlackBot) SetRootContext(rootContext context.Context) {
+	s.rootContext = rootContext
+}
+
+func (s *SlackBot) SetToken(token string) {
+	s.token = token
+}
+
+func (s *SlackBot) SetChannel(channel string) {
+	s.channel = channel
+}
+
+func (s *SlackBot) SetTracer(tracer tower.TraceCapturer) {
+	s.tracer = tracer
+}
+
+func (s *SlackBot) SetName(name string) {
+	s.name = name
+}
+
+func (s *SlackBot) SetTimeout(slackTimeout time.Duration) {
+	s.slackTimeout = slackTimeout
+}
+
+func (s *SlackBot) SetMessageTemplate(template TemplateBuilder) {
+	s.template = template
+}
+
+func (s *SlackBot) SetClient(client Client) {
+	s.client = client
+}
+
+func (s *SlackBot) SetCache(cache cache.Cacher) {
+	s.cache = cache
+}
+
+func (s *SlackBot) SetBaseCooldown(cooldown time.Duration) {
+	s.cooldown = cooldown
+}
+
+// Name Returns the name of the Messenger.
+func (s SlackBot) Name() string {
 	if s.name == "" {
 		return "slack"
 	}
 	return s.name
 }
 
-// Sends notification.
-func (s Slack) SendMessage(ctx context.Context, msg tower.MessageContext) {
+// SendMessage Sends notification.
+func (s SlackBot) SendMessage(ctx context.Context, msg tower.MessageContext) {
 	job := tower.KeyValue[context.Context, tower.MessageContext]{Key: ctx, Value: msg}
 	s.queue.Enqueue(job)
 	s.work()
 }
 
-func (s *Slack) work() {
+func (s *SlackBot) work() {
 	if !s.isWorking() {
 		atomic.AddInt32(&s.working, 1)
 		go func() {
@@ -62,14 +124,14 @@ func (s *Slack) work() {
 	}
 }
 
-func (s Slack) isWorking() bool {
+func (s SlackBot) isWorking() bool {
 	return atomic.LoadInt32(&s.working) == 1
 }
 
-// Waits until all message in the queue or until given channel is received.
+// Wait until all message in the queue or until given channel is received.
 //
 // Implementer must exit the function as soon as possible when this ctx is canceled.
-func (s Slack) Wait(ctx context.Context) error {
+func (s SlackBot) Wait(ctx context.Context) error {
 	err := make(chan error)
 	go func() {
 		for {
@@ -112,7 +174,7 @@ func (o operationContext) Value(key any) any {
 }
 
 // Detaches given context's deadline and replaces it with own's deadline, but the value is left untouched.
-func (s Slack) setOperationContext(parent context.Context) (context.Context, context.CancelFunc) {
+func (s SlackBot) setOperationContext(parent context.Context) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(s.rootContext, s.slackTimeout)
 	return operationContext{
 		runningCtx: ctx,

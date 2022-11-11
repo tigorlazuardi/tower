@@ -174,5 +174,5 @@ type Summary interface {
 
 type SummaryWriter interface {
 	// Writes the Summary() string to the writer instead of being allocated as value.
-	WriteSummary(w Writer)
+	WriteSummary(w LineWriter)
 }

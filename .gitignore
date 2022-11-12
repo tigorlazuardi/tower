@@ -6,3 +6,4 @@ bin/
 *.profile
 
 go.work.sum
+.idea

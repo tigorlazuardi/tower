@@ -1,8 +1,6 @@
 pre-commit:
     parallel: true
     commands:
-        commitlint:
-            run: make commitlint
         lint:
             glob: '*.go'
             run: echo {staged_files} > /dev/null && make lint

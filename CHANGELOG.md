@@ -60,6 +60,7 @@
 - **writer:** added writer implementation
 
 ### Miscellaneous
+- removed commitlint from githooks
 - rename interface to a better name
 - cleanup uneeded sum files
 - update gitignore

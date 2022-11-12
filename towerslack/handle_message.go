@@ -40,7 +40,7 @@ func (s SlackBot) handleMessage(ctx context.Context, msg tower.MessageContext) {
 		if msg.Err() != nil {
 			message = msg.Err().Error()
 		}
-		if err := s.cache.Set(ctx, key, []byte(message), s.countCooldown(iter)); err != nil {
+		if err := s.cache.Set(ctx, key, []byte(message), s.countCooldown(msg, iter)); err != nil {
 			_ = msg.Tower().
 				Wrap(err).
 				Message("failed to set message key to cache").
@@ -50,12 +50,16 @@ func (s SlackBot) handleMessage(ctx context.Context, msg tower.MessageContext) {
 	}
 }
 
-func (s SlackBot) countCooldown(iter int) time.Duration {
-	mult := (iter * iter) / 2
+func (s SlackBot) countCooldown(msg tower.MessageContext, iter int) time.Duration {
+	mult := (iter * iter) >> 1
 	if mult < 1 {
 		mult = 1
 	}
-	cooldown := s.cooldown * time.Duration(mult)
+	cooldown := msg.Cooldown()
+	if cooldown == 0 {
+		cooldown = s.cooldown
+	}
+	cooldown *= time.Duration(mult)
 	if cooldown > time.Hour*24 {
 		cooldown = time.Hour * 24
 	}

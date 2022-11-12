@@ -10,6 +10,7 @@
 - removed constraints lib
 - moved caller from hints file to caller file
 - **lefthook:** lefthook now uses make command
+- **towerslack:** updated internal data signature
 
 ### Docs
 - update code documentations to follow better standard

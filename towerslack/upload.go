@@ -84,6 +84,7 @@ func (s SlackBot) uploadAttachments(ctx context.Context, msg tower.MessageContex
 		value := attachment
 		item := tower.NewKeyValue(key, value)
 		s.fileQueue.Enqueue(item)
+		s.upload()
 	}
 }
 

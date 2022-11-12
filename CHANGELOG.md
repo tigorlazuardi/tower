@@ -4,6 +4,7 @@
 ### Bug Fixes
 - **error:** fix missing code hints
 - **queue:** go dependency changed to 1.18
+- **slackbot:** missing upload call command
 
 ### Code Refactoring
 - removed body code hint because it's purpose is ambiguous

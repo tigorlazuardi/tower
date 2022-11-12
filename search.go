@@ -41,7 +41,7 @@ Used by Tower to search Body Code.
 */
 func (query) GetCodeHint(err error) (code int) {
 	if err == nil {
-		return 5500
+		return 500
 	}
 
 	if ch, ok := err.(CodeHint); ok { //nolint:errorlint

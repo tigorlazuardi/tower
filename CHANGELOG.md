@@ -60,6 +60,9 @@
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation
 
+### Fix
+- **tower-query:** Fix typo on GetCodeHint returned value
+
 ### Miscellaneous
 - removed commitlint from githooks
 - rename interface to a better name

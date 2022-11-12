@@ -32,6 +32,9 @@ type SlackBot struct {
 }
 
 // NewSlackBot Creates New Slackbot Instance.
+//
+// If you create multiple bot instances, make sure to set different name for each instance. Otherwise, Tower will treat
+// them as same and only registers one instance.
 func NewSlackBot(rootContext context.Context, token string, channel string) *SlackBot {
 	s := &SlackBot{
 		rootContext:  rootContext,
@@ -39,7 +42,8 @@ func NewSlackBot(rootContext context.Context, token string, channel string) *Sla
 		channel:      channel,
 		tracer:       tower.NoopTracer{},
 		queue:        queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
-		slackTimeout: time.Second * 10,
+		slackTimeout: time.Second * 30,
+		template:     nil,
 		client:       http.DefaultClient,
 		cache:        cache.NewMemoryCache(),
 		working:      0,
@@ -51,42 +55,55 @@ func NewSlackBot(rootContext context.Context, token string, channel string) *Sla
 	return s
 }
 
+// SetRootContext sets the base context.
+// If this context is canceled, all the ongoing messages will have their context canceled as well.
+//
+// When this method is called, if there are already messages are already on going, they will still use the old context.
 func (s *SlackBot) SetRootContext(rootContext context.Context) {
 	s.rootContext = rootContext
 }
 
+// SetToken changes the token for the bot.
 func (s *SlackBot) SetToken(token string) {
 	s.token = token
 }
 
+// SetChannel changes the channel for the bot.
 func (s *SlackBot) SetChannel(channel string) {
 	s.channel = channel
 }
 
+// SetTracer setups how Slackbot will capture Traces.
 func (s *SlackBot) SetTracer(tracer tower.TraceCapturer) {
 	s.tracer = tracer
 }
 
+// SetName sets the name for this slackbot instance.
 func (s *SlackBot) SetName(name string) {
 	s.name = name
 }
 
+// SetTimeout sets the timeout for requests that are sent to Slack.
 func (s *SlackBot) SetTimeout(slackTimeout time.Duration) {
 	s.slackTimeout = slackTimeout
 }
 
+// SetMessageTemplate sets the block template for the message.
 func (s *SlackBot) SetMessageTemplate(template TemplateBuilder) {
 	s.template = template
 }
 
+// SetClient sets the http client for the slackbot.
 func (s *SlackBot) SetClient(client Client) {
 	s.client = client
 }
 
+// SetCache sets the caching mechanism for the slackbot.
 func (s *SlackBot) SetCache(cache cache.Cacher) {
 	s.cache = cache
 }
 
+// SetBaseCooldown sets the cooldown for all messages if they are not overridden by per message options.
 func (s *SlackBot) SetBaseCooldown(cooldown time.Duration) {
 	s.cooldown = cooldown
 }
@@ -157,23 +174,32 @@ type operationContext struct {
 	valueCtx   context.Context
 }
 
+// Deadline implements context.Context.
 func (o operationContext) Deadline() (deadline time.Time, ok bool) {
 	return o.runningCtx.Deadline()
 }
 
+// Done implements context.Context.
 func (o operationContext) Done() <-chan struct{} {
 	return o.runningCtx.Done()
 }
 
+// Err implements context.Context.
 func (o operationContext) Err() error {
 	return o.runningCtx.Err()
 }
 
+// Value implements context.Context.
 func (o operationContext) Value(key any) any {
-	return o.valueCtx.Value(key)
+	// Checks the Valuer first, because, in perspective, it contains lower lifetime scope of information.
+	if v := o.valueCtx.Value(key); v != nil {
+		return v
+	}
+	// Fallback to the root context, just in case the user sets it on the root context.
+	return o.runningCtx.Value(key)
 }
 
-// Detaches given context's deadline and replaces it with own's deadline, but the value is left untouched.
+// Detaches given context's deadline and replaces it with owns deadline, but the value is left untouched.
 func (s SlackBot) setOperationContext(parent context.Context) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithTimeout(s.rootContext, s.slackTimeout)
 	return operationContext{

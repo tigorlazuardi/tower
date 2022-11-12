@@ -15,12 +15,13 @@ type MessageContext interface {
 	ServiceHint
 	ContextHint
 	TimeHint
-	// Error item. May be nil if message contains no error.
+	// Err returns the error item. May be nil if message contains no error.
 	Err() error
-	// If true, Sender asks for this message to always be send.
+	// SkipVerification If true, Sender asks for this message to always be send.
 	SkipVerification() bool
+	// Cooldown returns non-zero value if Sender asks for this message to be sent after this duration.
 	Cooldown() time.Duration
-	// Gets the tower instance that created this MessageContext.
+	// Tower Gets the tower instance that created this MessageContext.
 	Tower() *Tower
 }
 

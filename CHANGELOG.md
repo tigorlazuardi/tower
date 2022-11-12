@@ -16,6 +16,7 @@
 - update code documentations to follow better standard
 - update docs
 - **changelog:** changed the format
+- **tower:** update message context docs
 - **wrap:** update the docs on wrap
 
 ### Features

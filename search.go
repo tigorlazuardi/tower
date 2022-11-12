@@ -2,7 +2,7 @@ package tower
 
 import "errors"
 
-// Groupings for Query and Query functions.
+// Query is a namespace group that holds the tower's Query functions.
 //
 // Methods and functions under Query are utilities to search values in the error stack.
 const Query query = 0
@@ -10,7 +10,7 @@ const Query query = 0
 type query uint8
 
 /*
-Search for any error in the stack that implements HTTPCodeHint and return that value.
+GetHTTPCode Search for any error in the stack that implements HTTPCodeHint and return that value.
 
 The API searches from the outermost error, and will return the first value it found.
 
@@ -31,13 +31,13 @@ func (query) GetHTTPCode(err error) (code int) {
 }
 
 /*
-Search for any error in the stack that implements CodeHint and return that value.
+GetCodeHint Search for any error in the stack that implements CodeHint and return that value.
 
 The API searches from the outermost error, and will return the first value it found.
 
-Return 5500 if there's no error that implements CodeHint in the stack.
+Return 500 if there's no error that implements CodeHint in the stack.
 
-Used by Tower to search Body Code.
+Used by Tower to search Code.
 */
 func (query) GetCodeHint(err error) (code int) {
 	if err == nil {
@@ -52,7 +52,7 @@ func (query) GetCodeHint(err error) (code int) {
 }
 
 /*
-Search for any error in the stack that implements MessageHint and return that value.
+GetMessage Search for any error in the stack that implements MessageHint and return that value.
 
 The API searches from the outermost error, and will return the first value it found.
 
@@ -73,14 +73,17 @@ func (query) GetMessage(err error) (message string) {
 }
 
 /*
-Search the error stack for given code.
+SearchCode Search the error stack for given code.
 
 Given Code will be tested and the tower.Error is returned if:
 
- 1. Any of the error in the stack implements CodeHint interface, matches the given code, and can be casted to tower.Error.
- 2. Any of the error in the stack implements HTTPCodeHint interface, matches the given code, and can be casted to tower.Error.
+ 1. Any of the error in the stack implements CodeHint interface, matches the given code, and can be cast to tower.Error.
+ 2. Any of the error in the stack implements HTTPCodeHint interface, matches the given code, and can be cast to tower.Error.
 
-Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements those three and have the code.
+Otherwise, this function will look deeper into the stack and
+eventually returns nil when nothing in the stack implements those three and have the code.
+
+The search operation is "Breath First", meaning the tower.Error is tested for CodeHint and HTTPCodeHint first before moving on.
 */
 func (query) SearchCode(err error, code int) Error {
 	if err == nil {
@@ -106,11 +109,11 @@ func (query) SearchCode(err error, code int) Error {
 }
 
 /*
-Search the error stack for given code.
+SearchCodeHint Search the error stack for given code.
 
-Given Code will be tested and the tower.Error is returned if any of the error in the stack implements CodeHint interface, matches the given code, and can be casted to tower.Error.
+Given Code will be tested and the tower.Error is returned if any of the error in the stack implements CodeHint interface, matches the given code, and can be cast to tower.Error.
 
-Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements CodeHint.
+Otherwise, this function will look deeper into the stack and eventually returns nil when nothing in the stack implements CodeHint.
 */
 func (query) SearchCodeHint(err error, code int) Error {
 	if err == nil {
@@ -127,11 +130,11 @@ func (query) SearchCodeHint(err error, code int) Error {
 }
 
 /*
-Search the error stack for given code.
+SearchHTTPCode Search the error stack for given code.
 
-Given Code will be tested and the tower.Error is returned if any of the error in the stack implements HTTPCodeHint interface, matches the given code, and can be casted to tower.Error.
+Given Code will be tested and the tower.Error is returned if any of the error in the stack implements HTTPCodeHint interface, matches the given code, and can be cast to tower.Error.
 
-Otherwise this function will look deeper into the stack and eventually returns nil when nothing in the stack implements HTTPCodeHint.
+Otherwise, this function will look deeper into the stack and eventually returns nil when nothing in the stack implements HTTPCodeHint.
 */
 func (query) SearchHTTPCode(err error, code int) Error {
 	if err == nil {
@@ -147,7 +150,7 @@ func (query) SearchHTTPCode(err error, code int) Error {
 	return Query.SearchHTTPCode(errors.Unwrap(err), code)
 }
 
-// Gets the error stack by checking CallerHint.
+// GetStack Gets the error stack by checking CallerHint.
 //
 // Tower recursively checks the given error if it implements CallerHint until all the error in the stack are checked.
 func (query) GetStack(err error) []Caller {
@@ -165,7 +168,7 @@ func getStackList(err error, input []Caller) []Caller {
 	return getStackList(errors.Unwrap(err), input)
 }
 
-// Gets the outermost tower.Error instance in the error stack.
+// GetError Gets the outermost tower.Error instance in the error stack.
 // Returns nil if no tower.Error instance found in the stack.
 func (query) GetError(err error) Error {
 	if err == nil {

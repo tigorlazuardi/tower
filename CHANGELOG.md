@@ -17,6 +17,7 @@
 - update docs
 - **changelog:** changed the format
 - **tower:** update message context docs
+- **tower-query:** update docs
 - **wrap:** update the docs on wrap
 
 ### Features

@@ -66,6 +66,7 @@
 - **tower-query:** Fix typo on GetCodeHint returned value
 
 ### Miscellaneous
+- format
 - removed commitlint from githooks
 - rename interface to a better name
 - cleanup uneeded sum files

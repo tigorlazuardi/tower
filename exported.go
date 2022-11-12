@@ -48,7 +48,7 @@ func WrapFreeze(err error, message string, args ...any) Error {
 
 // BailFreeze creates new immutable Error from simple messages.
 //
-// It's a shorthand for `tower.Bail(msg, args...).Freeze()`
+// It's a shorthand for `tower.Bail(msg, args...).Freeze()`.
 func BailFreeze(msg string, args ...any) Error {
 	return export.BailFreeze(msg, args...)
 }

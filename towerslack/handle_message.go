@@ -89,13 +89,14 @@ func (s SlackBot) postMessage(ctx context.Context, msg tower.MessageContext) err
 			Context(tower.F{"payload_message": msg.Message()}).
 			Log(ctx)
 	}
-	// TODO: Implement attachments upload.
-	_, _ = resp, attachments
+	if len(attachments) > 0 {
+		s.uploadAttachments(ctx, msg, resp, attachments)
+	}
 	return nil
 }
 
 func (s SlackBot) deleteGlobalKeyAfterOneSec(ctx context.Context) {
-	<-time.NewTimer(time.Second).C
+	time.Sleep(time.Second)
 	s.cache.Delete(ctx, s.globalKey)
 }
 

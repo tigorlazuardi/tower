@@ -3,6 +3,7 @@ package towerslack
 import (
 	"context"
 	"sync/atomic"
+	"time"
 
 	"github.com/tigorlazuardi/tower"
 	"github.com/tigorlazuardi/tower/bucket"
@@ -78,7 +79,7 @@ func PostToThread(ctx context.Context, tower *tower.Tower, thread string) Upload
 	}
 }
 
-func (s SlackBot) uploadAttachments(ctx context.Context, msg tower.MessageContext, resp slackrest.MessageResponse, attachments []*bucket.File) {
+func (s SlackBot) uploadAttachments(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []*bucket.File) {
 	for _, attachment := range attachments {
 		key := PostToThread(ctx, msg.Tower(), resp.Ts)
 		value := attachment
@@ -97,8 +98,6 @@ func (s SlackBot) upload() {
 				s.sem <- struct{}{}
 				go func() {
 					ctx := tower.DetachedContext(job.Key.Context())
-					ctx, cancel := context.WithTimeout(ctx, s.slackTimeout)
-					defer cancel()
 					err := s.uploadFile(ctx, job.Key.(UploadTarget), job.Value)
 					if err != nil {
 						_ = job.Key.Tower().Wrap(err).Message("failed to upload file").Log(ctx)
@@ -117,6 +116,16 @@ func (s SlackBot) isUploading() bool {
 
 func (s SlackBot) uploadFile(ctx context.Context, target UploadTarget, file *bucket.File) error {
 	defer file.Close()
+	ticker := time.NewTicker(time.Millisecond * 300)
+	for s.cache.Exist(ctx, s.globalFileKey) {
+		<-ticker.C
+	}
+	ticker.Stop()
+	err := s.cache.Set(ctx, s.globalFileKey, []byte(file.Filename()), time.Minute*5)
+	if err != nil {
+		_ = target.Tower().WrapFreeze(err, "failed to set global file key").Log(ctx)
+	}
+	defer s.cache.Delete(ctx, s.globalFileKey)
 	payload := slackrest.FilesUploadPayload{
 		File:           file,
 		Filename:       file.Filename(),
@@ -138,9 +147,11 @@ func (s SlackBot) uploadFile(ctx context.Context, target UploadTarget, file *buc
 			}).
 			Freeze()
 	}
-	_, err := slackrest.FileUpload(ctx, s.client, payload)
+	_, err = slackrest.FileUpload(ctx, s.client, payload)
 	if err != nil {
+		time.Sleep(time.Second * 1)
 		return target.Tower().WrapFreeze(err, "failed to upload file")
 	}
+	time.Sleep(time.Second * 3)
 	return nil
 }

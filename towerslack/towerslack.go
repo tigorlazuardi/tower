@@ -22,23 +22,24 @@ type (
 var _ tower.Messenger = (*SlackBot)(nil)
 
 type SlackBot struct {
-	rootContext  context.Context
-	token        string
-	channel      string
-	tracer       tower.TraceCapturer
-	name         string
-	queue        *queue.Queue[queueItem]
-	fileQueue    *queue.Queue[fileQueueItem]
-	bucket       bucket.Bucket
-	slackTimeout time.Duration
-	template     TemplateBuilder
-	client       Client
-	cache        cache.Cacher
-	working      int32
-	uploading    int32
-	sem          chan struct{}
-	globalKey    string
-	cooldown     time.Duration
+	rootContext   context.Context
+	token         string
+	channel       string
+	tracer        tower.TraceCapturer
+	name          string
+	queue         *queue.Queue[queueItem]
+	fileQueue     *queue.Queue[fileQueueItem]
+	bucket        bucket.Bucket
+	slackTimeout  time.Duration
+	template      TemplateBuilder
+	client        Client
+	cache         cache.Cacher
+	working       int32
+	uploading     int32
+	sem           chan struct{}
+	globalKey     string
+	globalFileKey string
+	cooldown      time.Duration
 }
 
 // SetBucket sets the bucket to upload files for the slackbot. If not set, upload files to slack instead.
@@ -51,21 +52,23 @@ func (s *SlackBot) SetBucket(bucket bucket.Bucket) {
 // If you create multiple bot instances, make sure to set different name for each instance. Otherwise, Tower will treat
 // them as same and only registers one instance.
 func NewSlackBot(token string, channel string) *SlackBot {
+	cache := cache.NewMemoryCache()
 	s := &SlackBot{
-		rootContext:  context.Background(),
-		token:        token,
-		channel:      channel,
-		tracer:       tower.NoopTracer{},
-		queue:        queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
-		fileQueue:    queue.New[tower.KeyValue[UploadTarget, *bucket.File]](),
-		slackTimeout: time.Second * 30,
-		client:       http.DefaultClient,
-		cache:        cache.NewMemoryCache(),
-		working:      0,
-		uploading:    0,
-		sem:          make(chan struct{}, runtime.NumCPU()/3+2),
-		globalKey:    "global",
-		cooldown:     time.Minute * 15,
+		rootContext:   context.Background(),
+		token:         token,
+		channel:       channel,
+		tracer:        tower.NoopTracer{},
+		queue:         queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
+		fileQueue:     queue.New[tower.KeyValue[UploadTarget, *bucket.File]](),
+		slackTimeout:  time.Second * 30,
+		client:        http.DefaultClient,
+		cache:         cache,
+		working:       0,
+		uploading:     0,
+		sem:           make(chan struct{}, runtime.NumCPU()/3+2),
+		globalKey:     "global",
+		globalFileKey: cache.Separator(),
+		cooldown:      time.Minute * 15,
 	}
 	s.template = TemplateFunc(s.defaultTemplate)
 	return s

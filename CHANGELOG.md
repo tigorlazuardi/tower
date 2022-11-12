@@ -22,20 +22,20 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- added exported functions
-- added auto changelog
-- general update
-- renamed Option to MessageParameter
-- added messenger
 - update options
-- general update
-- update messenger spec
-- updated implementations for todos
-- major update
 - more updates
+- update messenger spec
+- general update
+- added exported functions
+- added messenger
+- major update
+- renamed Option to MessageParameter
+- added auto changelog
+- updated implementations for todos
+- general update
 - **Messenger:** changed signature so ctx can be modified
-- **blocks:** added more blocks
 - **blocks:** added section block
+- **blocks:** added more blocks
 - **bucket:** added bucket interface
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
@@ -50,11 +50,12 @@
 - **query:** added query methods
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **queue:** added queue
-- **slack:** added post message
 - **slack:** added slack
+- **slack:** added post message
 - **slack:** update
 - **slack:** implemented towerslack handle message
 - **slack:** added dynamic build key
+- **slackbot:** implemented call to file attachments
 - **tower:** added wrap method
 - **towerslack:** start building template
 - **towerslack:** added constructor and template builder.

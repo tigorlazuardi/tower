@@ -22,15 +22,16 @@
 
 ### Features
 - added exported functions
-- general update
-- update options
-- added messenger
-- general update
 - added auto changelog
+- general update
+- renamed Option to MessageParameter
+- added messenger
+- update options
+- general update
 - update messenger spec
 - updated implementations for todos
+- major update
 - more updates
-- renamed Option to MessageParameter
 - **Messenger:** changed signature so ctx can be modified
 - **blocks:** added more blocks
 - **blocks:** added section block

@@ -1,4 +1,4 @@
-module github.com/tigorlazuardi/tower-go/towerslack
+module github.com/tigorlazuardi/tower/towerslack
 
 go 1.19
 

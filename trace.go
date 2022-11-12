@@ -7,6 +7,13 @@ type KeyValue[K, V any] struct {
 	Value V
 }
 
+func NewKeyValue[K, V any](key K, value V) KeyValue[K, V] {
+	return KeyValue[K, V]{
+		Key:   key,
+		Value: value,
+	}
+}
+
 type Trace []KeyValue[string, string]
 
 // Tracer that does nothing.

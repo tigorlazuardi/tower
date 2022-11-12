@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/francoispqt/gojay"
-	"github.com/tigorlazuardi/tower-go/towerslack/block"
+	"github.com/tigorlazuardi/tower/towerslack/block"
 )
 
 func init() {
@@ -117,7 +117,7 @@ type MessageResponseItem struct {
 	Ts          string          `json:"ts"`
 }
 
-// Posts Message to Slack. This is not for messages with file attachments.
+// PostMessage Posts Message to Slack. This is not for messages with file attachments.
 func PostMessage(ctx context.Context, client Client, token string, payload *MessagePayload) (resp *MessageResponse, err error) {
 	buf := &bytes.Buffer{}
 	enc := gojay.BorrowEncoder(buf)

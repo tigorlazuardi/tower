@@ -9,7 +9,7 @@ import (
 	"sync"
 )
 
-// An instance of Tower.
+// Tower is an instance of Tower.
 type Tower struct {
 	messengers                 Messengers
 	logger                     Logger
@@ -19,6 +19,12 @@ type Tower struct {
 	defaultNotifyOption        []MessageOption
 	errorMessageContextBuilder ErrorMessageContextBuilder
 	messageContextBuilder      MessageContextBuilder
+	callerDepth                int
+}
+
+// SetCallerDepth Sets the depth of the caller to be used when constructing the ErrorBuilder.
+func (t *Tower) SetCallerDepth(callerDepth int) {
+	t.callerDepth = callerDepth
 }
 
 var (
@@ -26,7 +32,7 @@ var (
 	_ Messenger = (*Tower)(nil)
 )
 
-// Creates New Tower Instance. Using Built in Generator Engines.
+// NewTower Creates New Tower Instance. Using Built in Generator Engines by default.
 func NewTower(service Service) *Tower {
 	return &Tower{
 		messengers:                 Messengers{},
@@ -36,15 +42,16 @@ func NewTower(service Service) *Tower {
 		errorMessageContextBuilder: ErrorMessageContextBuilderFunc(defaultErrorMessageContextBuilder),
 		messageContextBuilder:      MessageContextBuilderFunc(defaultMessageContextBuilder),
 		service:                    service,
+		callerDepth:                2,
 	}
 }
 
-// Like exported tower.Wrap, but at the scope of this Tower's instance instead.
+// Wrap like exported tower.Wrap, but at the scope of this Tower's instance instead.
 func (t *Tower) Wrap(err error) ErrorBuilder {
 	if err == nil {
 		err = errors.New("<nil>")
 	}
-	caller, _ := GetCaller(2)
+	caller, _ := GetCaller(t.callerDepth)
 	return t.errorConstructor.ContructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
@@ -52,9 +59,9 @@ func (t *Tower) Wrap(err error) ErrorBuilder {
 	})
 }
 
-// Creates a new EntryBuilder. The returned EntryBuilder may be appended with values.
+// NewEntry Creates a new EntryBuilder. The returned EntryBuilder may be appended with values.
 func (t *Tower) NewEntry(msg string) EntryBuilder {
-	caller, _ := GetCaller(2)
+	caller, _ := GetCaller(t.callerDepth)
 	return t.entryConstructor.ConstructEntry(&EntryConstructorContext{
 		Caller:  caller,
 		Tower:   t,
@@ -62,38 +69,80 @@ func (t *Tower) NewEntry(msg string) EntryBuilder {
 	})
 }
 
-// Sets how the ErrorBuilder will be constructed.
+// Bail creates a new ErrorBuilder from simple messages.
+//
+// If args is not empty, msg will be fed into fmt.Errorf along with the args.
+// Otherwise, msg will be fed into `errors.New()`.
+func (t *Tower) Bail(msg string, args ...any) ErrorBuilder {
+	var err error
+	if len(args) > 0 {
+		err = fmt.Errorf(msg, args...)
+	} else {
+		err = errors.New(msg)
+	}
+	caller, _ := GetCaller(t.callerDepth)
+	return t.errorConstructor.ContructError(&ErrorConstructorContext{
+		Err:    err,
+		Caller: caller,
+		Tower:  t,
+	})
+}
+
+// BailFreeze creates new immutable Error from simple messages.
+//
+// If args is not empty, msg will be fed into fmt.Errorf along with the args.
+// Otherwise, msg will be fed into `errors.New()`.
+func (t *Tower) BailFreeze(msg string, args ...any) Error {
+	var err error
+	if len(args) > 0 {
+		err = fmt.Errorf(msg, args...)
+	} else {
+		err = errors.New(msg)
+	}
+	caller, _ := GetCaller(t.callerDepth)
+	return t.errorConstructor.ContructError(&ErrorConstructorContext{
+		Err:    err,
+		Caller: caller,
+		Tower:  t,
+	}).Freeze()
+}
+
+// SetErrorConstructor Sets how the ErrorBuilder will be constructed.
 func (t *Tower) SetErrorConstructor(c ErrorConstructor) {
 	t.errorConstructor = c
 }
 
-// Sets how the Message Context will be built from tower.Error.
+// SetErrorMessageContextBuilder Sets how the MessageContext will be built from tower.Error.
 func (t *Tower) SetErrorMessageContextBuilder(b ErrorMessageContextBuilder) {
 	t.errorMessageContextBuilder = b
 }
 
-// Sets how the Message Context will be built from tower.Entry.
+// SetMessageContextBuilder Sets how the MessageContext will be built from tower.Entry.
 func (t *Tower) SetMessageContextBuilder(b MessageContextBuilder) {
 	t.messageContextBuilder = b
 }
 
-// Sets how the EntryBuilder will be constructed.
+// SetEntryConstructor Sets how the EntryBuilder will be constructed.
 func (t *Tower) SetEntryConstructor(c EntryConstructor) {
 	t.entryConstructor = c
 }
 
-// Sets the default options for Notify and NotifyError.
+// SetDefaultNotifyOption Sets the default options for Notify and NotifyError.
 // When Notify or NotifyError is called, the default options will be applied first,
 // then followed by the options passed in on premise by the user.
 func (t *Tower) SetDefaultNotifyOption(opts ...MessageOption) {
 	t.defaultNotifyOption = opts
 }
 
-// Shorthand for tower.Wrap(err).Message(message).Freeze()
+// WrapFreeze is a Shorthand for tower.Wrap(err).Message(message).Freeze()
 //
 // Useful when just wanting to add extra simple messages to the error chain.
-func (t *Tower) WrapFreeze(err error, message string) Error {
-	caller, _ := GetCaller(2)
+// If args is not empty, message will be fed into fmt.Errorf along with the args.
+func (t *Tower) WrapFreeze(err error, message string, args ...any) Error {
+	caller, _ := GetCaller(t.callerDepth)
+	if len(args) > 0 {
+		message = fmt.Sprintf(message, args...)
+	}
 	return t.errorConstructor.ContructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
@@ -103,39 +152,39 @@ func (t *Tower) WrapFreeze(err error, message string) Error {
 		Freeze()
 }
 
-// Returns a CLONE of the registered messengers.
+// GetMessengers Returns a CLONE of the registered messengers.
 func (t Tower) GetMessengers() Messengers {
 	return t.messengers.Clone()
 }
 
-// Gets the Messenger by name. Returns nil if not found.
+// GetMessengerByName Gets the Messenger by name. Returns nil if not found.
 func (t Tower) GetMessengerByName(name string) Messenger {
 	return t.messengers[name]
 }
 
-// Gets the underlying Logger.
+// GetLogger Gets the underlying Logger.
 func (t Tower) GetLogger() Logger {
 	return t.logger
 }
 
-// Gets the service metadata that Tower is running under.
+// GetService Gets the service metadata that Tower is running under.
 func (t Tower) GetService() Service {
 	return t.service
 }
 
-// Sets the underlying Logger. This method is NOT concurrent safe.
+// SetLogger Sets the underlying Logger. This method is NOT concurrent safe.
 func (t *Tower) SetLogger(log Logger) {
 	t.logger = log
 }
 
-// Sends the Entry to Messengers.
+// Notify Sends the Entry to Messengers.
 func (t Tower) Notify(ctx context.Context, entry Entry, parameters ...MessageOption) {
 	opts := t.createOption(parameters...)
 	msg := t.messageContextBuilder.BuildMessageContext(entry, opts)
 	t.sendNotif(ctx, msg, opts)
 }
 
-// Sends the Error to Messengers.
+// NotifyError Sends the Error to Messengers.
 func (t Tower) NotifyError(ctx context.Context, err Error, parameters ...MessageOption) {
 	opts := t.createOption(parameters...)
 	msg := t.errorMessageContextBuilder.BuildErrorMessageContext(err, opts)
@@ -170,27 +219,26 @@ func (t Tower) sendNotif(ctx context.Context, msg MessageContext, opts *option) 
 	}
 }
 
-// Implements tower.Logger interface. So The Tower instance itself may be used as Logger Engine.
+// Log Implements tower.Logger interface. So The Tower instance itself may be used as Logger Engine.
 func (t Tower) Log(ctx context.Context, entry Entry) {
 	t.logger.Log(ctx, entry)
 }
 
-// Implements tower.Logger interface. So The Tower instance itself may be used as Logger Engine.
+// LogError Implements tower.Logger interface. So The Tower instance itself may be used as Logger Engine.
 func (t Tower) LogError(ctx context.Context, err Error) {
 	t.logger.LogError(ctx, err)
 }
 
-// Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
+// Name Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
 //
 // Returns the service registered in the format of "tower-service_name-service_type-service_environment".
 func (t Tower) Name() string {
 	return "tower-" + t.service.String()
 }
 
-// Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
+// SendMessage Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
 //
-// Sends notification to all messengers in Tower's known messengers.
-// use GetMessengers or GetMessengerByName to get specific messenger.
+// Sends notification to all messengers registered in this instance.
 func (t Tower) SendMessage(ctx context.Context, msg MessageContext) {
 	for _, v := range t.messengers {
 		v.SendMessage(ctx, msg)
@@ -212,7 +260,7 @@ func (m multierror) Error() string {
 	return s.String()
 }
 
-// Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
+// Wait Implements tower.Messenger interface. So The Tower instance itself may be used as Messenger.
 //
 // Waits until all message in the queue or until given channel is received.
 //

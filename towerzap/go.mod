@@ -1,4 +1,4 @@
-module github.com/tigorlazuardi/tower-go/towerzap
+module github.com/tigorlazuardi/tower/towerzap
 
 go 1.18
 

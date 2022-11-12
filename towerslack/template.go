@@ -3,50 +3,41 @@ package towerslack
 import (
 	"context"
 	"fmt"
-	"io"
+	"github.com/tigorlazuardi/tower/bucket"
 	"strings"
 	"time"
 
 	"github.com/tigorlazuardi/tower"
-	"github.com/tigorlazuardi/tower-go/towerslack/block"
+	"github.com/tigorlazuardi/tower/towerslack/block"
 )
-
-type FileAttachment struct {
-	Body          io.ReadCloser
-	Filename      string
-	Mimetype      string
-	ContentLength int
-	ForceBucket   bool
-}
 
 type TemplateBuilder interface {
 	// BuildTemplate builds template for SlackBot Message.
-	// Avoid long side effects as much as possible when building the template (like request to DB). It may blocks up the queue,
+	// Avoid long side effects as much as possible when building the template (like request to DB). It may block up the queue,
 	// because towerslack limits the goroutine it will spin up to consume message queue.
 	//
-	// If any of the block overpasses the content limit, you may instead return file attachments and towerslack will upload those files to a Bucket and post them as a reply to the main message.
-	// If the file's Mimetype is human-readable and ContentLength is under 1MB, it will be uploaded as Snippet instead in a reply thread, unless ForceBucket option is true.
+	// If any of the block overpasses the content limit, you may instead return bucket.File attachments and towerslack will upload those files to a Bucket and post them as a reply to the main message.
 	//
 	// After attachment has been uploaded, The Close method on the attachment's body will be called by towerslack.
 	//
 	// If you have no attachments to upload, a simple nil return on the attachments is safe.
 	//
 	// Note: The blocks are required and must not be nil (returning empty blocks are safe however), regardless of attachments.
-	BuildTemplate(ctx context.Context, msg tower.MessageContext) (blocks block.Blocks, attachments []FileAttachment)
+	BuildTemplate(ctx context.Context, msg tower.MessageContext) (blocks block.Blocks, attachments []*bucket.File)
 }
 
 var _ TemplateBuilder = (TemplateFunc)(nil)
 
-type TemplateFunc func(ctx context.Context, msg tower.MessageContext) (block.Blocks, []FileAttachment)
+type TemplateFunc func(ctx context.Context, msg tower.MessageContext) (block.Blocks, []*bucket.File)
 
 // BuildTemplate implements Templater interface.
-func (f TemplateFunc) BuildTemplate(ctx context.Context, msg tower.MessageContext) (block.Blocks, []FileAttachment) {
+func (f TemplateFunc) BuildTemplate(ctx context.Context, msg tower.MessageContext) (block.Blocks, []*bucket.File) {
 	return f(ctx, msg)
 }
 
-func (s SlackBot) defaultTemplate(ctx context.Context, msg tower.MessageContext) (block.Blocks, []FileAttachment) {
+func (s SlackBot) defaultTemplate(ctx context.Context, msg tower.MessageContext) (block.Blocks, []*bucket.File) {
 	blocks := make(block.Blocks, 0, 6)
-	attachments := make([]FileAttachment, 0, 5)
+	attachments := make([]*bucket.File, 0, 5)
 	blocks = append(blocks, buildHeadline(msg))
 	blocks = append(blocks, block.NewDividerBlock())
 

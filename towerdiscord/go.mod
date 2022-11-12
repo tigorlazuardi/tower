@@ -1,4 +1,4 @@
-module github.com/tigorlazuardi/tower-go/towerdiscord
+module github.com/tigorlazuardi/tower/towerdiscord
 
 go 1.18
 

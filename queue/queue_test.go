@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/tigorlazuardi/tower-go/queue"
+	"github.com/tigorlazuardi/tower/queue"
 )
 
 func TestLockFreeQueue(t *testing.T) {

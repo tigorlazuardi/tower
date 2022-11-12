@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/tigorlazuardi/tower"
-	"github.com/tigorlazuardi/tower-go/towerslack/slackrest"
+	"github.com/tigorlazuardi/tower/towerslack/slackrest"
 )
 
 func (s SlackBot) handleMessage(ctx context.Context, msg tower.MessageContext) {

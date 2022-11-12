@@ -1,3 +1,3 @@
-module github.com/tigorlazuardi/tower-go/queue
+module github.com/tigorlazuardi/tower/queue
 
 go 1.18

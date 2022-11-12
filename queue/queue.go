@@ -16,7 +16,7 @@ type node[T any] struct {
 	next  unsafe.Pointer
 }
 
-// New returns an empty multi threaded safe queue.
+// New returns an empty multithreaded safe queue.
 func New[T any]() *Queue[T] {
 	n := unsafe.Pointer(&node[T]{})
 	return &Queue[T]{head: n, tail: n}
@@ -70,7 +70,7 @@ func (q *Queue[T]) Dequeue() T {
 	}
 }
 
-// Returns the current length of queue.
+// Len Returns the current length of queue.
 func (q *Queue[T]) Len() uint64 {
 	return atomic.LoadUint64(&q.len)
 }

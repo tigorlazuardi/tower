@@ -10,15 +10,15 @@ import (
 var ErrNilCache = errors.New("cache does not exist")
 
 type Cacher interface {
-	// Sets the Cache key and value.
+	// Set the Cache key and value.
 	Set(ctx context.Context, key string, value []byte, ttl time.Duration) error
-	// Gets the Value by Key. Returns tower.ErrNilCache if not found or ttl has passed.
+	// Get the Value by Key. Returns tower.ErrNilCache if not found or ttl has passed.
 	Get(ctx context.Context, key string) ([]byte, error)
-	// Deletes cache by key.
+	// Delete cache by key.
 	Delete(ctx context.Context, key string)
-	// Checks if Key exist in cache.
+	// Exist Checks if Key exist in cache.
 	Exist(ctx context.Context, key string) bool
-	// Accepted separator value for the Cacher implementor.
+	// Separator Returns Accepted separator value for the Cacher implementor.
 	Separator() string
 }
 
@@ -45,8 +45,8 @@ func NewMemoryCache() *MemoryCache {
 	}
 }
 
-// Sets the Cache key and value.
-func (m *MemoryCache) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
+// Set Sets the Cache key and value.
+func (m *MemoryCache) Set(_ context.Context, key string, value []byte, ttl time.Duration) error {
 	if ttl < 0 {
 		ttl = 0
 	}
@@ -64,7 +64,7 @@ func (m *MemoryCache) Set(ctx context.Context, key string, value []byte, ttl tim
 	return nil
 }
 
-// Gets the Value by Key. Returns tower.ErrNilCache if not found or ttl has passed.
+// Get the Value by Key. Returns tower.ErrNilCache if not found or ttl has passed.
 func (m *MemoryCache) Get(ctx context.Context, key string) ([]byte, error) {
 	m.mu.RLock()
 	cache, ok := m.state[key]
@@ -81,15 +81,16 @@ func (m *MemoryCache) Get(ctx context.Context, key string) ([]byte, error) {
 	return cache.value, nil
 }
 
-// Checks if Key exist in cache.
-func (m *MemoryCache) Exist(ctx context.Context, key string) bool {
+// Exist Checks if Key exist in cache.
+func (m *MemoryCache) Exist(_ context.Context, key string) bool {
 	m.mu.RLock()
 	_, ok := m.state[key]
 	m.mu.RUnlock()
 	return ok
 }
 
-func (m *MemoryCache) Delete(ctx context.Context, key string) {
+// Delete key from cache.
+func (m *MemoryCache) Delete(_ context.Context, key string) {
 	m.mu.Lock()
 	delete(m.state, key)
 	if m.length > 0 {

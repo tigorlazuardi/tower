@@ -12,6 +12,7 @@
 - **lefthook:** lefthook now uses make command
 
 ### Docs
+- update code documentations to follow better standard
 - update docs
 - **changelog:** changed the format
 - **wrap:** update the docs on wrap

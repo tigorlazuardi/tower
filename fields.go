@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 )
 
 type Fields map[string]any
 
-// Alias to tower.Fields.
+// F Alias to tower.Fields.
 type F = Fields
 
 var (
@@ -18,14 +19,15 @@ var (
 	_ DisplayWriter = (Fields)(nil)
 )
 
-// Returns a short summary of this type.
+// Summary Returns a short summary of this type.
 func (f Fields) Summary() string {
-	s := NewLineWriterBuilder().Separator("\n").Build()
-	f.WriteSummary(s)
+	s := &strings.Builder{}
+	lw := NewLineWriter(s).Separator("\n").Build()
+	f.WriteSummary(lw)
 	return s.String()
 }
 
-// Writes the Summary() string to the writer instead of being allocated as value.
+// WriteSummary Writes the Summary() string to the writer instead of being allocated as value.
 func (f Fields) WriteSummary(w LineWriter) {
 	prefixLength := 0
 	for k := range f {
@@ -42,11 +44,11 @@ func (f Fields) WriteSummary(w LineWriter) {
 
 		w.WriteIndent()
 		w.WritePrefix()
-		fmt.Fprintf(w, "%-*s : ", prefixLength, k)
+		_, _ = fmt.Fprintf(w, "%-*s : ", prefixLength, k)
 		switch v := v.(type) {
 		case SummaryWriter:
 			w.WriteSeparator()
-			v.WriteSummary(NewLineWriterBuilder().Writer(w).Indent("    ").Build())
+			v.WriteSummary(NewLineWriter(w).Indent("    ").Build())
 		case Summary:
 			_, _ = w.WriteString(v.Summary())
 		case fmt.Stringer:
@@ -74,14 +76,15 @@ func (f Fields) WriteSummary(w LineWriter) {
 	}
 }
 
-// Display returns a human readable and rich with information for the implementer.
+// Display returns a human-readable and rich with information for the implementer.
 func (f Fields) Display() string {
-	s := NewLineWriterBuilder().Separator("\n").Build()
-	f.WriteDisplay(s)
+	s := &strings.Builder{}
+	lw := NewLineWriter(s).Separator("\n").Build()
+	f.WriteDisplay(lw)
 	return s.String()
 }
 
-// Writes the Display() string to the writer instead of being allocated as value.
+// WriteDisplay Writes the Display() string to the writer instead of being allocated as value.
 func (f Fields) WriteDisplay(w LineWriter) {
 	keys := getSortedKeys(f)
 	for i, k := range keys {
@@ -100,7 +103,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 		switch v := v.(type) {
 		case DisplayWriter:
 			w.WriteSeparator()
-			v.WriteDisplay(NewLineWriterBuilder().Writer(w).Indent("    ").Build())
+			v.WriteDisplay(NewLineWriter(w).Indent("    ").Build())
 		case Display:
 			dsp := v.Display()
 			if len(dsp) > 50 {
@@ -113,9 +116,9 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			_, _ = w.WriteString(v.Display())
 		case ErrorWriter:
 			w.WriteSeparator()
-			v.WriteError(NewLineWriterBuilder().Writer(w).Indent("    ").Build())
+			v.WriteError(NewLineWriter(w).Indent("    ").Build())
 		case error:
-			indented := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
+			indented := NewLineWriter(w).Indent("    ").Build()
 			buf := &bytes.Buffer{}
 			enc := json.NewEncoder(buf)
 			enc.SetIndent(w.GetPrefix()+indented.GetIndentation(), "    ")
@@ -151,7 +154,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 		case fmt.Stringer:
 			str := v.String()
 			if len(str) > 50 {
-				w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
+				w := NewLineWriter(w).Indent("    ").Build()
 				w.WriteSeparator()
 				w.WritePrefix()
 				w.WriteIndent()
@@ -161,7 +164,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			_, _ = w.WriteString(v.String())
 		case string:
 			if len(v) > 50 {
-				w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
+				w := NewLineWriter(w).Indent("    ").Build()
 				w.WriteSeparator()
 				w.WritePrefix()
 				w.WriteIndent()
@@ -171,7 +174,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			_, _ = w.WriteString(v)
 		case []byte:
 			if isJson(v) {
-				w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
+				w := NewLineWriter(w).Indent("    ").Build()
 				w.WriteSeparator()
 				w.WritePrefix()
 				w.WriteIndent()
@@ -181,7 +184,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 				continue
 			}
 			if len(v) > 50 {
-				w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
+				w := NewLineWriter(w).Indent("    ").Build()
 				w.WriteSeparator()
 				w.WritePrefix()
 				w.WriteIndent()
@@ -193,7 +196,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			_, _ = w.WriteString(" ")
 			_, _ = fmt.Fprintf(w, "%v", v)
 		default:
-			w := NewLineWriterBuilder().Writer(w).Indent("    ").Build()
+			w := NewLineWriter(w).Indent("    ").Build()
 			w.WriteSeparator()
 			w.WritePrefix()
 			w.WriteIndent()

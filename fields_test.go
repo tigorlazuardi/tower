@@ -3,6 +3,7 @@ package tower_test
 import (
 	"bytes"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 
@@ -31,20 +32,17 @@ func (j jsonTest) MarshalJSON() ([]byte, error) {
 
 type displayTest string
 
-// Display returns a human readable and rich with information for the implementer.
+// Display returns a human-readable and rich with information for the implementer.
 func (d displayTest) Display() string {
 	return strings.Repeat("foo", 3)
 }
 
 func TestFields_WriteDisplay(t *testing.T) {
-	type args struct {
-		w tower.LineWriter
-	}
 	tests := []struct {
-		name string
-		f    tower.Fields
-		args args
-		want string
+		name   string
+		f      tower.Fields
+		writer func(writer io.Writer) tower.LineWriter
+		want   string
 	}{
 		{
 			name: "expected result - simple",
@@ -52,10 +50,10 @@ func TestFields_WriteDisplay(t *testing.T) {
 				"foo": "bar",
 				"wtf": 123,
 			},
-			args: args{
-				w: tower.NewLineWriterBuilder().Separator("\n").Build(),
-			},
 			want: "foo: bar\nwtf: 123",
+			writer: func(writer io.Writer) tower.LineWriter {
+				return tower.NewLineWriter(writer).Separator("\n").Build()
+			},
 		},
 		{
 			name: "expected result - complex",
@@ -77,8 +75,8 @@ func TestFields_WriteDisplay(t *testing.T) {
 				"error_test2": errorTest2{},
 				"function":    func() {},
 			},
-			args: args{
-				w: tower.NewLineWriterBuilder().Separator("\n").Prefix(">> ").Build(),
+			writer: func(writer io.Writer) tower.LineWriter {
+				return tower.NewLineWriter(writer).Separator("\n").Prefix(">> ").Build()
 			},
 			want: strings.TrimSpace(`
 >> bytes:
@@ -115,8 +113,10 @@ func TestFields_WriteDisplay(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.f.WriteDisplay(tt.args.w)
-			got := tt.args.w.String()
+			s := &strings.Builder{}
+			lw := tt.writer(s)
+			tt.f.WriteDisplay(lw)
+			got := s.String()
 			if got != tt.want {
 				t.Errorf("got and want is not equal.\n\nwant:\n%s\n\ngot:\n%s\n", tt.want, got)
 			}

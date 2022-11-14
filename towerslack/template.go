@@ -67,7 +67,7 @@ func buildSummary(msg tower.MessageContext) *block.SectionBlock {
 	summary.WriteString("\n\n")
 	if msg.Err() != nil {
 		if ew, ok := msg.Err().(tower.ErrorWriter); ok {
-			lw := tower.NewLineWriterBuilder().Separator("\n    ").Build()
+			lw := tower.NewLineWriter(summary).Separator("\n    ").Build()
 			ew.WriteError(lw)
 		} else {
 			summary.WriteString(msg.Err().Error())
@@ -81,7 +81,7 @@ func buildSummary(msg tower.MessageContext) *block.SectionBlock {
 		}
 		switch v := v.(type) {
 		case tower.SummaryWriter:
-			lw := tower.NewLineWriterBuilder().Writer(summary).Separator("\n").Build()
+			lw := tower.NewLineWriter(summary).Separator("\n").Build()
 			v.WriteSummary(lw)
 		case tower.Summary:
 			summary.WriteString(v.Summary())

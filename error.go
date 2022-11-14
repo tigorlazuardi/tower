@@ -3,6 +3,7 @@ package tower
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -82,7 +83,7 @@ type ErrorBuilder interface {
 	/*
 		Sets additional data that will enrich how the error will look.
 
-		`tower.Fields` is a type that is well integrated with built in Messengers.
+		`tower.Fields` is a type that is well integrated with built-in Messengers.
 		Using this type as Context value will have the performance more optimized when being marshaled
 		or provides additional quality of life improvements without having to implement those features
 		yourself. Use `tower.F` as alias for this type.
@@ -130,7 +131,7 @@ type ErrorBuilder interface {
 	/*
 		Freeze this ErrorBuilder, preventing further mutations and set this ErrorBuilder into proper error.
 
-		The returned Error is safe for multithreaded usage because of it's immutable nature.
+		The returned Error is safe for multithreaded usage because of its immutable nature.
 	*/
 	Freeze() Error
 
@@ -243,7 +244,7 @@ type Error interface {
 }
 
 type ErrorUnwrapper interface {
-	// Returns the error that is wrapped by this error. To be used by errors.Is and errors.As functions from errors library.
+	// Unwrap Returns the error that is wrapped by this error. To be used by errors.Is and errors.As functions from errors library.
 	Unwrap() error
 }
 
@@ -252,12 +253,13 @@ type implError struct {
 }
 
 func (e implError) Error() string {
-	s := NewLineWriterBuilder().Separator(" => ").Build()
-	e.WriteError(s)
+	s := &strings.Builder{}
+	lw := NewLineWriter(s).Separator(" => ").Build()
+	e.WriteError(lw)
 	return s.String()
 }
 
-// Writes the error.Error to the writer instead of being allocated as value.
+// WriteError Writes the error.Error to the writer instead of being allocated as value.
 func (e implError) WriteError(w LineWriter) {
 	w.WriteIndent()
 	msg := e.inner.message
@@ -303,12 +305,12 @@ func (e implError) WriteError(w LineWriter) {
 	w.WriteSuffix()
 }
 
-// Gets the original code of the type.
+// Code Gets the original code of the type.
 func (e implError) Code() int {
 	return e.inner.code
 }
 
-// Gets HTTP Status Code for the type.
+// HTTPCode Gets HTTP Status Code for the type.
 func (e implError) HTTPCode() int {
 	switch {
 	case e.inner.code >= 200 && e.inner.code <= 599:
@@ -322,17 +324,17 @@ func (e implError) HTTPCode() int {
 	return 500
 }
 
-// Gets the Message of the type.
+// Message Gets the Message of the type.
 func (e implError) Message() string {
 	return e.inner.message
 }
 
-// Gets the caller of this type.
+// Caller Gets the caller of this type.
 func (e implError) Caller() Caller {
 	return e.inner.caller
 }
 
-// Gets the context of this this type.
+// Context Gets the context of this type.
 func (e implError) Context() []any {
 	return e.inner.context
 }
@@ -349,22 +351,18 @@ func (e implError) Key() string {
 	return e.inner.key
 }
 
-// Returns the error that is wrapped by this error. To be used by errors.Is and errors.As functions from errors library.
+// Unwrap Returns the error that is wrapped by this error. To be used by errors.Is and errors.As functions from errors library.
 func (e implError) Unwrap() error {
 	return e.inner.origin
 }
 
-/*
-Logs this error.
-*/
+// Log this error.
 func (e implError) Log(ctx context.Context) Error {
 	e.inner.tower.LogError(ctx, e)
 	return e
 }
 
-/*
-Notifies this error to Messengers.
-*/
+// Notify this error to Messengers.
 func (e implError) Notify(ctx context.Context, opts ...MessageOption) Error {
 	e.inner.tower.NotifyError(ctx, e, opts...)
 	return e

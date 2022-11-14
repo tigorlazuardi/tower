@@ -80,6 +80,24 @@ func PostToThread(ctx context.Context, tower *tower.Tower, thread string) Upload
 }
 
 func (s SlackBot) uploadAttachments(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []*bucket.File) {
+	if s.bucket != nil {
+		s.uploadToBucket(ctx, msg, resp, attachments)
+		return
+	}
+	s.uploadToSlack(ctx, msg, resp, attachments)
+}
+
+func (s SlackBot) uploadToBucket(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []*bucket.File) {
+	results := s.bucket.Upload(ctx, attachments)
+	for _, result := range results {
+		if result.Error != nil {
+			_ = msg.Tower().WrapFreeze(result.Error, "failed to upload file").Log(ctx)
+			continue
+		}
+	}
+}
+
+func (s SlackBot) uploadToSlack(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []*bucket.File) {
 	for _, attachment := range attachments {
 		key := PostToThread(ctx, msg.Tower(), resp.Ts)
 		value := attachment

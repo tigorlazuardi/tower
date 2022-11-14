@@ -52,6 +52,10 @@ func NewFile(data io.Reader, filename string, mimetype string) *File {
 type UploadResult struct {
 	// The URL of the uploaded file, if successful.
 	URL string
+	// The file instance used to upload the file.
+	// The body of this file may have already been garbage collected.
+	// So do not consume this file content again and only use the remaining metadata.
+	File *File
 	// If Error is not nil, the upload is considered failed.
 	Error error
 }

@@ -11,6 +11,7 @@
 - removed constraints lib
 - moved caller from hints file to caller file
 - **lefthook:** lefthook now uses make command
+- **line-writer:** reduced requirement for LineWriter to merely io.Writer
 - **towerslack:** updated internal data signature
 
 ### Docs

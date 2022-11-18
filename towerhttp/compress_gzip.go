@@ -7,17 +7,17 @@ import (
 	"sync"
 )
 
-var _ Compression = (*GzipCompressor)(nil)
+var _ Compression = (*GzipCompression)(nil)
 
-type GzipCompressor struct {
+type GzipCompression struct {
 	pool *sync.Pool
 }
 
-func (g GzipCompressor) ContentEncoding() string {
+func (g GzipCompression) ContentEncoding() string {
 	return "gzip"
 }
 
-func (g GzipCompressor) Compress(b []byte) ([]byte, error) {
+func (g GzipCompression) Compress(b []byte) ([]byte, error) {
 	if len(b) <= 1500 {
 		return b, nil
 	}
@@ -29,7 +29,7 @@ func (g GzipCompressor) Compress(b []byte) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (g GzipCompressor) StreamCompress(origin io.Reader) (io.Reader, error) {
+func (g GzipCompression) StreamCompress(origin io.Reader) (io.Reader, error) {
 	pr, pw := io.Pipe()
 	w, _ := gzip.NewWriterLevel(pw, gzip.BestCompression)
 	go func() {

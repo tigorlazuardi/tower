@@ -41,7 +41,7 @@ func (c Caller) ShortOrigin() string {
 	return strings.Join(s, "/")
 }
 
-// Gets only the latest three items path in the File Path where the Caller comes from.
+// ShortSource Gets only the latest three items path in the File Path where the Caller comes from.
 func (c Caller) ShortSource() string {
 	s := strings.Split(c.File, sep)
 
@@ -52,7 +52,7 @@ func (c Caller) ShortSource() string {
 	return strings.Join(s, sep)
 }
 
-// Like .String(), but runes other than letters, digits, `-` and `.` are set to `_`.
+// FormatAsKey Like .String(), but runes other than letters, digits, `-` and `.` are set to `_`.
 func (c Caller) FormatAsKey() string {
 	s := &strings.Builder{}
 	strLine := strconv.Itoa(c.Line)
@@ -85,19 +85,15 @@ func replaceSymbols(builder *strings.Builder, s string, rep rune) {
 	}
 }
 
-// Gets the caller information for who calls this function. A value of 1 will return this GetCaller location.
+// GetCaller Gets the caller information for who calls this function. A value of 1 will return this GetCaller location.
 // So you may want the value to be 2 or higher if you wrap this call in another function.
 //
-// Returns false when you ask out of bounds caller depth or golang has already garbage collected the stack information.
-func GetCaller(depth int) (Caller, bool) {
-	pc, file, line, ok := runtime.Caller(depth)
-	if !ok {
-		return Caller{}, false
-	}
-
+// Returns zero value if the caller information cannot be obtained.
+func GetCaller(depth int) Caller {
+	pc, file, line, _ := runtime.Caller(depth)
 	return Caller{
 		PC:   pc,
 		File: file,
 		Line: line,
-	}, true
+	}
 }

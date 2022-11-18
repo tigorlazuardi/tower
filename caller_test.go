@@ -10,7 +10,7 @@ func TestCaller_ShortOrigin(t *testing.T) {
 	}{
 		{
 			name: "test",
-			c:    func() Caller { c, _ := GetCaller(1); return c }(),
+			c:    func() Caller { c := GetCaller(1); return c }(),
 			want: "github.com/tigorlazuardi/tower.TestCaller_ShortOrigin.func1",
 		},
 	}

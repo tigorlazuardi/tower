@@ -51,7 +51,7 @@ func (t *Tower) Wrap(err error) ErrorBuilder {
 	if err == nil {
 		err = errors.New("<nil>")
 	}
-	caller, _ := GetCaller(t.callerDepth)
+	caller := GetCaller(t.callerDepth)
 	return t.errorConstructor.ContructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
@@ -61,7 +61,7 @@ func (t *Tower) Wrap(err error) ErrorBuilder {
 
 // NewEntry Creates a new EntryBuilder. The returned EntryBuilder may be appended with values.
 func (t *Tower) NewEntry(msg string) EntryBuilder {
-	caller, _ := GetCaller(t.callerDepth)
+	caller := GetCaller(t.callerDepth)
 	return t.entryConstructor.ConstructEntry(&EntryConstructorContext{
 		Caller:  caller,
 		Tower:   t,
@@ -80,7 +80,7 @@ func (t *Tower) Bail(msg string, args ...any) ErrorBuilder {
 	} else {
 		err = errors.New(msg)
 	}
-	caller, _ := GetCaller(t.callerDepth)
+	caller := GetCaller(t.callerDepth)
 	return t.errorConstructor.ContructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
@@ -99,7 +99,7 @@ func (t *Tower) BailFreeze(msg string, args ...any) Error {
 	} else {
 		err = errors.New(msg)
 	}
-	caller, _ := GetCaller(t.callerDepth)
+	caller := GetCaller(t.callerDepth)
 	return t.errorConstructor.ContructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
@@ -139,7 +139,7 @@ func (t *Tower) SetDefaultNotifyOption(opts ...MessageOption) {
 // Useful when just wanting to add extra simple messages to the error chain.
 // If args is not empty, message will be fed into fmt.Errorf along with the args.
 func (t *Tower) WrapFreeze(err error, message string, args ...any) Error {
-	caller, _ := GetCaller(t.callerDepth)
+	caller := GetCaller(t.callerDepth)
 	if len(args) > 0 {
 		message = fmt.Sprintf(message, args...)
 	}

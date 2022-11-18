@@ -10,6 +10,7 @@
 - removed body code hint because it's purpose is ambiguous
 - removed constraints lib
 - moved caller from hints file to caller file
+- **GetCaller:** changed signature to return zero value instead of with OK on failure to capture frame.
 - **lefthook:** lefthook now uses make command
 - **line-writer:** reduced requirement for LineWriter to merely io.Writer
 - **towerslack:** updated internal data signature

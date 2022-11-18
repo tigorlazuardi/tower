@@ -10,7 +10,7 @@ type TowerHttp struct {
 	encoder    Encoder
 	transform  BodyTransform
 	tower      *tower.Tower
-	compressor Compressor
+	compressor Compression
 }
 
 func (t TowerHttp) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {

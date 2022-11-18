@@ -18,7 +18,7 @@ func (r RespondOptionFunc) apply(o *option) {
 type option struct {
 	encoder    Encoder
 	transfomer BodyTransform
-	compressor Compressor
+	compressor Compression
 }
 
 // Encoder overrides the encoder to be used for encoding the response body.
@@ -35,8 +35,8 @@ func (ro) Transformer(transformer BodyTransform) RespondOption {
 	})
 }
 
-// Compressor overrides the compressor to be used for compressing the response body.
-func (ro) Compressor(compressor Compressor) RespondOption {
+// Compression overrides the compressor to be used for compressing the response body.
+func (ro) Compressor(compressor Compression) RespondOption {
 	return RespondOptionFunc(func(o *option) {
 		o.compressor = compressor
 	})

@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-var _ Compressor = (*GzipCompressor)(nil)
+var _ Compression = (*GzipCompressor)(nil)
 
 type GzipCompressor struct {
 	pool *sync.Pool

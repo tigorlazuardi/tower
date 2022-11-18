@@ -7,6 +7,7 @@
 - **slackbot:** missing upload call command
 
 ### Code Refactoring
+- renamed compressor to compression
 - removed body code hint because it's purpose is ambiguous
 - removed constraints lib
 - moved caller from hints file to caller file

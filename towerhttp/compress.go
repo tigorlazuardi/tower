@@ -1,29 +1,24 @@
 package towerhttp
 
 import (
-	"bytes"
-	"compress/gzip"
-	"sync"
+	"io"
 )
 
 type Compressor interface {
+	// ContentEncoding returns the value of the Content-Encoding header. If empty, the content-encoding header will be
+	// set by the http framework.
 	ContentEncoding() string
+	// Compress the given bytes.
 	Compress([]byte) ([]byte, error)
+	// StreamCompress compresses the given reader and returns a new reader that will give the compressed data.
+	StreamCompress(origin io.Reader) (io.Reader, error)
 }
 
-type GzipCompressor struct {
-	pool *sync.Pool
-}
+var _ Compressor = (*NoopCompressor)(nil)
 
-func (g GzipCompressor) ContentEncoding() string {
-	return "gzip"
-}
+// NoopCompressor is a compressor that does nothing. Basically it's an Uncompressed operation.
+type NoopCompressor struct{}
 
-func (g GzipCompressor) Compress(b []byte) ([]byte, error) {
-	buf := g.pool.Get().(*bytes.Buffer) //nolint
-	buf.Reset()
-	w, _ := gzip.NewWriterLevel(buf, gzip.BestCompression)
-	defer w.Close()
-	_, err := w.Write(b)
-	return buf.Bytes(), err
-}
+func (n NoopCompressor) StreamCompress(origin io.Reader) (io.Reader, error) { return origin, nil }
+func (n NoopCompressor) ContentEncoding() string                            { return "" }
+func (n NoopCompressor) Compress(bytes []byte) ([]byte, error)              { return bytes, nil }

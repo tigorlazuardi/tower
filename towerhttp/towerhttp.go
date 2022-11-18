@@ -50,9 +50,10 @@ func (t TowerHttp) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	contentType := opt.encoder.ContentType()
 	rw.Header().Set("Content-Type", contentType)
 
-	compressed, err := opt.compressor.Compress(b)
+	compressed, ok, err := opt.compressor.Compress(b)
 	if err != nil {
-		rw.WriteHeader(statusCode)
+		_ = t.tower.Wrap(err).Caller(tower.GetCaller(3)).Level(tower.WarnLevel).Log(ctx)
+		rw.WriteHeader(opt.statusCode)
 		_, err = rw.Write(b)
 		return
 	}

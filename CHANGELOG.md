@@ -7,6 +7,7 @@
 - **slackbot:** missing upload call command
 
 ### Code Refactoring
+- compression Compress method now returns 3 values
 - renamed GzipCompressor to GzipCompression for consistency
 - renamed compressor to compression
 - removed body code hint because it's purpose is ambiguous

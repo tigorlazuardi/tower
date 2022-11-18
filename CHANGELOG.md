@@ -16,6 +16,7 @@
 - **GetCaller:** changed signature to return zero value instead of with OK on failure to capture frame.
 - **lefthook:** lefthook now uses make command
 - **line-writer:** reduced requirement for LineWriter to merely io.Writer
+- **towerhttp:** moved Respond method to its own file
 - **towerslack:** updated internal data signature
 
 ### Docs

@@ -19,6 +19,7 @@ type option struct {
 	encoder    Encoder
 	transfomer BodyTransform
 	compressor Compression
+	statusCode int
 }
 
 // Encoder overrides the encoder to be used for encoding the response body.
@@ -35,9 +36,16 @@ func (ro) Transformer(transformer BodyTransform) RespondOption {
 	})
 }
 
-// Compression overrides the compressor to be used for compressing the response body.
+// Compressor overrides the compressor to be used for compressing the response body.
 func (ro) Compressor(compressor Compression) RespondOption {
 	return RespondOptionFunc(func(o *option) {
 		o.compressor = compressor
+	})
+}
+
+// StatusCode overrides the status code to be used for the response.
+func (ro) StatusCode(i int) RespondOption {
+	return RespondOptionFunc(func(o *option) {
+		o.statusCode = i
 	})
 }

@@ -27,20 +27,20 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- renamed Option to MessageParameter
+- updated implementations for todos
+- general update
 - added messenger
-- major update
 - added auto changelog
+- major update
+- added exported functions
+- more updates
 - update messenger spec
 - general update
-- more updates
-- general update
-- added exported functions
 - update options
-- updated implementations for todos
+- renamed Option to MessageParameter
 - **Messenger:** changed signature so ctx can be modified
-- **blocks:** added more blocks
 - **blocks:** added section block
+- **blocks:** added more blocks
 - **bucket:** added bucket interface
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
@@ -52,6 +52,7 @@
 - **gitignore:** goland .idead folder is now gitignored
 - **message-context:** added implmentations
 - **message-option:** simplified the api
+- **option:** added status code override option
 - **query:** added query methods
 - **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
@@ -64,8 +65,8 @@
 - **tower:** added wrap method
 - **tower-http:** added towerhttp library
 - **towerhttp:** added compressor and respond method
-- **towerslack:** start building template
 - **towerslack:** added constructor and template builder.
+- **towerslack:** start building template
 - **towerslack:** update documentations.
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies

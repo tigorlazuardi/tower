@@ -13,6 +13,11 @@ type TowerHttp struct {
 	compressor Compression
 }
 
+// Respond with the given body and options.
+//
+// HTTP status by default is http.StatusOK. If body implements tower.HTTPCodeHint, the status code will be set to the
+// value returned by the tower.HTTPCodeHint method. If the towerhttp.RO.StatusCode RespondOption is set, it will override
+// the status regardless of the tower.HTTPCodeHint.
 func (t TowerHttp) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
 	var (
 		statusCode = http.StatusOK
@@ -20,7 +25,7 @@ func (t TowerHttp) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	)
 	defer func() {
 		if err != nil {
-			_ = t.tower.Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
+			_ = t.tower.Wrap(err).Caller(tower.GetCaller(4)).Log(ctx)
 		}
 	}()
 
@@ -32,6 +37,7 @@ func (t TowerHttp) Respond(ctx context.Context, rw http.ResponseWriter, body any
 		encoder:    t.encoder,
 		transfomer: t.transform,
 		compressor: t.compressor,
+		statusCode: statusCode,
 	}
 
 	for _, o := range opts {
@@ -58,13 +64,19 @@ func (t TowerHttp) Respond(ctx context.Context, rw http.ResponseWriter, body any
 		return
 	}
 
+	if !ok {
+		rw.WriteHeader(opt.statusCode)
+		_, err = rw.Write(b)
+		return
+	}
+
 	if len(compressed) < len(b) {
 		rw.Header().Set("Content-Encoding", opt.compressor.ContentEncoding())
-		rw.WriteHeader(statusCode)
+		rw.WriteHeader(opt.statusCode)
 		_, err = rw.Write(compressed)
 		return
 	}
 
-	rw.WriteHeader(statusCode)
+	rw.WriteHeader(opt.statusCode)
 	_, err = rw.Write(compressed)
 }

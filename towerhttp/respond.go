@@ -37,10 +37,7 @@ func (t TowerHttp) Respond(ctx context.Context, rw http.ResponseWriter, body any
 		o.apply(opt)
 	}
 
-	body, err = opt.transfomer.BodyTransform(ctx, body)
-	if err != nil {
-		return
-	}
+	body = opt.transfomer.BodyTransform(ctx, body)
 
 	b, err := opt.encoder.Encode(body)
 	if err != nil {

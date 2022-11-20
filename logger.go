@@ -7,7 +7,7 @@ type Logger interface {
 	LogError(ctx context.Context, err Error)
 }
 
-// Logger that does nothing. The default logger that Tower uses.
+// NoopLogger that does nothing. The default logger that Tower uses.
 type NoopLogger struct{}
 
 func (NoopLogger) Log(ctx context.Context, entry Entry)    {}

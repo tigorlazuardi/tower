@@ -52,7 +52,7 @@ func TestFields_WriteDisplay(t *testing.T) {
 			},
 			want: "foo: bar\nwtf: 123",
 			writer: func(writer io.Writer) tower.LineWriter {
-				return tower.NewLineWriter(writer).Separator("\n").Build()
+				return tower.NewLineWriter(writer).LineBreak("\n").Build()
 			},
 		},
 		{
@@ -76,7 +76,7 @@ func TestFields_WriteDisplay(t *testing.T) {
 				"function":    func() {},
 			},
 			writer: func(writer io.Writer) tower.LineWriter {
-				return tower.NewLineWriter(writer).Separator("\n").Prefix(">> ").Build()
+				return tower.NewLineWriter(writer).LineBreak("\n").Prefix(">> ").Build()
 			},
 			want: strings.TrimSpace(`
 >> bytes:

@@ -22,7 +22,7 @@ var (
 // Summary Returns a short summary of this type.
 func (f Fields) Summary() string {
 	s := &strings.Builder{}
-	lw := NewLineWriter(s).Separator("\n").Build()
+	lw := NewLineWriter(s).LineBreak("\n").Build()
 	f.WriteSummary(lw)
 	return s.String()
 }
@@ -38,7 +38,7 @@ func (f Fields) WriteSummary(w LineWriter) {
 	i := 0
 	for k, v := range f {
 		if i > 0 {
-			w.WriteSeparator()
+			w.WriteLineBreak()
 		}
 		i++
 
@@ -47,7 +47,7 @@ func (f Fields) WriteSummary(w LineWriter) {
 		_, _ = fmt.Fprintf(w, "%-*s : ", prefixLength, k)
 		switch v := v.(type) {
 		case SummaryWriter:
-			w.WriteSeparator()
+			w.WriteLineBreak()
 			v.WriteSummary(NewLineWriter(w).Indent("    ").Build())
 		case Summary:
 			_, _ = w.WriteString(v.Summary())
@@ -79,7 +79,7 @@ func (f Fields) WriteSummary(w LineWriter) {
 // Display returns a human-readable and rich with information for the implementer.
 func (f Fields) Display() string {
 	s := &strings.Builder{}
-	lw := NewLineWriter(s).Separator("\n").Build()
+	lw := NewLineWriter(s).LineBreak("\n").Build()
 	f.WriteDisplay(lw)
 	return s.String()
 }
@@ -90,7 +90,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 	for i, k := range keys {
 		v := f[k]
 		if i > 0 {
-			w.WriteSeparator()
+			w.WriteLineBreak()
 		}
 		i++
 		w.WritePrefix()
@@ -102,12 +102,12 @@ func (f Fields) WriteDisplay(w LineWriter) {
 		}
 		switch v := v.(type) {
 		case DisplayWriter:
-			w.WriteSeparator()
+			w.WriteLineBreak()
 			v.WriteDisplay(NewLineWriter(w).Indent("    ").Build())
 		case Display:
 			dsp := v.Display()
 			if len(dsp) > 50 {
-				w.WriteSeparator()
+				w.WriteLineBreak()
 				w.WritePrefix()
 				w.WriteIndent()
 			} else {
@@ -115,7 +115,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			}
 			_, _ = w.WriteString(v.Display())
 		case ErrorWriter:
-			w.WriteSeparator()
+			w.WriteLineBreak()
 			v.WriteError(NewLineWriter(w).Indent("    ").Build())
 		case error:
 			indented := NewLineWriter(w).Indent("    ").Build()
@@ -129,12 +129,12 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			} else {
 				content := buf.Bytes()
 				strip := bytes.TrimSpace(content)
-				if !(len(strip) == 2 && (string(strip) == "{}" || string(strip) == "[]")) {
-					indented.WriteSeparator()
+				if bytes.Equal(strip, []byte(`{}`)) || bytes.Equal(strip, []byte(`[]`)) {
+					indented.WriteLineBreak()
 					indented.WritePrefix()
 					indented.WriteIndent()
 					_, _ = indented.Write(bytes.TrimSpace(content))
-					w.WriteSeparator()
+					w.WriteLineBreak()
 					w.WritePrefix()
 					w.WriteIndent()
 					_, _ = w.WriteString(k)
@@ -144,7 +144,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			}
 			str := v.Error()
 			if len(str) > 50 {
-				indented.WriteSeparator()
+				indented.WriteLineBreak()
 				indented.WritePrefix()
 				indented.WriteIndent()
 			} else {
@@ -155,7 +155,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			str := v.String()
 			if len(str) > 50 {
 				w := NewLineWriter(w).Indent("    ").Build()
-				w.WriteSeparator()
+				w.WriteLineBreak()
 				w.WritePrefix()
 				w.WriteIndent()
 			} else {
@@ -165,7 +165,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 		case string:
 			if len(v) > 50 {
 				w := NewLineWriter(w).Indent("    ").Build()
-				w.WriteSeparator()
+				w.WriteLineBreak()
 				w.WritePrefix()
 				w.WriteIndent()
 			} else {
@@ -175,7 +175,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 		case []byte:
 			if isJson(v) {
 				w := NewLineWriter(w).Indent("    ").Build()
-				w.WriteSeparator()
+				w.WriteLineBreak()
 				w.WritePrefix()
 				w.WriteIndent()
 				buf := &bytes.Buffer{}
@@ -185,7 +185,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			}
 			if len(v) > 50 {
 				w := NewLineWriter(w).Indent("    ").Build()
-				w.WriteSeparator()
+				w.WriteLineBreak()
 				w.WritePrefix()
 				w.WriteIndent()
 			} else {
@@ -197,7 +197,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			_, _ = fmt.Fprintf(w, "%v", v)
 		default:
 			w := NewLineWriter(w).Indent("    ").Build()
-			w.WriteSeparator()
+			w.WriteLineBreak()
 			w.WritePrefix()
 			w.WriteIndent()
 			buf := &bytes.Buffer{}

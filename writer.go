@@ -7,16 +7,16 @@ import (
 type LineWriter interface {
 	io.Writer
 	io.StringWriter
-	// WriteSeparator Writes a predetermined separator to the writer.
-	WriteSeparator()
+	// WriteNewLine Writes a predetermined new line character(s) to the writer.
+	WriteLineBreak()
 	// WritePrefix Writes a predetermined prefix to the writer.
 	WritePrefix()
 	// WriteSuffix Writes a predetermined suffix to the writer.
 	WriteSuffix()
 	// WriteIndent Writes Indentation characters.
 	WriteIndent()
-	// GetSeparator Returns the pre-determined separator.
-	GetSeparator() string
+	// GetLineBreak Returns the pre-determined line break characters.
+	GetLineBreak() string
 	// GetPrefix Returns the pre-determined prefix.
 	GetPrefix() string
 	// GetSuffix Returns the pre-determined suffix.
@@ -26,11 +26,11 @@ type LineWriter interface {
 }
 
 type LineWriterBuilder struct {
-	writer    io.Writer
-	indent    string
-	separator string
-	prefix    string
-	suffix    string
+	writer  io.Writer
+	indent  string
+	newLine string
+	prefix  string
+	suffix  string
 }
 
 // Indent Sets the Indentation.
@@ -39,9 +39,9 @@ func (builder *LineWriterBuilder) Indent(s string) *LineWriterBuilder {
 	return builder
 }
 
-// Separator Sets the Linebreak character(s).
-func (builder *LineWriterBuilder) Separator(s string) *LineWriterBuilder {
-	builder.separator = s
+// LineBreak Sets the Linebreak character(s).
+func (builder *LineWriterBuilder) LineBreak(s string) *LineWriterBuilder {
+	builder.newLine = s
 	return builder
 }
 
@@ -60,11 +60,11 @@ func (builder *LineWriterBuilder) Suffix(s string) *LineWriterBuilder {
 // Build Turn this writer into proper LineWriter.
 func (builder *LineWriterBuilder) Build() LineWriter {
 	return &lineWriter{
-		Writer:    builder.writer,
-		separator: builder.separator,
-		prefix:    builder.prefix,
-		suffix:    builder.suffix,
-		indent:    builder.indent,
+		Writer:  builder.writer,
+		newLine: builder.newLine,
+		prefix:  builder.prefix,
+		suffix:  builder.suffix,
+		indent:  builder.indent,
 	}
 }
 
@@ -79,10 +79,10 @@ var _ LineWriter = (*lineWriter)(nil)
 
 type lineWriter struct {
 	io.Writer
-	separator string
-	prefix    string
-	suffix    string
-	indent    string
+	newLine string
+	prefix  string
+	suffix  string
+	indent  string
 }
 
 func (l *lineWriter) WriteString(s string) (n int, err error) {
@@ -104,11 +104,11 @@ func (l lineWriter) GetIndentation() string {
 	return l.indent
 }
 
-func (l *lineWriter) WriteSeparator() {
+func (l *lineWriter) WriteLineBreak() {
 	if lw, ok := l.Writer.(LineWriter); ok {
-		lw.WriteSeparator()
+		lw.WriteLineBreak()
 	}
-	_, _ = io.WriteString(l.Writer, l.separator)
+	_, _ = io.WriteString(l.Writer, l.newLine)
 }
 
 func (l *lineWriter) WritePrefix() {
@@ -125,11 +125,11 @@ func (l *lineWriter) WriteSuffix() {
 	_, _ = io.WriteString(l.Writer, l.suffix)
 }
 
-func (l lineWriter) GetSeparator() string {
+func (l lineWriter) GetLineBreak() string {
 	if lw, ok := l.Writer.(LineWriter); ok {
-		return lw.GetSeparator() + l.separator
+		return lw.GetLineBreak() + l.newLine
 	}
-	return l.separator
+	return l.newLine
 }
 
 func (l lineWriter) GetPrefix() string {

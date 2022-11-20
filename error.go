@@ -254,7 +254,7 @@ type implError struct {
 
 func (e implError) Error() string {
 	s := &strings.Builder{}
-	lw := NewLineWriter(s).Separator(" => ").Build()
+	lw := NewLineWriter(s).LineBreak(" => ").Build()
 	e.WriteError(lw)
 	return s.String()
 }
@@ -268,7 +268,7 @@ func (e implError) WriteError(w LineWriter) {
 			w.WritePrefix()
 			_, _ = w.WriteString(msg)
 			w.WriteSuffix()
-			w.WriteSeparator()
+			w.WriteLineBreak()
 		}
 		w.WritePrefix()
 		_, _ = w.WriteString("[nil]")
@@ -282,12 +282,12 @@ func (e implError) WriteError(w LineWriter) {
 			w.WritePrefix()
 			_, _ = w.WriteString(msg)
 			w.WriteSuffix()
-			w.WriteSeparator()
+			w.WriteLineBreak()
 		} else if msg != errMsg {
 			w.WritePrefix()
 			_, _ = w.WriteString(msg)
 			w.WriteSuffix()
-			w.WriteSeparator()
+			w.WriteLineBreak()
 		}
 		w.WritePrefix()
 		ew.WriteError(w)
@@ -298,7 +298,7 @@ func (e implError) WriteError(w LineWriter) {
 		w.WritePrefix()
 		_, _ = w.WriteString(msg)
 		w.WriteSuffix()
-		w.WriteSeparator()
+		w.WriteLineBreak()
 	}
 	w.WritePrefix()
 	_, _ = w.WriteString(errMsg)

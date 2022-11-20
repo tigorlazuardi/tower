@@ -6,19 +6,27 @@ import (
 	"net/http"
 )
 
+// Responder handles the response and writing to http.ResponseWriter.
+type Responder struct {
+	encoder    Encoder
+	transform  BodyTransform
+	tower      *tower.Tower
+	compressor Compression
+}
+
 // Respond with the given body and options.
 //
 // HTTP status by default is http.StatusOK. If body implements tower.HTTPCodeHint, the status code will be set to the
 // value returned by the tower.HTTPCodeHint method. If the towerhttp.RO.StatusCode RespondOption is set, it will override
 // the status regardless of the tower.HTTPCodeHint.
-func (t TowerHttp) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
+func (t Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
 	var (
 		statusCode = http.StatusOK
 		err        error
 	)
 	defer func() {
 		if err != nil {
-			_ = t.tower.Wrap(err).Caller(tower.GetCaller(4)).Log(ctx)
+			_ = t.tower.Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
 		}
 	}()
 

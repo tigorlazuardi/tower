@@ -88,6 +88,12 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	_, err = rw.Write(compressed)
 }
 
+// RespondStream writes the given stream to the http.ResponseWriter.
+//
+// If the stream implements tower.HTTPCodeHint, the status code will be set to the value returned by the tower.HTTPCodeHint.
+//
+// If the Compression supports StreamCompression, the stream will be compressed by said StreamCompression and
+// written to the http.ResponseWriter.
 func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, contentType string, body io.Reader, opts ...RespondOption) {
 	var (
 		statusCode = http.StatusOK
@@ -100,6 +106,9 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 	}()
 
 	opt := r.buildOption(statusCode, opts...)
+	if ch, ok := body.(tower.HTTPCodeHint); ok {
+		opt.statusCode = ch.HTTPCode()
+	}
 
 	if sc, ok := opt.compressor.(StreamCompression); ok {
 		body = sc.StreamCompress(body)
@@ -109,5 +118,6 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 		}
 	}
 	rw.Header().Set("Content-Type", contentType)
+	rw.WriteHeader(opt.statusCode)
 	_, err = io.Copy(rw, body)
 }

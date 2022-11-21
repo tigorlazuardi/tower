@@ -32,17 +32,17 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- added exported functions
-- general update
+- renamed Option to MessageParameter
 - added messenger
+- updated implementations for todos
 - update messenger spec
 - more updates
-- major update
 - general update
-- update options
-- renamed Option to MessageParameter
+- major update
 - added auto changelog
-- updated implementations for todos
+- update options
+- added exported functions
+- general update
 - **Messenger:** changed signature so ctx can be modified
 - **blocks:** added more blocks
 - **blocks:** added section block
@@ -59,21 +59,22 @@
 - **message-option:** simplified the api
 - **option:** added status code override option
 - **query:** added query methods
-- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **queue:** added queue
-- **slack:** added slack
+- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
+- **respond-stream:** support for tower.HTTPCodeHint interface check
+- **slack:** added dynamic build key
 - **slack:** added post message
 - **slack:** update
-- **slack:** added dynamic build key
+- **slack:** added slack
 - **slack:** implemented towerslack handle message
 - **slackbot:** implemented call to file attachments
 - **tower:** added wrap method
 - **tower-http:** added towerhttp library
 - **towerhttp:** added compressor and respond method
 - **towerhttp:** added RequestContext logging
+- **towerslack:** added constructor and template builder.
 - **towerslack:** update documentations.
 - **towerslack:** start building template
-- **towerslack:** added constructor and template builder.
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

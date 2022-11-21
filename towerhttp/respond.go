@@ -15,15 +15,12 @@ type Responder struct {
 	compressor Compression
 }
 
-func (r Responder) buildOption(statusCode int, opts ...RespondOption) *option {
+func (r Responder) buildOption(statusCode int) *option {
 	opt := &option{
 		encoder:    r.encoder,
 		transfomer: r.transform,
 		compressor: r.compressor,
 		statusCode: statusCode,
-	}
-	for _, o := range opts {
-		o.apply(opt)
 	}
 	return opt
 }
@@ -49,9 +46,7 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	if ch, ok := body.(tower.HTTPCodeHint); ok {
 		statusCode = ch.HTTPCode()
 	}
-
-	opt := r.buildOption(statusCode, opts...)
-
+	opt := r.buildOption(statusCode)
 	for _, o := range opts {
 		o.apply(opt)
 	}
@@ -105,9 +100,12 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 		}
 	}()
 
-	opt := r.buildOption(statusCode, opts...)
+	opt := r.buildOption(statusCode)
 	if ch, ok := body.(tower.HTTPCodeHint); ok {
 		opt.statusCode = ch.HTTPCode()
+	}
+	for _, o := range opts {
+		o.apply(opt)
 	}
 
 	if sc, ok := opt.compressor.(StreamCompression); ok {

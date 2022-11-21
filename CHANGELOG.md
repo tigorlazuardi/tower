@@ -11,12 +11,14 @@
 - compression Compress method now returns 3 values
 - renamed GzipCompressor to GzipCompression for consistency
 - renamed compressor to compression
+- moved caller from hints file to caller file
 - removed body code hint because it's purpose is ambiguous
 - removed constraints lib
-- moved caller from hints file to caller file
 - **GetCaller:** changed signature to return zero value instead of with OK on failure to capture frame.
+- **LineWriter:** renamed methods for better readability for implementers
 - **lefthook:** lefthook now uses make command
 - **line-writer:** reduced requirement for LineWriter to merely io.Writer
+- **stream-compression:** split the definition for streams for easier api usage
 - **towerhttp:** moved Respond method to its own file
 - **towerslack:** updated internal data signature
 
@@ -29,20 +31,20 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- updated implementations for todos
+- added exported functions
 - general update
 - added messenger
-- added auto changelog
-- major update
-- added exported functions
-- more updates
 - update messenger spec
+- more updates
+- major update
 - general update
 - update options
 - renamed Option to MessageParameter
+- added auto changelog
+- updated implementations for todos
 - **Messenger:** changed signature so ctx can be modified
-- **blocks:** added section block
 - **blocks:** added more blocks
+- **blocks:** added section block
 - **bucket:** added bucket interface
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
@@ -56,20 +58,21 @@
 - **message-option:** simplified the api
 - **option:** added status code override option
 - **query:** added query methods
-- **queue:** added queue
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
-- **slack:** added dynamic build key
+- **queue:** added queue
 - **slack:** added slack
 - **slack:** added post message
 - **slack:** update
+- **slack:** added dynamic build key
 - **slack:** implemented towerslack handle message
 - **slackbot:** implemented call to file attachments
 - **tower:** added wrap method
 - **tower-http:** added towerhttp library
 - **towerhttp:** added compressor and respond method
-- **towerslack:** added constructor and template builder.
-- **towerslack:** start building template
+- **towerhttp:** added RequestContext logging
 - **towerslack:** update documentations.
+- **towerslack:** start building template
+- **towerslack:** added constructor and template builder.
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation
@@ -78,6 +81,7 @@
 - **tower-query:** Fix typo on GetCodeHint returned value
 
 ### Miscellaneous
+- renamed Logger to NoopLogger in comment
 - format
 - removed commitlint from githooks
 - rename interface to a better name

@@ -4,6 +4,10 @@ import "context"
 
 type BodyTransform interface {
 	// BodyTransform transform given input into another shape. This is called before the Encoder.
+	//
+	// input may be nil so make sure to take account for such situation.
+	//
+	// If the returned value is nil, the process will be short-circuited and the response body will be empty.
 	BodyTransform(ctx context.Context, input any) any
 }
 

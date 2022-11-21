@@ -6,9 +6,13 @@ import (
 	"sync"
 )
 
-type Encoder interface {
+type ContentTypeHint interface {
 	// ContentType Returns the content type of the encoded data.
 	ContentType() string
+}
+
+type Encoder interface {
+	ContentTypeHint
 	// Encode the input into a byte array.
 	Encode(input any) ([]byte, error)
 }

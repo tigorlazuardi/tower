@@ -129,7 +129,7 @@ func (f Fields) WriteDisplay(w LineWriter) {
 			} else {
 				content := buf.Bytes()
 				strip := bytes.TrimSpace(content)
-				if bytes.Equal(strip, []byte(`{}`)) || bytes.Equal(strip, []byte(`[]`)) {
+				if !(len(strip) == 2 && (strip[0] == '{' || strip[0] == '[')) {
 					indented.WriteLineBreak()
 					indented.WritePrefix()
 					indented.WriteIndent()

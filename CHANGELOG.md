@@ -3,6 +3,7 @@
 
 ### Bug Fixes
 - **error:** fix missing code hints
+- **fields:** fix wrong logic on writing empty json
 - **queue:** go dependency changed to 1.18
 - **slackbot:** missing upload call command
 

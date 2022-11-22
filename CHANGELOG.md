@@ -32,17 +32,17 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- general update
-- updated implementations for todos
-- update messenger spec
 - more updates
+- renamed Option to MessageParameter
 - general update
+- update options
+- general update
+- added messenger
+- update messenger spec
+- updated implementations for todos
 - added exported functions
 - major update
 - added auto changelog
-- update options
-- added messenger
-- renamed Option to MessageParameter
 - **Messenger:** changed signature so ctx can be modified
 - **blocks:** added section block
 - **blocks:** added more blocks
@@ -50,8 +50,9 @@
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **context-builder:** added context builder impls
-- **discord:** update discord
 - **discord:** updated discord element
+- **discord:** thread-id is generated
+- **discord:** update discord
 - **discord:** update discord
 - **discord:** added send
 - **entry:** added Entry implementations
@@ -66,19 +67,19 @@
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **respond-stream:** support for tower.HTTPCodeHint interface check
 - **respond-stream:** support for tower.HTTPCodeHint interface check
-- **slack:** implemented towerslack handle message
-- **slack:** added post message
-- **slack:** update
 - **slack:** added slack
+- **slack:** update
+- **slack:** added post message
+- **slack:** implemented towerslack handle message
 - **slack:** added dynamic build key
 - **slackbot:** implemented call to file attachments
 - **tower:** added wrap method
 - **tower-http:** added towerhttp library
-- **towerhttp:** added RequestContext logging
 - **towerhttp:** added compressor and respond method
-- **towerslack:** start building template
+- **towerhttp:** added RequestContext logging
 - **towerslack:** update documentations.
 - **towerslack:** added constructor and template builder.
+- **towerslack:** start building template
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

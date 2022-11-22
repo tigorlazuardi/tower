@@ -30,6 +30,7 @@ type Discord struct {
 	bucket    bucket.Bucket
 	globalKey string
 	cooldown  time.Duration
+	snowflake *snowflake.Node
 }
 
 // SetName sets the name of the bot. This is used for identification of the bot for tower.

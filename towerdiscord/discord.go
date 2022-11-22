@@ -2,10 +2,11 @@ package towerdiscord
 
 import (
 	"context"
-	"github.com/tigorlazuardi/tower/bucket"
 	"runtime"
 	"sync/atomic"
 	"time"
+
+	"github.com/tigorlazuardi/tower/bucket"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/tigorlazuardi/tower"
@@ -18,15 +19,17 @@ func init() {
 }
 
 type Discord struct {
-	name    string
-	webhook string
-	cache   cache.Cacher
-	queue   *queue.Queue[tower.KeyValue[context.Context, tower.MessageContext]]
-	sem     chan struct{}
-	working int32
-	trace   tower.TraceCapturer
-	builder EmbedBuilder
-	bucket  bucket.Bucket
+	name      string
+	webhook   string
+	cache     cache.Cacher
+	queue     *queue.Queue[tower.KeyValue[context.Context, tower.MessageContext]]
+	sem       chan struct{}
+	working   int32
+	trace     tower.TraceCapturer
+	builder   EmbedBuilder
+	bucket    bucket.Bucket
+	globalKey string
+	cooldown  time.Duration
 }
 
 // SetName sets the name of the bot. This is used for identification of the bot for tower.
@@ -51,10 +54,16 @@ func (d *Discord) SetCache(cache cache.Cacher) {
 
 func NewDiscordBot(webhook string) *Discord {
 	return &Discord{
-		webhook: webhook,
-		cache:   cache.NewMemoryCache(),
-		queue:   queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
-		sem:     make(chan struct{}, (runtime.NumCPU()/3)+2),
+		name:      "",
+		webhook:   webhook,
+		cache:     cache.NewMemoryCache(),
+		queue:     queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
+		sem:       make(chan struct{}, (runtime.NumCPU()/3)+2),
+		trace:     tower.NoopTracer{},
+		builder:   nil,
+		bucket:    nil,
+		globalKey: "global",
+		cooldown:  time.Minute * 15,
 	}
 }
 

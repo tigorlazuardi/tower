@@ -21,7 +21,7 @@ func (s SlackBot) handleMessage(ctx context.Context, msg tower.MessageContext) {
 	}
 	ticker.Stop()
 	if err := s.cache.Set(ctx, s.globalKey, []byte("locked"), time.Second*30); err != nil {
-		_ = msg.Tower().Wrap(err).Message("failed to set global lock to cache").Log(ctx)
+		_ = msg.Tower().Wrap(err).Message("%s: failed to set global lock to cache", s.Name()).Log(ctx)
 	}
 	if msg.SkipVerification() {
 		_ = s.postMessage(ctx, msg)
@@ -43,7 +43,7 @@ func (s SlackBot) handleMessage(ctx context.Context, msg tower.MessageContext) {
 		if err := s.cache.Set(ctx, key, []byte(message), s.countCooldown(msg, iter)); err != nil {
 			_ = msg.Tower().
 				Wrap(err).
-				Message("failed to set message key to cache").
+				Message("%s: failed to set message key to cache", s.Name()).
 				Context(tower.F{"key": key, "payload": message}).
 				Log(ctx)
 		}

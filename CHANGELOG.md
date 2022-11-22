@@ -32,17 +32,17 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- update messenger spec
-- renamed Option to MessageParameter
-- added messenger
-- update options
-- added auto changelog
-- more updates
-- general update
-- major update
-- added exported functions
 - general update
 - updated implementations for todos
+- update messenger spec
+- more updates
+- general update
+- added exported functions
+- major update
+- added auto changelog
+- update options
+- added messenger
+- renamed Option to MessageParameter
 - **Messenger:** changed signature so ctx can be modified
 - **blocks:** added section block
 - **blocks:** added more blocks
@@ -50,7 +50,10 @@
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **context-builder:** added context builder impls
+- **discord:** update discord
 - **discord:** updated discord element
+- **discord:** update discord
+- **discord:** added send
 - **entry:** added Entry implementations
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
@@ -59,23 +62,23 @@
 - **message-option:** simplified the api
 - **option:** added status code override option
 - **query:** added query methods
-- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **queue:** added queue
+- **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **respond-stream:** support for tower.HTTPCodeHint interface check
 - **respond-stream:** support for tower.HTTPCodeHint interface check
-- **slack:** added dynamic build key
 - **slack:** implemented towerslack handle message
 - **slack:** added post message
 - **slack:** update
 - **slack:** added slack
+- **slack:** added dynamic build key
 - **slackbot:** implemented call to file attachments
 - **tower:** added wrap method
 - **tower-http:** added towerhttp library
-- **towerhttp:** added compressor and respond method
 - **towerhttp:** added RequestContext logging
-- **towerslack:** added constructor and template builder.
+- **towerhttp:** added compressor and respond method
 - **towerslack:** start building template
 - **towerslack:** update documentations.
+- **towerslack:** added constructor and template builder.
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

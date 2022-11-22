@@ -2,6 +2,7 @@ package towerdiscord
 
 import (
 	"context"
+	"github.com/tigorlazuardi/tower/bucket"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -23,6 +24,9 @@ type Discord struct {
 	queue   *queue.Queue[tower.KeyValue[context.Context, tower.MessageContext]]
 	sem     chan struct{}
 	working int32
+	trace   tower.TraceCapturer
+	builder EmbedBuilder
+	bucket  bucket.Bucket
 }
 
 // SetName sets the name of the bot. This is used for identification of the bot for tower.

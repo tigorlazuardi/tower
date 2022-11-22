@@ -143,8 +143,7 @@ func (s SlackBot) SendMessage(ctx context.Context, msg tower.MessageContext) {
 }
 
 func (s *SlackBot) work() {
-	if !s.isWorking() {
-		atomic.AddInt32(&s.working, 1)
+	if atomic.CompareAndSwapInt32(&s.working, 0, 1) {
 		go func() {
 			for s.queue.Len() > 0 {
 				job := s.queue.Dequeue()
@@ -155,13 +154,9 @@ func (s *SlackBot) work() {
 					<-s.sem
 				}()
 			}
-			atomic.AddInt32(&s.working, -1)
+			atomic.StoreInt32(&s.working, 0)
 		}()
 	}
-}
-
-func (s SlackBot) isWorking() bool {
-	return atomic.LoadInt32(&s.working) == 1
 }
 
 // Wait until all message in the queue or until given channel is received.

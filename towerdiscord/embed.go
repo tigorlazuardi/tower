@@ -7,7 +7,7 @@ import (
 )
 
 type EmbedBuilder interface {
-	BuildEmbed(ctx context.Context, discord *Discord, msg tower.MessageContext) ([]*Embed, []*bucket.File)
+	BuildEmbed(ctx context.Context, msg tower.MessageContext) ([]*Embed, []*bucket.File)
 }
 
 type Embed struct {

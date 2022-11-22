@@ -6,4 +6,5 @@ use (
 	./towerslack
 	./towerzap
 	./towerhttp
+	./towerdiscord
 )

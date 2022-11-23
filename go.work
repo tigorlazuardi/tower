@@ -3,8 +3,8 @@ go 1.19
 use (
 	.
 	./queue
+	./towerdiscord
+	./towerhttp
 	./towerslack
 	./towerzap
-	./towerhttp
-	./towerdiscord
 )

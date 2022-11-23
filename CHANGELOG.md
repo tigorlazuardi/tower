@@ -1,6 +1,12 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Miscellaneous
+- cleanup go mods
+
+
+<a name="v0.1.1"></a>
+## [v0.1.1] - 2022-11-23
 ### Bug Fixes
 - **error:** fix missing code hints
 - **fields:** fix wrong logic on writing empty json
@@ -108,4 +114,5 @@
 - added docs support
 
 
-[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.1...HEAD
+[v0.1.1]: https://github.com/tigorlazuardi/tower/compare/v0.1.0...v0.1.1

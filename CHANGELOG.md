@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+- **responder:** added special handling for nil and http.NoBody
+
 ### Miscellaneous
 - cleanup go mods
 

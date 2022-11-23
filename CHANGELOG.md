@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+- **responder:** fix bad refactoring
+
 ### Code Refactoring
 - **responder:** moved RespondStream to its own file
 

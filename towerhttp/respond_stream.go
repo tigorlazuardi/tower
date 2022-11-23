@@ -52,6 +52,6 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 	rw.WriteHeader(opt.statusCode)
 	_, err = io.Copy(rw, body)
 	if err != nil {
-		_ = r.tower.Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
+		_ = r.tower().Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
 	}
 }

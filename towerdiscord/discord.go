@@ -60,19 +60,20 @@ func (d *Discord) SetSnowflakeGenerator(node *snowflake.Node) {
 
 func NewDiscordBot(webhook string) *Discord {
 	host, _ := os.Hostname()
-	return &Discord{
+	d := &Discord{
 		name:      "discord",
 		webhook:   webhook,
 		cache:     cache.NewMemoryCache(),
 		queue:     queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
 		sem:       make(chan struct{}, (runtime.NumCPU()/3)+2),
 		trace:     tower.NoopTracer{},
-		builder:   EmbedBuilderFunc(defaultEmbedBuilder),
 		bucket:    nil,
 		globalKey: "global",
 		cooldown:  time.Minute * 15,
 		snowflake: generateSnowflakeNodeFromString(host + webhook),
 	}
+	d.builder = EmbedBuilderFunc(d.defaultEmbedBuilder)
+	return d
 }
 
 func (d Discord) Name() string {

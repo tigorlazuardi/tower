@@ -32,17 +32,17 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- major update
-- updated implementations for todos
-- added exported functions
 - update options
-- added messenger
-- general update
-- renamed Option to MessageParameter
 - update messenger spec
-- added auto changelog
-- general update
+- added exported functions
 - more updates
+- added auto changelog
+- renamed Option to MessageParameter
+- major update
+- general update
+- general update
+- added messenger
+- updated implementations for todos
 - **Messenger:** changed signature so ctx can be modified
 - **blocks:** added section block
 - **blocks:** added more blocks
@@ -50,12 +50,13 @@
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **context-builder:** added context builder impls
-- **discord:** added summary buildre
 - **discord:** updated discord element
-- **discord:** thread-id is generated
+- **discord:** added data embed builder
+- **discord:** update discord
+- **discord:** update discord
 - **discord:** added send
-- **discord:** update discord
-- **discord:** update discord
+- **discord:** thread-id is generated
+- **discord:** added summary buildre
 - **entry:** added Entry implementations
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
@@ -68,11 +69,11 @@
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **respond-stream:** support for tower.HTTPCodeHint interface check
 - **respond-stream:** support for tower.HTTPCodeHint interface check
-- **slack:** implemented towerslack handle message
+- **slack:** added dynamic build key
 - **slack:** added post message
 - **slack:** update
 - **slack:** added slack
-- **slack:** added dynamic build key
+- **slack:** implemented towerslack handle message
 - **slackbot:** implemented call to file attachments
 - **tower:** added wrap method
 - **tower-http:** added towerhttp library

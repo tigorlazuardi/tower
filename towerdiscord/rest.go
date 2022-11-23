@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 )
 
-const baseDiscordURL = "https://discord.com/api/v10"
-
 type HTTPErrorResponse struct {
 	Code    int             `json:"code"`
 	Errors  json.RawMessage `json:"errors"`

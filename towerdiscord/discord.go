@@ -2,6 +2,7 @@ package towerdiscord
 
 import (
 	"context"
+	"os"
 	"runtime"
 	"sync/atomic"
 	"time"
@@ -53,18 +54,24 @@ func (d *Discord) SetCache(cache cache.Cacher) {
 	d.cache = cache
 }
 
+func (d *Discord) SetSnowflakeGenerator(node *snowflake.Node) {
+	d.snowflake = node
+}
+
 func NewDiscordBot(webhook string) *Discord {
+	host, _ := os.Hostname()
 	return &Discord{
-		name:      "",
+		name:      "discord",
 		webhook:   webhook,
 		cache:     cache.NewMemoryCache(),
 		queue:     queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
 		sem:       make(chan struct{}, (runtime.NumCPU()/3)+2),
 		trace:     tower.NoopTracer{},
-		builder:   nil,
+		builder:   EmbedBuilderFunc(defaultEmbedBuilder),
 		bucket:    nil,
 		globalKey: "global",
 		cooldown:  time.Minute * 15,
+		snowflake: generateSnowflakeNodeFromString(host + webhook),
 	}
 }
 
@@ -116,4 +123,16 @@ func (d Discord) Wait(ctx context.Context) error {
 	}()
 
 	return <-err
+}
+
+func generateSnowflakeNodeFromString(s string) *snowflake.Node {
+	id := 0
+	for _, c := range s {
+		id += int(c)
+	}
+	for id > 1023 {
+		id >>= 1
+	}
+	node, _ := snowflake.NewNode(int64(id))
+	return node
 }

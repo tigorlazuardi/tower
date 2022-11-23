@@ -32,17 +32,17 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- more updates
-- renamed Option to MessageParameter
-- general update
-- update options
-- general update
-- added messenger
-- update messenger spec
+- major update
 - updated implementations for todos
 - added exported functions
-- major update
+- update options
+- added messenger
+- general update
+- renamed Option to MessageParameter
+- update messenger spec
 - added auto changelog
+- general update
+- more updates
 - **Messenger:** changed signature so ctx can be modified
 - **blocks:** added section block
 - **blocks:** added more blocks
@@ -50,11 +50,12 @@
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **context-builder:** added context builder impls
+- **discord:** added summary buildre
 - **discord:** updated discord element
 - **discord:** thread-id is generated
-- **discord:** update discord
-- **discord:** update discord
 - **discord:** added send
+- **discord:** update discord
+- **discord:** update discord
 - **entry:** added Entry implementations
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
@@ -67,19 +68,19 @@
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **respond-stream:** support for tower.HTTPCodeHint interface check
 - **respond-stream:** support for tower.HTTPCodeHint interface check
-- **slack:** added slack
-- **slack:** update
-- **slack:** added post message
 - **slack:** implemented towerslack handle message
+- **slack:** added post message
+- **slack:** update
+- **slack:** added slack
 - **slack:** added dynamic build key
 - **slackbot:** implemented call to file attachments
 - **tower:** added wrap method
 - **tower-http:** added towerhttp library
-- **towerhttp:** added compressor and respond method
 - **towerhttp:** added RequestContext logging
+- **towerhttp:** added compressor and respond method
+- **towerslack:** start building template
 - **towerslack:** update documentations.
 - **towerslack:** added constructor and template builder.
-- **towerslack:** start building template
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

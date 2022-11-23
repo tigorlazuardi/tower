@@ -5,6 +5,7 @@
 - **responder:** moved RespondStream to its own file
 
 ### Features
+- **responder:** added error responder and constructor
 - **responder:** http.NoBody now no longer set default status code to http.StatusNoContent
 - **responder:** added special handling for nil and http.NoBody
 

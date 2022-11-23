@@ -17,7 +17,7 @@ func (r RespondOptionFunc) apply(o *option) {
 
 type option struct {
 	encoder    Encoder
-	transfomer BodyTransform
+	transfomer BodyTransformer
 	compressor Compression
 	statusCode int
 }
@@ -30,7 +30,7 @@ func (ro) Encoder(encoder Encoder) RespondOption {
 }
 
 // Transformer overrides the transformer to be used for transforming the response body.
-func (ro) Transformer(transformer BodyTransform) RespondOption {
+func (ro) Transformer(transformer BodyTransformer) RespondOption {
 	return RespondOptionFunc(func(o *option) {
 		o.transfomer = transformer
 	})

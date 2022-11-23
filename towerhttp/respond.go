@@ -1,17 +1,45 @@
 package towerhttp
 
 import (
-	"context"
 	"github.com/tigorlazuardi/tower"
-	"net/http"
 )
 
 // Responder handles the response and writing to http.ResponseWriter.
 type Responder struct {
-	encoder     Encoder
-	transformer BodyTransform
-	tower       *tower.Tower
-	compressor  Compression
+	encoder          Encoder
+	transformer      BodyTransformer
+	errorTransformer ErrorBodyTransformer
+	tower            func() *tower.Tower
+	compressor       Compression
+}
+
+// NewResponder creates a new Responder instance.
+//
+// It has the following default values:
+//
+// - Encoder: JSONEncoder (encodes to JSON)
+//
+// - BodyTransformer: NoopBodyTransform (does nothing to whatever value you pass in)
+//
+// - ErrorBodyTransformer: SimpleErrorTransformer (encodes error to {"error": "message/err.Error()"}) with JSONEncoder.
+// Different encoder may have different output.
+//
+// - Tower: points to the global tower instance
+//
+// - Compression: NoCompression
+func NewResponder() *Responder {
+	return &Responder{
+		encoder:          NewJSONEncoder(),
+		transformer:      NoopBodyTransform{},
+		errorTransformer: SimpleErrorTransformer{},
+		tower:            tower.Global.Tower,
+		compressor:       NoCompression{},
+	}
+}
+
+// SetErrorTransformer sets the ErrorBodyTransformer to be used by the Responder.
+func (r *Responder) SetErrorTransformer(errorTransformer ErrorBodyTransformer) {
+	r.errorTransformer = errorTransformer
 }
 
 // SetEncoder sets the encoder to be used by the Responder.
@@ -19,14 +47,14 @@ func (r *Responder) SetEncoder(encoder Encoder) {
 	r.encoder = encoder
 }
 
-// SetTransformer sets the BodyTransform to be used by the Responder.
-func (r *Responder) SetTransformer(transform BodyTransform) {
+// SetBodyTransformer sets the BodyTransformer to be used by the Responder.
+func (r *Responder) SetBodyTransformer(transform BodyTransformer) {
 	r.transformer = transform
 }
 
 // SetTower sets the tower instance to be used by the Responder.
-func (r *Responder) SetTower(tower *tower.Tower) {
-	r.tower = tower
+func (r *Responder) SetTower(t *tower.Tower) {
+	r.tower = func() *tower.Tower { return t }
 }
 
 // SetCompressor sets the compression to be used by the Responder.
@@ -42,76 +70,4 @@ func (r Responder) buildOption(statusCode int) *option {
 		statusCode: statusCode,
 	}
 	return opt
-}
-
-// Respond with the given body and options.
-//
-// body is expected to be a serializable type. For streams, use RespondStream.
-//
-// HTTP status by default is http.StatusOK. If body implements tower.HTTPCodeHint, the status code will be set to the
-// value returned by the tower.HTTPCodeHint method. If the towerhttp.RO.StatusCode RespondOption is set, it will override
-// the status regardless of the tower.HTTPCodeHint.
-//
-// There's a special case if you pass http.NoBody as body, there will be no respond body related operations executed.
-// StatusCode default value is STILL http.StatusOK. If you wish to set the status code to http.StatusNoContent, you
-// can still override this output by setting the related RespondOption.
-//
-// Body of nil has different treatment with http.NoBody. if body is nil, the nil value is still passed to the BodyTransform implementer,
-// therefore the final result body may not actually be empty.
-func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
-	var (
-		statusCode = http.StatusOK
-		err        error
-	)
-
-	if ch, ok := body.(tower.HTTPCodeHint); ok {
-		statusCode = ch.HTTPCode()
-	}
-
-	opt := r.buildOption(statusCode)
-	for _, o := range opts {
-		o.apply(opt)
-	}
-	if body == http.NoBody {
-		rw.WriteHeader(opt.statusCode)
-		return
-	}
-
-	body = opt.transfomer.BodyTransform(ctx, body)
-	if body == nil {
-		rw.WriteHeader(opt.statusCode)
-		return
-	}
-
-	b, err := opt.encoder.Encode(body)
-	if err != nil {
-		_ = r.tower.Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
-		return
-	}
-	contentType := opt.encoder.ContentType()
-	if contentType != "" {
-		rw.Header().Set("Content-Type", contentType)
-	}
-
-	compressed, err := opt.compressor.Compress(b)
-	if err != nil {
-		_ = r.tower.Wrap(err).Caller(tower.GetCaller(3)).Level(tower.WarnLevel).Log(ctx)
-		rw.WriteHeader(opt.statusCode)
-		_, err = rw.Write(b)
-		if err != nil {
-			_ = r.tower.Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
-		}
-		return
-	}
-
-	contentEncoding := opt.compressor.ContentEncoding()
-	if contentEncoding != "" {
-		rw.Header().Set("Content-Encoding", contentEncoding)
-	}
-
-	rw.WriteHeader(opt.statusCode)
-	_, err = rw.Write(compressed)
-	if err != nil {
-		_ = r.tower.Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
-	}
 }

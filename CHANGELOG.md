@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Code Refactoring
+- **responder:** moved RespondStream to its own file
+
 ### Features
 - **responder:** http.NoBody now no longer set default status code to http.StatusNoContent
 - **responder:** added special handling for nil and http.NoBody

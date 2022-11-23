@@ -21,10 +21,14 @@ func (d Discord) defaultEmbedBuilder(ctx context.Context, msg tower.MessageConte
 	files := make([]*bucket.File, 0, 3)
 	embeds := make([]*Embed, 0, 5)
 	embeds = append(embeds, d.buildSummary(msg))
-	em, file := d.buildDataEmbed(msg)
-	embeds = append(embeds, em)
-	if file != nil {
-		files = append(files, file)
+	{
+		em, file := d.buildDataEmbed(msg)
+		if em != nil {
+			embeds = append(embeds, em)
+		}
+		if file != nil {
+			files = append(files, file)
+		}
 	}
 	return embeds, files
 }

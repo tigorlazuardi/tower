@@ -8,15 +8,16 @@
 - **slackbot:** missing upload call command
 
 ### Code Refactoring
-- removed error from body transform
-- compression Compress method now returns 3 values
 - renamed GzipCompressor to GzipCompression for consistency
+- removed error from body transform
 - renamed compressor to compression
+- compression Compress method now returns 3 values
 - moved caller from hints file to caller file
 - removed body code hint because it's purpose is ambiguous
 - removed constraints lib
 - **GetCaller:** changed signature to return zero value instead of with OK on failure to capture frame.
 - **LineWriter:** renamed methods for better readability for implementers
+- **discord:** added block scope to set explicit where the variable pointers pointed to
 - **lefthook:** lefthook now uses make command
 - **line-writer:** reduced requirement for LineWriter to merely io.Writer
 - **stream-compression:** split the definition for streams for easier api usage

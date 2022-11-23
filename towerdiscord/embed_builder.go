@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"mime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -85,15 +85,13 @@ func (d Discord) buildDataEmbed(msg tower.MessageContext) (*Embed, *bucket.File)
 	embed := &Embed{
 		Type:      "rich",
 		Title:     "Summary",
-		Color:     0x2596be, // Green Jewel
+		Color:     0x063970, // Dark Blue
 		Timestamp: msg.Time().Format(time.RFC3339),
 	}
 	b := descBufPool.Get()
 	defer descBufPool.Put(b)
 	b.Reset()
 	b.Grow(2000)
-	filename := d.snowflake.Generate().String()
-	filetype := "text/plain"
 	for i, v := range msg.Context() {
 		if i > 0 {
 			b.WriteString("\n\n")
@@ -103,49 +101,56 @@ func (d Discord) buildDataEmbed(msg tower.MessageContext) (*Embed, *bucket.File)
 		case tower.DisplayWriter:
 			if hl, ok := v.(HighlightHint); ok {
 				b.WriteString(hl.DiscordHighlight())
+			} else {
+				b.WriteString("md")
 			}
-			if hl, ok := v.(MimetypeHint); ok {
-				filetype = hl.Mimetype()
-			}
-			b.WriteString("\n")
+			b.WriteRune('\n')
 			lw := tower.NewLineWriter(b).LineBreak("\n").Build()
 			v.WriteDisplay(lw)
 		case tower.Display:
 			if hl, ok := v.(HighlightHint); ok {
 				b.WriteString(hl.DiscordHighlight())
+			} else {
+				b.WriteString("md")
 			}
-			if hl, ok := v.(MimetypeHint); ok {
-				filetype = hl.Mimetype()
-			}
-			b.WriteString("\n")
+			b.WriteRune('\n')
 			b.WriteString(v.Display())
 		default:
-			filetype = "application/json"
 			b.WriteString("json\n")
 			enc := json.NewEncoder(b)
+			enc.SetIndent("", "    ")
 			enc.SetEscapeHTML(false)
-			enc.SetIndent("", "  ")
 			err := enc.Encode(v)
 			if err != nil {
-				b.WriteString("json encode error: ")
-				b.WriteString(err.Error())
+				b.WriteString(`{"error":`)
+				b.WriteString(strconv.Quote(err.Error()))
+				b.WriteString(`}`)
 			}
 		}
-		b.WriteString("\n")
-		b.WriteString("```")
-	}
-	exts, _ := mime.ExtensionsByType(filetype)
-	if len(exts) > 0 {
-		filename += exts[0]
+		b.WriteString("\n```")
 	}
 	content := b.String()
 	if b.Len() > 2000 {
-		msg := "\n---\nContent truncated. See attachment for more details\n---\n```"
-		b.Truncate(2000 - len(msg))
-		b.WriteString(msg)
+		outro := "Content is too long to be displayed fully. See attachment for details"
+		if hasClosingTicks(b, len(outro)+5) {
+			outro = "\n```\nContent is too long to be displayed fully. See attachment for details"
+		}
+		b.Truncate(2000 - len(outro))
+		b.WriteString(outro)
 		embed.Description = b.String()
-		r := strings.NewReader(content)
-		return embed, bucket.NewFile(r, filename, filetype)
+		buf := strings.NewReader(content)
+		filename := d.snowflake.Generate().String() + ".md"
+		return embed, bucket.NewFile(buf, filename, "text/markdown")
 	}
+	embed.Description = content
 	return embed, nil
+}
+
+func hasClosingTicks(b *bytes.Buffer, countback int) bool {
+	buf := b.Bytes()
+	if len(buf) >= countback {
+		buf = buf[len(buf)-countback:]
+	}
+	count := bytes.Count(buf, []byte("```"))
+	return count%2 == 0
 }

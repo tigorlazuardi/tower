@@ -33,31 +33,32 @@
 - **wrap:** update the docs on wrap
 
 ### Features
-- update options
-- update messenger spec
-- added exported functions
-- more updates
-- added auto changelog
 - renamed Option to MessageParameter
-- major update
-- general update
-- general update
-- added messenger
+- added exported functions
+- added auto changelog
+- update options
 - updated implementations for todos
+- update messenger spec
+- general update
+- major update
+- added messenger
+- general update
+- more updates
 - **Messenger:** changed signature so ctx can be modified
-- **blocks:** added section block
 - **blocks:** added more blocks
+- **blocks:** added section block
 - **bucket:** added bucket interface
 - **cache:** added cacher interface
 - **commitlint:** added commitlint integration
 - **context-builder:** added context builder impls
 - **discord:** updated discord element
-- **discord:** added data embed builder
-- **discord:** update discord
-- **discord:** update discord
 - **discord:** added send
+- **discord:** update discord
+- **discord:** update discord
+- **discord:** file uploads are now markdown
 - **discord:** thread-id is generated
 - **discord:** added summary buildre
+- **discord:** added data embed builder
 - **entry:** added Entry implementations
 - **error:** properly implemented defaultErrorGenerator
 - **fields:** major fields update
@@ -70,19 +71,19 @@
 - **queue:** uses lock free queue algorithm instead of two lock queue since it's faster
 - **respond-stream:** support for tower.HTTPCodeHint interface check
 - **respond-stream:** support for tower.HTTPCodeHint interface check
-- **slack:** added dynamic build key
-- **slack:** added post message
-- **slack:** update
 - **slack:** added slack
+- **slack:** update
+- **slack:** added post message
 - **slack:** implemented towerslack handle message
+- **slack:** added dynamic build key
 - **slackbot:** implemented call to file attachments
 - **tower:** added wrap method
 - **tower-http:** added towerhttp library
-- **towerhttp:** added RequestContext logging
 - **towerhttp:** added compressor and respond method
-- **towerslack:** start building template
+- **towerhttp:** added RequestContext logging
 - **towerslack:** update documentations.
 - **towerslack:** added constructor and template builder.
+- **towerslack:** start building template
 - **towerzap:** added towerzap implementations
 - **workspace:** now uses workspace to separate dependencies
 - **writer:** added writer implementation

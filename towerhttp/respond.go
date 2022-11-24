@@ -9,7 +9,7 @@ type Responder struct {
 	encoder          Encoder
 	transformer      BodyTransformer
 	errorTransformer ErrorBodyTransformer
-	tower            func() *tower.Tower
+	tower            *tower.Tower
 	compressor       Compression
 	callerDepth      int
 }
@@ -33,9 +33,9 @@ func NewResponder() *Responder {
 		encoder:          NewJSONEncoder(),
 		transformer:      NoopBodyTransform{},
 		errorTransformer: SimpleErrorTransformer{},
-		tower:            tower.Global.Tower,
+		tower:            tower.Global.Tower(),
 		compressor:       NoCompression{},
-		callerDepth:      2,
+		callerDepth:      3,
 	}
 }
 
@@ -56,7 +56,7 @@ func (r *Responder) SetBodyTransformer(transform BodyTransformer) {
 
 // SetTower sets the tower instance to be used by the Responder.
 func (r *Responder) SetTower(t *tower.Tower) {
-	r.tower = func() *tower.Tower { return t }
+	r.tower = t
 }
 
 // SetCompressor sets the compression to be used by the Responder.

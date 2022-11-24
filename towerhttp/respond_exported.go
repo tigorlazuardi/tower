@@ -10,11 +10,17 @@ var exportedResponder *Responder
 
 func init() {
 	exportedResponder = NewResponder()
-	exportedResponder.SetCallerDepth(3)
+	exportedResponder.SetCallerDepth(4)
 }
 
+// Responder returns the global responder instance.
 func (exported) Responder() *Responder {
 	return exportedResponder
+}
+
+// SetResponder sets the global responder instance.
+func (exported) SetResponder(r *Responder) {
+	exportedResponder = r
 }
 
 // Respond with the given body and options.

@@ -45,7 +45,7 @@ func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, err
 	body := r.errorTransformer.ErrorBodyTransform(ctx, err)
 	b, errIO := opt.encoder.Encode(body)
 	if errIO != nil {
-		_ = r.tower().Wrap(errIO).Caller(tower.GetCaller(r.callerDepthh)).Log(ctx)
+		_ = r.tower.Wrap(errIO).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 		return
 	}
 	contentType := opt.encoder.ContentType()
@@ -54,7 +54,7 @@ func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, err
 	}
 	compressed, errIO := opt.compressor.Compress(b)
 	if errIO != nil {
-		_ = r.tower().Wrap(errIO).Caller(tower.GetCaller(r.callerDepthh)).Log(ctx)
+		_ = r.tower.Wrap(errIO).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 		return
 	}
 	contentEncoding := opt.compressor.ContentEncoding()
@@ -65,6 +65,6 @@ func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, err
 	rw.WriteHeader(opt.statusCode)
 	_, errIO = rw.Write(compressed)
 	if errIO != nil {
-		_ = r.tower().Wrap(errIO).Caller(tower.GetCaller(r.callerDepthh)).Log(ctx)
+		_ = r.tower.Wrap(errIO).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 	}
 }

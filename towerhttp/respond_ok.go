@@ -2,8 +2,9 @@ package towerhttp
 
 import (
 	"context"
-	"github.com/tigorlazuardi/tower"
 	"net/http"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 // Respond with the given body and options.
@@ -47,7 +48,7 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 
 	b, err := opt.encoder.Encode(body)
 	if err != nil {
-		_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
+		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 		return
 	}
 	contentType := opt.encoder.ContentType()
@@ -57,11 +58,11 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 
 	compressed, err := opt.compressor.Compress(b)
 	if err != nil {
-		_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Level(tower.WarnLevel).Log(ctx)
+		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Level(tower.WarnLevel).Log(ctx)
 		rw.WriteHeader(opt.statusCode)
 		_, err = rw.Write(b)
 		if err != nil {
-			_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
+			_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 		}
 		return
 	}
@@ -74,6 +75,6 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	rw.WriteHeader(opt.statusCode)
 	_, err = rw.Write(compressed)
 	if err != nil {
-		_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
+		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 	}
 }

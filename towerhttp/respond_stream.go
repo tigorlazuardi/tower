@@ -2,9 +2,10 @@ package towerhttp
 
 import (
 	"context"
-	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 // RespondStream writes the given stream to the http.ResponseWriter.
@@ -52,6 +53,6 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 	rw.WriteHeader(opt.statusCode)
 	_, err = io.Copy(rw, body)
 	if err != nil {
-		_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
+		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 	}
 }

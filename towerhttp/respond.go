@@ -11,6 +11,7 @@ type Responder struct {
 	errorTransformer ErrorBodyTransformer
 	tower            func() *tower.Tower
 	compressor       Compression
+	callerDepth      int
 }
 
 // NewResponder creates a new Responder instance.
@@ -26,7 +27,7 @@ type Responder struct {
 //
 // - Tower: points to the global tower instance
 //
-// - Compression: NoCompression
+// - Compression: NoCompression.
 func NewResponder() *Responder {
 	return &Responder{
 		encoder:          NewJSONEncoder(),
@@ -34,6 +35,7 @@ func NewResponder() *Responder {
 		errorTransformer: SimpleErrorTransformer{},
 		tower:            tower.Global.Tower,
 		compressor:       NoCompression{},
+		callerDepth:      2,
 	}
 }
 
@@ -60,6 +62,11 @@ func (r *Responder) SetTower(t *tower.Tower) {
 // SetCompressor sets the compression to be used by the Responder.
 func (r *Responder) SetCompressor(compressor Compression) {
 	r.compressor = compressor
+}
+
+// SetCallerDepth sets the caller depth to be used to get caller function by the Responder.
+func (r *Responder) SetCallerDepth(depth int) {
+	r.callerDepth = depth
 }
 
 func (r Responder) buildOption(statusCode int) *option {

@@ -47,7 +47,7 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 
 	b, err := opt.encoder.Encode(body)
 	if err != nil {
-		_ = r.tower().Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
+		_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 		return
 	}
 	contentType := opt.encoder.ContentType()
@@ -57,11 +57,11 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 
 	compressed, err := opt.compressor.Compress(b)
 	if err != nil {
-		_ = r.tower().Wrap(err).Caller(tower.GetCaller(3)).Level(tower.WarnLevel).Log(ctx)
+		_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Level(tower.WarnLevel).Log(ctx)
 		rw.WriteHeader(opt.statusCode)
 		_, err = rw.Write(b)
 		if err != nil {
-			_ = r.tower().Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
+			_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 		}
 		return
 	}
@@ -74,6 +74,6 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	rw.WriteHeader(opt.statusCode)
 	_, err = rw.Write(compressed)
 	if err != nil {
-		_ = r.tower().Wrap(err).Caller(tower.GetCaller(3)).Log(ctx)
+		_ = r.tower().Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
 	}
 }

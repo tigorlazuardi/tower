@@ -2,12 +2,18 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **responder:** fix bad refactorings
 - **responder:** fix bad refactoring
 
 ### Code Refactoring
+- **responder:** rename option
+- **responder:** simplified the api
 - **responder:** moved RespondStream to its own file
 
 ### Features
+- **discord:** added setters for discord bot
+- **discord:** added embed building
+- **responder:** added exported version
 - **responder:** added error responder and constructor
 - **responder:** http.NoBody now no longer set default status code to http.StatusNoContent
 - **responder:** added special handling for nil and http.NoBody

@@ -2,6 +2,7 @@ package towerdiscord
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"runtime"
 	"sync/atomic"
@@ -32,6 +33,39 @@ type Discord struct {
 	globalKey string
 	cooldown  time.Duration
 	snowflake *snowflake.Node
+	client    Client
+}
+
+// SetTraceCapturer sets the trace capturer for the bot.
+//
+// If you have any tracing system, you can set it here.
+func (d *Discord) SetTraceCapturer(trace tower.TraceCapturer) {
+	d.trace = trace
+}
+
+// SetEmbedBuilder sets the embed message builder for the bot.
+func (d *Discord) SetEmbedBuilder(builder EmbedBuilder) {
+	d.builder = builder
+}
+
+// SetBucket sets the bucket where the files are stored.
+func (d *Discord) SetBucket(bucket bucket.Bucket) {
+	d.bucket = bucket
+}
+
+// SetClient sets the http client for the bot.
+func (d *Discord) SetClient(client Client) {
+	d.client = client
+}
+
+// SetGlobalKey sets the global key for the bot. This is used for global lock.
+func (d *Discord) SetGlobalKey(globalKey string) {
+	d.globalKey = globalKey
+}
+
+// SetBaseCooldown sets the base cooldown for the bot.
+func (d *Discord) SetBaseCooldown(cooldown time.Duration) {
+	d.cooldown = cooldown
 }
 
 // SetName sets the name of the bot. This is used for identification of the bot for tower.
@@ -58,6 +92,7 @@ func (d *Discord) SetSnowflakeGenerator(node *snowflake.Node) {
 	d.snowflake = node
 }
 
+// NewDiscordBot creates a new discord bot.
 func NewDiscordBot(webhook string) *Discord {
 	host, _ := os.Hostname()
 	d := &Discord{
@@ -67,15 +102,16 @@ func NewDiscordBot(webhook string) *Discord {
 		queue:     queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
 		sem:       make(chan struct{}, (runtime.NumCPU()/3)+2),
 		trace:     tower.NoopTracer{},
-		bucket:    nil,
 		globalKey: "global",
 		cooldown:  time.Minute * 15,
 		snowflake: generateSnowflakeNodeFromString(host + webhook),
+		client:    http.DefaultClient,
 	}
 	d.builder = EmbedBuilderFunc(d.defaultEmbedBuilder)
 	return d
 }
 
+// Name implements tower.Messenger interface.
 func (d Discord) Name() string {
 	if d.name == "" {
 		return "discord"
@@ -83,6 +119,7 @@ func (d Discord) Name() string {
 	return d.name
 }
 
+// SendMessage implements tower.Messenger interface.
 func (d Discord) SendMessage(ctx context.Context, msg tower.MessageContext) {
 	d.queue.Enqueue(tower.NewKeyValue(ctx, msg))
 	d.work()
@@ -105,6 +142,7 @@ func (d *Discord) work() {
 	}
 }
 
+// Wait implements tower.Messenger interface.
 func (d Discord) Wait(ctx context.Context) error {
 	err := make(chan error)
 	go func() {

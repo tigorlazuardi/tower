@@ -2,19 +2,25 @@ package towerdiscord
 
 import (
 	"context"
-
 	"github.com/tigorlazuardi/tower"
 	"github.com/tigorlazuardi/tower/bucket"
+	"time"
 )
 
 type EmbedBuilder interface {
-	BuildEmbed(ctx context.Context, msg tower.MessageContext) ([]*Embed, []*bucket.File)
+	BuildEmbed(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []*bucket.File)
 }
 
-type EmbedBuilderFunc func(ctx context.Context, msg tower.MessageContext) ([]*Embed, []*bucket.File)
+type ExtraInformation struct {
+	Iteration        int
+	CooldownTimeEnds time.Time
+	CacheKey         string
+}
 
-func (e EmbedBuilderFunc) BuildEmbed(ctx context.Context, msg tower.MessageContext) ([]*Embed, []*bucket.File) {
-	return e(ctx, msg)
+type EmbedBuilderFunc func(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []*bucket.File)
+
+func (e EmbedBuilderFunc) BuildEmbed(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []*bucket.File) {
+	return e(ctx, msg, info)
 }
 
 type Embed struct {

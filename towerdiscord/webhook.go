@@ -2,8 +2,9 @@ package towerdiscord
 
 import (
 	"context"
-	"github.com/bwmarrin/snowflake"
 	"io"
+
+	"github.com/bwmarrin/snowflake"
 )
 
 type WebhookPayload struct {
@@ -33,8 +34,16 @@ type AllowedMentions struct {
 }
 
 type Attachment struct {
-	Filename string
-	Reader   io.Reader
+	ID          snowflake.ID
+	Filename    string
+	Description string
+	ContentType string
+	Size        int
+	URL         string
+	ProxyURL    string
+	Height      int
+	Width       int
+	Ephemeral   bool
 }
 
 func PostWebhook(ctx context.Context, webhookURL string, payload *WebhookPayload) error {

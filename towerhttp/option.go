@@ -1,21 +1,21 @@
 package towerhttp
 
-type ro int
+type option struct{}
 
-// RO holds all the available options for responding with towerhttp.
-const RO ro = 0
+// Option holds all the available options for responding with towerhttp.
+var Option option
 
 type RespondOption interface {
-	apply(*option)
+	apply(*respondOption)
 }
 
-type RespondOptionFunc func(*option)
+type RespondOptionFunc func(*respondOption)
 
-func (r RespondOptionFunc) apply(o *option) {
+func (r RespondOptionFunc) apply(o *respondOption) {
 	r(o)
 }
 
-type option struct {
+type respondOption struct {
 	encoder    Encoder
 	transfomer BodyTransformer
 	compressor Compression
@@ -23,29 +23,29 @@ type option struct {
 }
 
 // Encoder overrides the encoder to be used for encoding the response body.
-func (ro) Encoder(encoder Encoder) RespondOption {
-	return RespondOptionFunc(func(o *option) {
+func (option) Encoder(encoder Encoder) RespondOption {
+	return RespondOptionFunc(func(o *respondOption) {
 		o.encoder = encoder
 	})
 }
 
 // Transformer overrides the transformer to be used for transforming the response body.
-func (ro) Transformer(transformer BodyTransformer) RespondOption {
-	return RespondOptionFunc(func(o *option) {
+func (option) Transformer(transformer BodyTransformer) RespondOption {
+	return RespondOptionFunc(func(o *respondOption) {
 		o.transfomer = transformer
 	})
 }
 
 // Compressor overrides the compressor to be used for compressing the response body.
-func (ro) Compressor(compressor Compression) RespondOption {
-	return RespondOptionFunc(func(o *option) {
+func (option) Compressor(compressor Compression) RespondOption {
+	return RespondOptionFunc(func(o *respondOption) {
 		o.compressor = compressor
 	})
 }
 
 // StatusCode overrides the status code to be used for the response.
-func (ro) StatusCode(i int) RespondOption {
-	return RespondOptionFunc(func(o *option) {
+func (option) StatusCode(i int) RespondOption {
+	return RespondOptionFunc(func(o *respondOption) {
 		o.statusCode = i
 	})
 }

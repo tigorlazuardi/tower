@@ -3,6 +3,7 @@ package towerdiscord
 import (
 	"context"
 	"fmt"
+	"github.com/tigorlazuardi/tower/bucket"
 	"strconv"
 	"strings"
 	"time"
@@ -104,6 +105,20 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 	}
 
 	return d.PostWebhook(ctx, payload)
+}
+
+func (d Discord) prepareWebhookPayload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) *WebhookPayload {
+	if len(files) == 0 {
+		return payload
+	}
+	if d.bucket != nil && len(files) > 0 {
+		return d.prepareBucketUpload(ctx, payload, files)
+	}
+	return payload
+}
+
+func (d Discord) prepareBucketUpload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) *WebhookPayload {
+	return payload
 }
 
 func (d Discord) buildKey(msg tower.MessageContext) string {

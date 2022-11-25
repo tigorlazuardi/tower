@@ -127,7 +127,8 @@ func (d Discord) Name() string {
 
 // SendMessage implements tower.Messenger interface.
 func (d Discord) SendMessage(ctx context.Context, msg tower.MessageContext) {
-	d.queue.Enqueue(tower.NewKeyValue(ctx, msg))
+	item := tower.NewKeyValue(ctx, msg)
+	d.queue.Enqueue(item)
 	d.work()
 }
 

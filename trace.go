@@ -16,7 +16,7 @@ func NewKeyValue[K, V any](key K, value V) KeyValue[K, V] {
 
 type Trace []KeyValue[string, string]
 
-// Tracer that does nothing.
+// NoopTracer is a tracer that does nothing.
 type NoopTracer struct{}
 
 func (n NoopTracer) CaptureTrace(ctx context.Context) Trace {

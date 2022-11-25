@@ -23,65 +23,67 @@ type messageContext struct {
 	param MessageParameter
 }
 
-// Gets HTTP Status Code for the type.
+// HTTPCode Gets HTTP Status Code for the type.
 func (m messageContext) HTTPCode() int {
 	return m.inner.HTTPCode()
 }
 
-// Gets the original code of the type.
+// Code Gets the original code of the type.
 func (m messageContext) Code() int {
 	return m.inner.Code()
 }
 
-// Gets the Message of the type.
+// Message Gets the Message of the type.
 func (m messageContext) Message() string {
 	return m.inner.Message()
 }
 
-// Gets the caller of this type.
+// Caller Gets the caller of this type.
 func (m messageContext) Caller() Caller {
 	return m.inner.Caller()
 }
 
-// Gets the key for this message.
+// Key Gets the key for this message.
 func (m messageContext) Key() string {
 	return m.inner.Key()
 }
 
-// Gets the level of this message.
+// Level Gets the level of this message.
 func (m messageContext) Level() Level {
 	return m.inner.Level()
 }
 
-// Gets the service information.
+// Service Gets the service information.
 func (m messageContext) Service() Service {
 	return m.inner.Service()
 }
 
-// Gets the context of this this type.
+// Context Gets the context of this this type.
 func (m messageContext) Context() []any {
 	return m.inner.Context()
 }
 
+// Time returns the time when this message was created.
 func (m messageContext) Time() time.Time {
 	return m.inner.Time()
 }
 
-// Error item. May be nil if message contains no error.
+// Err returns the error of this message, if set by the sender.
 func (m messageContext) Err() error {
 	return nil
 }
 
-// If true, Sender asks for this message to always be send.
+// SkipVerification If true, Sender asks for this message to always be send.
 func (m messageContext) SkipVerification() bool {
 	return m.param.SkipVerification()
 }
 
+// Cooldown Gets the cooldown for this message.
 func (m messageContext) Cooldown() time.Duration {
 	return m.param.Cooldown()
 }
 
-// Gets the tower instance that created this MessageContext.
+// Tower Gets the tower instance that created this MessageContext.
 func (m messageContext) Tower() *Tower {
 	return m.param.Tower()
 }

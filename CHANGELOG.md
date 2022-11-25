@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Features
+- **discord:** add further implementations
 - **discord:** added hook
 - **tower-http:** added client logger
 

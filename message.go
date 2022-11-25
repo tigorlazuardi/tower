@@ -69,7 +69,7 @@ func (f MessageOptionFunc) apply(opt *option) {
 	f(opt)
 }
 
-// Asks the Messengers to Skip cooldown verifications and just send the message.
+// SkipMessageVerification Asks the Messengers to Skip cooldown verifications and just send the message.
 func SkipMessageVerification(b bool) MessageOption {
 	return MessageOptionFunc(func(ob *option) {
 		ob.skipVerification = b
@@ -77,7 +77,7 @@ func SkipMessageVerification(b bool) MessageOption {
 }
 
 /*
-Asks Tower to only send only to the Messenger with this name.
+OnlyMessengerWithName Asks Tower to only send only to the Messenger with this name.
 If name is not found, Tower returns to default behaviour.
 
 Note: OnlyMessengerWithName option will conflict with other Messenger setters option, and thus only the latest option will be set.

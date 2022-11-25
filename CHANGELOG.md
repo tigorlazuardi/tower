@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Features
+- **discord:** separated upload file flow between bucket and discord
 - **discord:** add further implementations
 - **discord:** added hook
 - **tower-http:** added client logger

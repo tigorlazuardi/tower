@@ -73,35 +73,11 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 		Embeds:   embeds,
 	}
 
-	if d.bucket != nil && len(files) > 0 {
-		for _, result := range d.bucket.Upload(ctx, files) {
-			if result.Error != nil {
-				_ = msg.Tower().
-					Wrap(err).
-					Message("%s: failed to upload file key to bucket", d.Name()).
-					Caller(msg.Caller()).
-					Context(tower.F{
-						"filename":        result.File.Filename(),
-						"mimetype":        result.File.Mimetype(),
-						"content_message": msg.Message(),
-					}).Log(ctx)
-				continue
-			}
-			id := d.snowflake.Generate()
-			attachment := &Attachment{ID: id,
-				Filename:    result.File.Filename(),
-				ContentType: result.File.Mimetype(),
-				Description: result.File.Pretext(),
-				URL:         result.URL,
-				Size:        result.File.Size(),
-			}
-			if img, ok := result.File.Data().(ImageSizeHint); ok {
-				width, height := img.ImageSize()
-				attachment.Width = width
-				attachment.Height = height
-			}
-			payload.Attachments = append(payload.Attachments, attachment)
-		}
+	switch {
+	case d.bucket != nil && len(files) > 0:
+		payload = d.bucketUpload(ctx, payload, files)
+	case len(files) > 0:
+		return d.PostWebhookWithFiles(ctx, payload, files)
 	}
 
 	return d.PostWebhook(ctx, payload)
@@ -112,12 +88,12 @@ func (d Discord) prepareWebhookPayload(ctx context.Context, payload *WebhookPayl
 		return payload
 	}
 	if d.bucket != nil && len(files) > 0 {
-		return d.prepareBucketUpload(ctx, payload, files)
+		return d.bucketUpload(ctx, payload, files)
 	}
 	return payload
 }
 
-func (d Discord) prepareBucketUpload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) *WebhookPayload {
+func (d Discord) bucketUpload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) *WebhookPayload {
 	return payload
 }
 

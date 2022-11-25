@@ -2,24 +2,23 @@ package towerdiscord
 
 import (
 	"context"
+	"github.com/bwmarrin/snowflake"
 	"github.com/tigorlazuardi/tower/bucket"
 	"io"
-
-	"github.com/bwmarrin/snowflake"
 )
 
 type WebhookPayload struct {
-	Wait            bool
-	ThreadID        snowflake.ID
-	Content         string
-	Username        string
-	AvatarURL       string
-	TTS             bool
-	Embeds          []*Embed
-	Files           []*File
-	AllowedMentions *AllowedMentions
-	PayloadJSON     string
-	Attachments     []*Attachment
+	Wait            bool             `json:"-"`
+	ThreadID        snowflake.ID     `json:"-"`
+	Content         string           `json:"content,omitempty"`
+	Username        string           `json:"username,omitempty"`
+	AvatarURL       string           `json:"avatarURL,omitempty"`
+	TTS             bool             `json:"TTS,omitempty"`
+	Embeds          []*Embed         `json:"embeds,omitempty"`
+	Files           []*File          `json:"files,omitempty"`
+	AllowedMentions *AllowedMentions `json:"allowedMentions,omitempty"`
+	PayloadJSON     string           `json:"payloadJSON,omitempty"`
+	Attachments     []*Attachment    `json:"attachments,omitempty"`
 }
 
 type File struct {
@@ -47,12 +46,13 @@ type Attachment struct {
 	Ephemeral   bool
 }
 
-func (d Discord) PostWebhook(ctx context.Context, payload *WebhookPayload) error {
+func (d Discord) PostWebhookJSON(ctx context.Context, payload *WebhookPayload) error {
+
 	panic("not implemented") // TODO: Implement
 	return nil
 }
 
-func (d Discord) PostWebhookWithFiles(ctx context.Context, payload *WebhookPayload, files []*bucket.File) error {
+func (d Discord) PostWebhookMultipart(ctx context.Context, payload *WebhookPayload, files []*bucket.File) error {
 	panic("not implemented") // TODO: Implement
 	return nil
 }

@@ -75,26 +75,35 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 
 	switch {
 	case d.bucket != nil && len(files) > 0:
-		payload = d.bucketUpload(ctx, payload, files)
+		payload, errUpload := d.bucketUpload(ctx, payload, files)
+		err := d.PostWebhookJSON(ctx, payload)
+		switch {
+		case err != nil:
+			return err
+		case errUpload != nil:
+			return errUpload
+		default:
+			return nil
+		}
 	case len(files) > 0:
-		return d.PostWebhookWithFiles(ctx, payload, files)
+		return d.PostWebhookMultipart(ctx, payload, files)
 	}
 
-	return d.PostWebhook(ctx, payload)
+	return d.PostWebhookJSON(ctx, payload)
 }
 
 func (d Discord) prepareWebhookPayload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) *WebhookPayload {
-	if len(files) == 0 {
-		return payload
-	}
-	if d.bucket != nil && len(files) > 0 {
-		return d.bucketUpload(ctx, payload, files)
-	}
 	return payload
 }
 
-func (d Discord) bucketUpload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) *WebhookPayload {
-	return payload
+func (d Discord) bucketUpload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) (*WebhookPayload, error) {
+	results := d.bucket.Upload(ctx, files)
+	for _, result := range results {
+		if result.Error != nil {
+
+		}
+	}
+	return payload, nil
 }
 
 func (d Discord) buildKey(msg tower.MessageContext) string {

@@ -16,16 +16,14 @@ func (d Discord) send(ctx context.Context, msg tower.MessageContext) {
 	for d.cache.Exist(ctx, d.globalKey) {
 		<-ticker.C
 	}
+	extra := &ExtraInformation{CacheKey: key}
 	ticker.Stop()
 	if err := d.cache.Set(ctx, d.globalKey, []byte("locked"), time.Second*30); err != nil {
 		_ = msg.Tower().Wrap(err).Caller(msg.Caller()).Message("%s: failed to set global lock to cache", d.Name()).Log(ctx)
 	}
 	if msg.SkipVerification() {
-		_ = d.postMessage(ctx, msg, &ExtraInformation{
-			Iteration:        0,
-			CooldownTimeEnds: time.Now().Add(time.Second * 2),
-			CacheKey:         "",
-		})
+		extra.CooldownTimeEnds = time.Now().Add(time.Second * 2)
+		_ = d.postMessage(ctx, msg, extra)
 		return
 	}
 	if d.cache.Exist(ctx, key) {
@@ -35,11 +33,9 @@ func (d Discord) send(ctx context.Context, msg tower.MessageContext) {
 	iterKey := key + d.cache.Separator() + "iter"
 	iter := d.getAndSetIter(ctx, iterKey)
 	cooldown := d.countCooldown(msg, iter)
-	err := d.postMessage(ctx, msg, &ExtraInformation{
-		Iteration:        iter,
-		CooldownTimeEnds: time.Now().Add(cooldown),
-		CacheKey:         key,
-	})
+	extra.Iteration = iter
+	extra.CooldownTimeEnds = time.Now().Add(cooldown)
+	err := d.postMessage(ctx, msg, extra)
 	if err == nil {
 		message := msg.Message()
 		if msg.Err() != nil {

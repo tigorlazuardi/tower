@@ -1,6 +1,13 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+- **discord:** added hook
+- **tower-http:** added client logger
+
+
+<a name="v0.1.2"></a>
+## [v0.1.2] - 2022-11-25
 ### Bug Fixes
 - **responder:** fix bad refactorings
 - **responder:** fix bad refactoring
@@ -132,5 +139,6 @@
 - added docs support
 
 
-[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.2...HEAD
+[v0.1.2]: https://github.com/tigorlazuardi/tower/compare/v0.1.1...v0.1.2
 [v0.1.1]: https://github.com/tigorlazuardi/tower/compare/v0.1.0...v0.1.1

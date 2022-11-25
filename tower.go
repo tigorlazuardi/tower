@@ -46,6 +46,20 @@ func NewTower(service Service) *Tower {
 	}
 }
 
+// RegisterMessenger Registers a messenger to the tower.
+//
+// The messenger's name should be unique. Same name will replace the previous messenger with the same name.
+//
+// If you wish to have multiple messengers of the same type, you should use different names for each of them.
+func (t *Tower) RegisterMessenger(messenger Messenger) {
+	t.messengers[messenger.Name()] = messenger
+}
+
+// RemoveMessenger Removes the Messenger by name.
+func (t *Tower) RemoveMessenger(name string) {
+	delete(t.messengers, name)
+}
+
 // Wrap like exported tower.Wrap, but at the scope of this Tower's instance instead.
 func (t *Tower) Wrap(err error) ErrorBuilder {
 	if err == nil {

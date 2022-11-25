@@ -34,6 +34,11 @@ type Discord struct {
 	cooldown  time.Duration
 	snowflake *snowflake.Node
 	client    Client
+	hook      Hook
+}
+
+func (d *Discord) SetHook(hook Hook) {
+	d.hook = hook
 }
 
 // SetTraceCapturer sets the trace capturer for the bot.
@@ -106,6 +111,7 @@ func NewDiscordBot(webhook string) *Discord {
 		cooldown:  time.Minute * 15,
 		snowflake: generateSnowflakeNodeFromString(host + webhook),
 		client:    http.DefaultClient,
+		hook:      NoopHook{},
 	}
 	d.builder = EmbedBuilderFunc(d.defaultEmbedBuilder)
 	return d

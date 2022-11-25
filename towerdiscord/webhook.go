@@ -2,6 +2,7 @@ package towerdiscord
 
 import (
 	"context"
+	"github.com/tigorlazuardi/tower/bucket"
 	"io"
 
 	"github.com/bwmarrin/snowflake"
@@ -46,7 +47,12 @@ type Attachment struct {
 	Ephemeral   bool
 }
 
-func PostWebhook(ctx context.Context, webhookURL string, payload *WebhookPayload) error {
+func (d Discord) PostWebhook(ctx context.Context, payload *WebhookPayload) error {
+	panic("not implemented") // TODO: Implement
+	return nil
+}
+
+func (d Discord) PostWebhookWithFiles(ctx context.Context, payload *WebhookPayload, files []*bucket.File) error {
 	panic("not implemented") // TODO: Implement
 	return nil
 }

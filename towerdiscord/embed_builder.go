@@ -19,6 +19,8 @@ var descBufPool = pool.New(func() *bytes.Buffer {
 	return &bytes.Buffer{}
 })
 
+const descriptionLimit = 4096
+
 func (d Discord) defaultEmbedBuilder(ctx context.Context, msg tower.MessageContext, extra *ExtraInformation) ([]*Embed, []*bucket.File) {
 	files := make([]*bucket.File, 0, 5)
 	embeds := make([]*Embed, 0, 5)
@@ -80,7 +82,7 @@ func (d Discord) buildSummary(msg tower.MessageContext) (*Embed, *bucket.File) {
 	b := descBufPool.Get()
 	defer descBufPool.Put(b)
 	b.Reset()
-	b.Grow(2000)
+	b.Grow(descriptionLimit)
 
 	_, _ = b.WriteString(msg.Message())
 	_, _ = b.WriteString("\n\n")
@@ -112,23 +114,7 @@ func (d Discord) buildSummary(msg tower.MessageContext) (*Embed, *bucket.File) {
 		}
 	}
 	_, _ = b.WriteString("\n```")
-	if b.Len() > 2000 {
-		content := b.String()
-		outro := "Content is too long to be displayed fully. See attachment for details"
-		if hasClosingTicks(b, len(outro)+5) {
-			outro = "\n```\nContent is too long to be displayed fully. See attachment for details"
-		}
-		b.Truncate(2000 - len(outro))
-		_, _ = b.WriteString(outro)
-		buf := strings.NewReader(content)
-		filename := d.snowflake.Generate().String() + ".md"
-		file := bucket.NewFile(buf, filename, "text/markdown")
-		file.SetPretext(`# Summary`)
-		embed.Description = b.String()
-		return embed, file
-	}
-	embed.Description = b.String()
-	return embed, nil
+	return d.shouldCreateFile(embed, b, "# Summary")
 }
 
 func (d Discord) buildDataEmbed(msg tower.MessageContext) (*Embed, *bucket.File) {
@@ -144,7 +130,7 @@ func (d Discord) buildDataEmbed(msg tower.MessageContext) (*Embed, *bucket.File)
 	b := descBufPool.Get()
 	defer descBufPool.Put(b)
 	b.Reset()
-	b.Grow(2000)
+	b.Grow(descriptionLimit)
 	for i, v := range msg.Context() {
 		if i > 0 {
 			_, _ = b.WriteString("\n\n")
@@ -182,23 +168,7 @@ func (d Discord) buildDataEmbed(msg tower.MessageContext) (*Embed, *bucket.File)
 		}
 		_, _ = b.WriteString("\n```")
 	}
-	content := b.String()
-	if b.Len() > 2000 {
-		outro := "Content is too long to be displayed fully. See attachment for details"
-		if hasClosingTicks(b, len(outro)+5) {
-			outro = "\n```\nContent is too long to be displayed fully. See attachment for details"
-		}
-		b.Truncate(2000 - len(outro))
-		_, _ = b.WriteString(outro)
-		embed.Description = b.String()
-		buf := strings.NewReader(content)
-		filename := d.snowflake.Generate().String() + ".md"
-		file := bucket.NewFile(buf, filename, "text/markdown")
-		file.SetPretext(`# Data`)
-		return embed, file
-	}
-	embed.Description = content
-	return embed, nil
+	return d.shouldCreateFile(embed, b, "# Data")
 }
 
 func (d Discord) buildErrorEmbed(msg tower.MessageContext) (*Embed, *bucket.File) {
@@ -215,7 +185,7 @@ func (d Discord) buildErrorEmbed(msg tower.MessageContext) (*Embed, *bucket.File
 	b := descBufPool.Get()
 	defer descBufPool.Put(b)
 	b.Reset()
-	b.Grow(2000)
+	b.Grow(descriptionLimit)
 	_, _ = b.WriteString("```")
 	switch err := err.(type) {
 	case tower.DisplayWriter:
@@ -245,23 +215,7 @@ func (d Discord) buildErrorEmbed(msg tower.MessageContext) (*Embed, *bucket.File
 			_ = enc.Encode(map[string]string{"error": err.Error()})
 		}
 	}
-	content := b.String()
-	if b.Len() > 2000 {
-		outro := "Content is too long to be displayed fully. See attachment for details"
-		if hasClosingTicks(b, len(outro)+5) {
-			outro = "\n```\nContent is too long to be displayed fully. See attachment for details"
-		}
-		b.Truncate(2000 - len(outro))
-		_, _ = b.WriteString(outro)
-		embed.Description = b.String()
-		buf := strings.NewReader(content)
-		filename := d.snowflake.Generate().String() + ".md"
-		file := bucket.NewFile(buf, filename, "text/markdown")
-		file.SetPretext(`# Error`)
-		return embed, file
-	}
-	embed.Description = content
-	return embed, nil
+	return d.shouldCreateFile(embed, b, "# Error")
 }
 
 func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContext, extra *ExtraInformation) (*Embed, *bucket.File) {
@@ -300,7 +254,7 @@ func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContex
 	b := descBufPool.Get()
 	defer descBufPool.Put(b)
 	b.Reset()
-	b.Grow(2000)
+	b.Grow(descriptionLimit)
 	_, _ = b.WriteString(`**Caller Origin**`)
 	_, _ = b.WriteString("\n```\n")
 	_, _ = b.WriteString(msg.Caller().String())
@@ -308,24 +262,12 @@ func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContex
 	_, _ = b.WriteString(`**Caller Function**`)
 	_, _ = b.WriteString("\n```\n")
 	_, _ = b.WriteString(msg.Caller().ShortOrigin())
+	_, _ = b.WriteString("\n```\n")
+	_, _ = b.WriteString(`**Cache Key**`)
+	_, _ = b.WriteString("\n```\n")
+	_, _ = b.WriteString(extra.CacheKey)
 	_, _ = b.WriteString("\n```")
-	content := b.String()
-	if b.Len() > 2000 {
-		outro := "Content is too long to be displayed fully. See attachment for details"
-		if hasClosingTicks(b, len(outro)+5) {
-			outro = "\n```\nContent is too long to be displayed fully. See attachment for details"
-		}
-		b.Truncate(2000 - len(outro))
-		_, _ = b.WriteString(outro)
-		embed.Description = b.String()
-		buf := strings.NewReader(content)
-		filename := d.snowflake.Generate().String() + ".md"
-		file := bucket.NewFile(buf, filename, "text/markdown")
-		file.SetPretext(`# Metadata`)
-		return embed, file
-	}
-	embed.Description = content
-	return embed, nil
+	return d.shouldCreateFile(embed, b, "# Metadata")
 }
 
 func (d Discord) buildErrorStackEmbed(msg tower.MessageContext) (*Embed, *bucket.File) {
@@ -344,7 +286,7 @@ func (d Discord) buildErrorStackEmbed(msg tower.MessageContext) (*Embed, *bucket
 	b := descBufPool.Get()
 	defer descBufPool.Put(b)
 	b.Reset()
-	b.Grow(2000)
+	b.Grow(descriptionLimit)
 	_, _ = b.WriteString("```")
 	_, _ = b.WriteString(content)
 	_, _ = b.WriteString("```")
@@ -355,21 +297,7 @@ func (d Discord) buildErrorStackEmbed(msg tower.MessageContext) (*Embed, *bucket
 		Color:     0x063970, // Dark Blue
 		Timestamp: msg.Time().Format(time.RFC3339),
 	}
-	if b.Len() > 2000 {
-		outro := "Content is too long to be displayed fully. See attachment for details"
-		if hasClosingTicks(b, len(outro)+5) {
-			outro = "\n```\nContent is too long to be displayed fully. See attachment for details"
-		}
-		b.Truncate(2000 - len(outro))
-		_, _ = b.WriteString(outro)
-		embed.Description = b.String()
-		buf := strings.NewReader(content)
-		filename := d.snowflake.Generate().String() + ".md"
-		file := bucket.NewFile(buf, filename, "text/markdown")
-		file.SetPretext(`# Error Stack`)
-		return embed, file
-	}
-	return embed, nil
+	return d.shouldCreateFile(embed, b, "# Error Stack")
 }
 
 func stackAccumulator(s []string, err error) []string {
@@ -394,11 +322,35 @@ func stackAccumulator(s []string, err error) []string {
 	return stackAccumulator(s, errors.Unwrap(err))
 }
 
-func hasClosingTicks(b *bytes.Buffer, countBack int) bool {
+func closingTicksTruncated(b *bytes.Buffer, countBack int) bool {
 	buf := b.Bytes()
 	if len(buf) >= countBack {
 		buf = buf[len(buf)-countBack:]
 	}
 	count := bytes.Count(buf, []byte("```"))
 	return count%2 == 0
+}
+
+func (d Discord) shouldCreateFile(embed *Embed, b *bytes.Buffer, pretext string) (em *Embed, file *bucket.File) {
+	content := b.String()
+	if b.Len() > descriptionLimit {
+		outro := "Content is too long to be displayed fully. See attachment for details"
+		if closingTicksTruncated(b, len(outro)+5) {
+			outro = "\n```\nContent is too long to be displayed fully. See attachment for details"
+		}
+		b.Truncate(descriptionLimit - len(outro))
+		_, _ = b.WriteString(outro)
+		embed.Description = b.String()
+		buf := strings.NewReader(content)
+		filename := d.snowflake.Generate().String() + ".md"
+		file := bucket.NewFile(
+			buf,
+			"text/markdown",
+			bucket.WithFilename(filename),
+			bucket.WithPretext(pretext),
+		)
+		return embed, file
+	}
+	embed.Description = content
+	return embed, nil
 }

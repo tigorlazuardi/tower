@@ -96,9 +96,7 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 				ContentType: result.File.Mimetype(),
 				Description: result.File.Pretext(),
 				URL:         result.URL,
-			}
-			if l, ok := result.File.Data().(LengthHint); ok {
-				attachment.Size = l.Len()
+				Size:        result.File.Size(),
 			}
 			if img, ok := result.File.Data().(ImageSizeHint); ok {
 				width, height := img.ImageSize()
@@ -109,7 +107,7 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 		}
 	}
 
-	return PostWebhook(ctx, d.webhook, payload)
+	return d.PostWebhook(ctx, payload)
 }
 
 func (d Discord) buildKey(msg tower.MessageContext) string {

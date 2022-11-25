@@ -11,6 +11,7 @@
 - **responder:** moved RespondStream to its own file
 
 ### Features
+- **discord:** further updates
 - **discord:** added setters for discord bot
 - **discord:** added embed building
 - **responder:** added exported version

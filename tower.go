@@ -60,7 +60,10 @@ func (t *Tower) Wrap(err error) ErrorBuilder {
 }
 
 // NewEntry Creates a new EntryBuilder. The returned EntryBuilder may be appended with values.
-func (t *Tower) NewEntry(msg string) EntryBuilder {
+func (t *Tower) NewEntry(msg string, args ...any) EntryBuilder {
+	if len(args) > 0 {
+		msg = fmt.Sprintf(msg, args...)
+	}
 	caller := GetCaller(t.callerDepth)
 	return t.entryConstructor.ConstructEntry(&EntryConstructorContext{
 		Caller:  caller,

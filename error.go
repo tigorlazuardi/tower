@@ -1,7 +1,9 @@
 package tower
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -206,7 +208,7 @@ func (e *errorBuilder) Time(t time.Time) ErrorBuilder {
 }
 
 func (e *errorBuilder) Freeze() Error {
-	return implError{inner: e}
+	return &implError{inner: e}
 }
 
 func (e *errorBuilder) Log(ctx context.Context) Error {
@@ -250,6 +252,10 @@ type ErrorUnwrapper interface {
 
 type implError struct {
 	inner *errorBuilder
+}
+
+func (e implError) MarshalJSON() ([]byte, error) {
+	return (&implErrorJsonMarshaler{inner: e}).MarshalJSON()
 }
 
 func (e implError) Error() string {
@@ -366,4 +372,74 @@ func (e implError) Log(ctx context.Context) Error {
 func (e implError) Notify(ctx context.Context, opts ...MessageOption) Error {
 	e.inner.tower.NotifyError(ctx, e, opts...)
 	return e
+}
+
+// sorted keys are rather important for human reads. Especially the Context and Error should always be at the last marshaled keys.
+// as they contain the most amount of data and information, and thus shadows other values at a glance.
+//
+// arguably this is simpler to be done than implementing json.Marshaler interface and doing it manually, key by key
+// without resorting to other libraries.
+type implErrorJsonMarshaler struct {
+	inner   implError
+	Time    string `json:"time,omitempty"`
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Caller  Caller `json:"caller,omitempty"`
+	Key     string `json:"key,omitempty"`
+	Level   string `json:"level,omitempty"`
+	Context []any  `json:"context,omitempty"`
+	Error   error  `json:"error,omitempty"`
+}
+
+// richJsonError is a special kind of error that tries to prevent information loss when marshaling to json.
+type richJsonError struct {
+	error
+}
+
+func (r richJsonError) MarshalJSON() ([]byte, error) {
+	if r.error == nil {
+		return []byte("null"), nil
+	}
+
+	// if the error supports json.Marshaler we use it directly.
+	// this is because we can assume that the error have special marshaling needs for specific output.
+	//
+	// E.G. to prevent unnecessary "summary" keys when the origin error is already is a tower.Error type.
+	if e, ok := r.error.(json.Marshaler); ok { //nolint
+		return e.MarshalJSON()
+	}
+
+	b, err := json.Marshal(r.error)
+	if err != nil {
+		return nil, err
+	}
+
+	summary, _ := json.Marshal(r.error.Error())
+	if len(b) == 2 {
+		switch {
+		case b[0] == '"' && b[1] == '"', b[0] == '{' && b[1] == '}', b[0] == '[' && b[1] == ']':
+			return summary, nil
+		}
+	}
+
+	if bytes.Equal(b, summary) {
+		return summary, nil
+	}
+	return json.Marshal(map[string]json.RawMessage{
+		"summary": summary,
+		"value":   b,
+	})
+}
+
+func (i implErrorJsonMarshaler) MarshalJSON() ([]byte, error) {
+	i.Time = i.inner.Time().Format(time.RFC3339)
+	i.Code = i.inner.Code()
+	i.Message = i.inner.Message()
+	i.Caller = i.inner.Caller()
+	i.Key = i.inner.Key()
+	i.Level = i.inner.Level().String()
+	i.Context = i.inner.Context()
+	i.Error = richJsonError{i.inner.inner.origin}
+
+	return json.Marshal(i)
 }

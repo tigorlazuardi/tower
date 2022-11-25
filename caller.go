@@ -1,6 +1,7 @@
 package tower
 
 import (
+	"encoding/json"
 	"os"
 	"runtime"
 	"strconv"
@@ -14,6 +15,10 @@ type Caller struct {
 	PC   uintptr
 	File string
 	Line int
+}
+
+func (c Caller) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.String())
 }
 
 func (c Caller) Function() *runtime.Func {
@@ -30,7 +35,7 @@ func (c Caller) getOrigin() []string {
 	return strings.Split(c.Origin(), "/")
 }
 
-// Gets only the latest four items maximum in the package path.
+// ShortOrigin returns only the latest four items maximum in the package path.
 func (c Caller) ShortOrigin() string {
 	s := c.getOrigin()
 

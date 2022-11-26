@@ -15,6 +15,9 @@
 ### Miscellaneous
 - explicit ignore on lints
 
+### Tag
+- added new tag
+
 ### Wip
 - **discord:** post message
 

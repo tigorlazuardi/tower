@@ -12,6 +12,9 @@
 - **tower:** added json marshaler to error and caller
 - **tower-http:** added client logger
 
+### Miscellaneous
+- explicit ignore on lints
+
 ### Wip
 - **discord:** post message
 

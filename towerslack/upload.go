@@ -133,7 +133,9 @@ func (s SlackBot) isUploading() bool {
 }
 
 func (s SlackBot) uploadFile(ctx context.Context, target UploadTarget, file bucket.File) error {
-	defer file.Close()
+	defer func(file bucket.File) {
+		_ = file.Close()
+	}(file)
 	ticker := time.NewTicker(time.Millisecond * 300)
 	for s.cache.Exist(ctx, s.globalFileKey) {
 		<-ticker.C

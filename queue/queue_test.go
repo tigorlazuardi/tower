@@ -9,8 +9,8 @@ import (
 	"github.com/tigorlazuardi/tower/queue"
 )
 
-func TestLockFreeQueue(t *testing.T) {
-	q := queue.New[int]()
+func TestQueue(t *testing.T) {
+	q := queue.New[int](5000)
 	count := uint64(0)
 	wg := sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -40,8 +40,8 @@ func TestLockFreeQueue(t *testing.T) {
 	}
 }
 
-func BenchmarkLockFreeQueue(b *testing.B) {
-	q := queue.New[int]()
+func BenchmarkQueue(b *testing.B) {
+	q := queue.New[int](b.N)
 	wg := sync.WaitGroup{}
 	wg.Add(b.N * 2)
 	for i := 0; i < b.N; i++ {

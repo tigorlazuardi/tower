@@ -20,11 +20,18 @@ func init() {
 	snowflake.Epoch = 1420070400000 // discord epoch
 }
 
+type QueueItem tower.KeyValue[context.Context, tower.MessageContext]
+
+func NewQueueItem(ctx context.Context, messageContext tower.MessageContext) QueueItem {
+	w := tower.NewKeyValue(ctx, messageContext)
+	return QueueItem(w)
+}
+
 type Discord struct {
 	name      string
 	webhook   string
 	cache     cache.Cacher
-	queue     *queue.Queue[tower.KeyValue[context.Context, tower.MessageContext]]
+	queue     *queue.Queue[QueueItem]
 	sem       chan struct{}
 	working   int32
 	trace     tower.TraceCapturer
@@ -104,7 +111,7 @@ func NewDiscordBot(webhook string) *Discord {
 		name:      "discord",
 		webhook:   webhook,
 		cache:     cache.NewMemoryCache(),
-		queue:     queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
+		queue:     queue.New[QueueItem](500),
 		sem:       make(chan struct{}, (runtime.NumCPU()/3)+2),
 		trace:     tower.NoopTracer{},
 		globalKey: "global",
@@ -127,18 +134,17 @@ func (d Discord) Name() string {
 
 // SendMessage implements tower.Messenger interface.
 func (d Discord) SendMessage(ctx context.Context, msg tower.MessageContext) {
-	item := tower.NewKeyValue(ctx, msg)
-	d.queue.Enqueue(item)
+	d.queue.Enqueue(NewQueueItem(ctx, msg))
 	d.work()
 }
 
 func (d *Discord) work() {
 	if atomic.CompareAndSwapInt32(&d.working, 0, 1) {
 		go func() {
-			for d.queue.Len() > 0 {
+			for d.queue.HasNext() {
 				d.sem <- struct{}{}
+				kv := d.queue.Dequeue()
 				go func() {
-					kv := d.queue.Dequeue()
 					ctx := tower.DetachedContext(kv.Key)
 					d.send(ctx, kv.Value)
 					<-d.sem

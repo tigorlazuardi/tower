@@ -54,7 +54,6 @@ func (d Discord) send(ctx context.Context, msg tower.MessageContext) {
 }
 
 func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extra *ExtraInformation) error {
-	id := d.snowflake.Generate()
 	var intro string
 	service := msg.Service()
 	err := msg.Err()
@@ -67,7 +66,7 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 	embeds, files := d.builder.BuildEmbed(ctx, msg, extra)
 	payload := &WebhookPayload{
 		Wait:     true,
-		ThreadID: id,
+		ThreadID: d.snowflake.Generate(),
 		Content:  intro,
 		Username: fmt.Sprintf("%s Bot", service.Name),
 		Embeds:   embeds,

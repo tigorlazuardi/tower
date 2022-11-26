@@ -1,60 +1,55 @@
 package queue
 
 import (
-	"sync"
-	"sync/atomic"
+	"errors"
 )
 
-// Queue is a lock-free unbounded queue.
+// Queue is a channel based concurrent safe queue.
 type Queue[T any] struct {
-	head  *node[T]
-	tail  *node[T]
-	hlock *sync.Mutex
-	tlock *sync.Mutex
-	len   uint64
+	queue chan T
 }
 
-type node[T any] struct {
-	value *T
-	next  *node[T]
+// New returns an empty concurrent safe queue. Panics if size is 0 or less.
+func New[T any](size int) *Queue[T] {
+	if size < 1 {
+		panic(errors.New("queue size must be greater than 0"))
+	}
+	return &Queue[T]{
+		queue: make(chan T, size),
+	}
 }
 
-// New returns an empty concurrent safe queue.
-func New[T any]() *Queue[T] {
-	n := &node[T]{}
-	return &Queue[T]{head: n, tail: n, hlock: &sync.Mutex{}, tlock: &sync.Mutex{}}
-}
-
-// Enqueue puts the given value v at the tail of the queue.
+// Enqueue puts the given value v at the tail of the queue. If the queue is full, the operation is a no-op.
 func (q *Queue[T]) Enqueue(v T) {
-	n := &node[T]{value: &v}
-	q.tlock.Lock()
-	q.tail.next = n
-	q.tail = n
-	q.tlock.Unlock()
-	atomic.AddUint64(&q.len, 1)
+	select {
+	case q.queue <- v:
+	default:
+	}
 }
 
 // Dequeue removes and returns the value at the head of the queue.
-// It returns nil if empty.
+// It returns zero value of T if the queue is empty.
 func (q *Queue[T]) Dequeue() T {
-	q.hlock.Lock()
-	n := q.head
-	newHead := n.next
-	if newHead == nil {
-		q.hlock.Unlock()
+	select {
+	case v := <-q.queue:
+		return v
+	default:
 		var t T
 		return t
 	}
-	v := *newHead.value
-	newHead.value = nil
-	q.head = newHead
-	q.hlock.Unlock()
-	atomic.AddUint64(&q.len, ^uint64(0))
-	return v
+}
+
+// HasNext checks if there is a value in the queue. If there is, it returns true and the value can be accessed by Dequeue().
+func (q *Queue[T]) HasNext() bool {
+	return q.Len() > 0
 }
 
 // Len Returns the current length of queue.
-func (q *Queue[T]) Len() uint64 {
-	return atomic.LoadUint64(&q.len)
+func (q *Queue[T]) Len() int {
+	return len(q.queue)
+}
+
+// Cap returns the capacity of the queue.
+func (q *Queue[T]) Cap() int {
+	return cap(q.queue)
 }

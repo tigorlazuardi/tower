@@ -58,8 +58,8 @@ func NewSlackBot(token string, channel string) *SlackBot {
 		token:         token,
 		channel:       channel,
 		tracer:        tower.NoopTracer{},
-		queue:         queue.New[tower.KeyValue[context.Context, tower.MessageContext]](),
-		fileQueue:     queue.New[tower.KeyValue[UploadTarget, *bucket.File]](),
+		queue:         queue.New[tower.KeyValue[context.Context, tower.MessageContext]](500),
+		fileQueue:     queue.New[tower.KeyValue[UploadTarget, *bucket.File]](500),
 		slackTimeout:  time.Second * 30,
 		client:        http.DefaultClient,
 		cache:         cache,
@@ -145,7 +145,7 @@ func (s SlackBot) SendMessage(ctx context.Context, msg tower.MessageContext) {
 func (s *SlackBot) work() {
 	if atomic.CompareAndSwapInt32(&s.working, 0, 1) {
 		go func() {
-			for s.queue.Len() > 0 {
+			for s.queue.HasNext() {
 				job := s.queue.Dequeue()
 				s.sem <- struct{}{}
 				go func() {

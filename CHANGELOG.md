@@ -1,11 +1,18 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+- **queue:** scrapped nasty bug for queue logic and used native golang implementation instead.
+
 ### Features
 - **discord:** separated upload file flow between bucket and discord
 - **discord:** add further implementations
 - **discord:** added hook
+- **tower:** added json marshaler to error and caller
 - **tower-http:** added client logger
+
+### Wip
+- **discord:** post message
 
 
 <a name="v0.1.2"></a>

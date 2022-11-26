@@ -80,10 +80,11 @@ func TestIntegration_NoFiles(t *testing.T) {
 		"bar":   "baz",
 	}).Freeze()
 	wrapped := tow.WrapFreeze(origin, "wrapping error")
-	tow.WrapFreeze(wrapped, "wrapping error").Notify(ctx)
+	_ = tow.WrapFreeze(wrapped, "wrapping error").Notify(ctx)
 	err := bot.Wait(ctx)
 	if err != nil {
 		t.Error(err)
 	}
+
 	wg.Wait()
 }

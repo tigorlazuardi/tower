@@ -8,7 +8,7 @@ import (
 )
 
 type EmbedBuilder interface {
-	BuildEmbed(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []*bucket.File)
+	BuildEmbed(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []bucket.File)
 }
 
 type ExtraInformation struct {
@@ -17,9 +17,9 @@ type ExtraInformation struct {
 	CacheKey         string
 }
 
-type EmbedBuilderFunc func(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []*bucket.File)
+type EmbedBuilderFunc func(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []bucket.File)
 
-func (e EmbedBuilderFunc) BuildEmbed(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []*bucket.File) {
+func (e EmbedBuilderFunc) BuildEmbed(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []bucket.File) {
 	return e(ctx, msg, info)
 }
 

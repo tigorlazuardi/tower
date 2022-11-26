@@ -79,7 +79,7 @@ func PostToThread(ctx context.Context, tower *tower.Tower, thread string) Upload
 	}
 }
 
-func (s SlackBot) uploadAttachments(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []*bucket.File) {
+func (s SlackBot) uploadAttachments(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []bucket.File) {
 	if s.bucket != nil {
 		s.uploadToBucket(ctx, msg, resp, attachments)
 		return
@@ -87,7 +87,7 @@ func (s SlackBot) uploadAttachments(ctx context.Context, msg tower.MessageContex
 	s.uploadToSlack(ctx, msg, resp, attachments)
 }
 
-func (s SlackBot) uploadToBucket(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []*bucket.File) {
+func (s SlackBot) uploadToBucket(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []bucket.File) {
 	results := s.bucket.Upload(ctx, attachments)
 	for _, result := range results {
 		if result.Error != nil {
@@ -97,7 +97,7 @@ func (s SlackBot) uploadToBucket(ctx context.Context, msg tower.MessageContext, 
 	}
 }
 
-func (s SlackBot) uploadToSlack(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []*bucket.File) {
+func (s SlackBot) uploadToSlack(ctx context.Context, msg tower.MessageContext, resp *slackrest.MessageResponse, attachments []bucket.File) {
 	for _, attachment := range attachments {
 		key := PostToThread(ctx, msg.Tower(), resp.Ts)
 		value := attachment
@@ -132,7 +132,7 @@ func (s SlackBot) isUploading() bool {
 	return atomic.LoadInt32(&s.uploading) == 1
 }
 
-func (s SlackBot) uploadFile(ctx context.Context, target UploadTarget, file *bucket.File) error {
+func (s SlackBot) uploadFile(ctx context.Context, target UploadTarget, file bucket.File) error {
 	defer file.Close()
 	ticker := time.NewTicker(time.Millisecond * 300)
 	for s.cache.Exist(ctx, s.globalFileKey) {

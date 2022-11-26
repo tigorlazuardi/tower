@@ -9,5 +9,5 @@ type MimetypeHint interface {
 }
 
 type ImageSizeHint interface {
-	ImageSize() (width, height int)
+	ImageSize() (height, width int)
 }

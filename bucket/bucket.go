@@ -3,7 +3,6 @@ package bucket
 import (
 	"context"
 	"github.com/bwmarrin/snowflake"
-	"io"
 	"os"
 )
 
@@ -14,75 +13,13 @@ func init() {
 	snowflakeNode = generateSnowflakeNodeFromString("tower-bucket-" + host)
 }
 
-type File struct {
-	data     io.Reader
-	filename string
-	mimetype string
-	pretext  string
-	size     int
-}
-
-func (f File) Data() io.Reader {
-	return f.data
-}
-
-func (f File) Filename() string {
-	return f.filename
-}
-
-func (f File) Mimetype() string {
-	return f.mimetype
-}
-
-func (f *File) Read(p []byte) (n int, err error) {
-	return f.data.Read(p)
-}
-
-func (f File) Pretext() string {
-	return f.pretext
-}
-
-func (f File) Size() int {
-	return f.size
-}
-
-// SetPretext Sets the pretext of the file. Depending on the bucket implementation, this may or may not be used.
-func (f *File) SetPretext(pretext string) {
-	f.pretext = pretext
-}
-
-func (f *File) Close() error {
-	if closer, ok := f.data.(io.Closer); ok {
-		return closer.Close()
-	}
-	return nil
-}
-
-// NewFile Creates a new file with the given data, filename, and mimetype.
-func NewFile(data io.Reader, mimetype string, opts ...FileOption) *File {
-	var size int
-	if lh, ok := data.(LengthHint); ok {
-		size = lh.Len()
-	}
-	f := &File{
-		data:     data,
-		filename: snowflakeNode.Generate().String(),
-		mimetype: mimetype,
-		size:     size,
-	}
-	for _, opt := range opts {
-		opt.apply(f)
-	}
-	return f
-}
-
 type UploadResult struct {
 	// The URL of the uploaded file, if successful.
 	URL string
 	// The file instance used to upload the file.
 	// The body of this file may have already been garbage collected.
 	// So do not consume this file content again and only use the remaining metadata.
-	File *File
+	File File
 	// If Error is not nil, the upload is considered failed.
 	Error error
 }
@@ -93,33 +30,33 @@ type Bucket interface {
 	// Whether the Upload operation is successful or not.
 	//
 	// The number of result will be the same as the number of files uploaded.
-	Upload(ctx context.Context, attachment []*File) []UploadResult
+	Upload(ctx context.Context, files []File) []UploadResult
 }
 
 type FileOption interface {
-	apply(*File)
+	apply(*implFile)
 }
 
-type FileOptionFunc func(*File)
+type FileOptionFunc func(*implFile)
 
-func (f FileOptionFunc) apply(file *File) {
+func (f FileOptionFunc) apply(file *implFile) {
 	f(file)
 }
 
 func WithPretext(pretext string) FileOption {
-	return FileOptionFunc(func(file *File) {
+	return FileOptionFunc(func(file *implFile) {
 		file.pretext = pretext
 	})
 }
 
 func WithFilesize(size int) FileOption {
-	return FileOptionFunc(func(file *File) {
+	return FileOptionFunc(func(file *implFile) {
 		file.size = size
 	})
 }
 
 func WithFilename(filename string) FileOption {
-	return FileOptionFunc(func(file *File) {
+	return FileOptionFunc(func(file *implFile) {
 		file.filename = filename
 	})
 }

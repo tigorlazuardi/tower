@@ -117,5 +117,5 @@ func (m *MemoryCache) checkGC() {
 }
 
 func (m *MemoryCache) Separator() string {
-	return "_"
+	return "::"
 }

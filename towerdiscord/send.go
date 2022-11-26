@@ -25,12 +25,14 @@ func (d Discord) send(ctx context.Context, msg tower.MessageContext) {
 	if msg.SkipVerification() {
 		extra.CooldownTimeEnds = time.Now().Add(time.Second * 2)
 		_ = d.postMessage(ctx, msg, extra)
+		d.deleteGlobalCacheKeyAfter2Seconds(ctx)
 		return
 	}
 	if d.cache.Exist(ctx, key) {
 		d.cache.Delete(ctx, d.globalKey)
 		return
 	}
+	defer d.deleteGlobalCacheKeyAfter2Seconds(ctx)
 	iterKey := key + d.cache.Separator() + "iter"
 	iter := d.getAndSetIter(ctx, iterKey)
 	cooldown := d.countCooldown(msg, iter)
@@ -53,14 +55,19 @@ func (d Discord) send(ctx context.Context, msg tower.MessageContext) {
 	}
 }
 
+func (d Discord) deleteGlobalCacheKeyAfter2Seconds(ctx context.Context) {
+	time.Sleep(time.Second * 2)
+	d.cache.Delete(ctx, d.globalKey)
+}
+
 func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extra *ExtraInformation) error {
 	var intro string
 	service := msg.Service()
 	err := msg.Err()
 	if err != nil {
-		intro = fmt.Sprintf("<!here> an error has occurred on service %s of type %s on environment %s", service.Name, service.Type, service.Environment)
+		intro = fmt.Sprintf("@here an error has occurred on service **%s** of type **%s** on environment **%s**", service.Name, service.Type, service.Environment)
 	} else {
-		intro = fmt.Sprintf("<!here> message from service %s of type %s on environment %s", service.Name, service.Type, service.Environment)
+		intro = fmt.Sprintf("@here message from service **%s** of type **%s** on environment **%s**", service.Name, service.Type, service.Environment)
 	}
 
 	embeds, files := d.builder.BuildEmbed(ctx, msg, extra)
@@ -68,14 +75,21 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 		Wait:     true,
 		ThreadID: d.snowflake.Generate(),
 		Content:  intro,
-		Username: fmt.Sprintf("%s Bot", service.Name),
 		Embeds:   embeds,
+	}
+
+	webhookContext := &WebhookContext{
+		Message: msg,
+		Files:   files,
+		Payload: payload,
+		Extra:   extra,
 	}
 
 	switch {
 	case d.bucket != nil && len(files) > 0:
-		payload, errUpload := d.bucketUpload(ctx, payload, files)
-		err := d.PostWebhookJSON(ctx, payload)
+		payload, errUpload := d.bucketUpload(ctx, webhookContext)
+		webhookContext.Payload = payload
+		err := d.PostWebhookJSON(ctx, webhookContext)
 		switch {
 		case err != nil:
 			return err
@@ -87,20 +101,39 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 	case len(files) > 0:
 		return d.PostWebhookMultipart(ctx, payload, files)
 	}
-
-	return d.PostWebhookJSON(ctx, payload)
+	return d.PostWebhookJSON(ctx, webhookContext)
 }
 
-func (d Discord) prepareWebhookPayload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) *WebhookPayload {
+func (d Discord) prepareWebhookPayload(ctx context.Context, payload *WebhookPayload, files []bucket.File) *WebhookPayload {
 	return payload
 }
 
-func (d Discord) bucketUpload(ctx context.Context, payload *WebhookPayload, files []*bucket.File) (*WebhookPayload, error) {
-	results := d.bucket.Upload(ctx, files)
+func (d Discord) bucketUpload(ctx context.Context, web *WebhookContext) (*WebhookPayload, error) {
+	ctx = d.hook.PreBucketUploadHook(ctx, web)
+	results := d.bucket.Upload(ctx, web.Files)
+	d.hook.PostBucketUploadHook(ctx, web, results)
+	payload := web.Payload
+	errs := make([]error, 0, len(results))
 	for _, result := range results {
 		if result.Error != nil {
-
+			errs = append(errs, result.Error)
+			continue
 		}
+		id := d.snowflake.Generate()
+		var height, width int
+		if imgHint, ok := result.File.(ImageSizeHint); ok {
+			height, width = imgHint.ImageSize()
+		}
+		payload.Attachments = append(payload.Attachments, &Attachment{
+			ID:          id,
+			Filename:    result.File.Filename(),
+			Description: result.File.Pretext(),
+			ContentType: result.File.Mimetype(),
+			Size:        result.File.Size(),
+			URL:         result.URL,
+			Height:      height,
+			Width:       width,
+		})
 	}
 	return payload, nil
 }

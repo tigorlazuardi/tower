@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -40,6 +41,7 @@ func defaultErrorGenerator(ctx *ErrorConstructorContext) ErrorBuilder {
 		level:   ErrorLevel,
 		origin:  ctx.Err,
 		tower:   ctx.Tower,
+		time:    time.Now(),
 	}
 }
 
@@ -255,7 +257,44 @@ type implError struct {
 }
 
 func (e implError) MarshalJSON() ([]byte, error) {
-	return (&implErrorJsonMarshaler{inner: e}).MarshalJSON()
+	// sorted keys are rather important for human reads. Especially the Context and Error should always be at the last marshaled keys.
+	// as they contain the most amount of data and information, and thus shadows other values at a glance.
+	//
+	// arguably this is simpler to be done than implementing json.Marshaler interface and doing it manually, key by key
+	// without resorting to other libraries.
+	type implErrorJsonMarshaler struct {
+		Time    time.Time     `json:"time,omitempty"`
+		Code    int           `json:"code,omitempty"`
+		Message string        `json:"message,omitempty"`
+		Caller  Caller        `json:"caller,omitempty"`
+		Key     string        `json:"key,omitempty"`
+		Level   string        `json:"level,omitempty"`
+		Context any           `json:"context,omitempty"`
+		Error   richJsonError `json:"error,omitempty"`
+	}
+	b := &bytes.Buffer{}
+	enc := json.NewEncoder(b)
+	enc.SetEscapeHTML(false)
+	ctx := func() any {
+		if len(e.inner.context) == 0 {
+			return nil
+		}
+		if len(e.inner.context) == 1 {
+			return e.inner.context[0]
+		}
+		return e.inner.context
+	}()
+	err := enc.Encode(implErrorJsonMarshaler{
+		Time:    e.Time(),
+		Code:    e.Code(),
+		Message: e.Message(),
+		Caller:  e.Caller(),
+		Key:     e.Key(),
+		Level:   e.Level().String(),
+		Context: ctx,
+		Error:   richJsonError{e.inner.origin},
+	})
+	return b.Bytes(), err
 }
 
 func (e implError) Error() string {
@@ -374,23 +413,6 @@ func (e implError) Notify(ctx context.Context, opts ...MessageOption) Error {
 	return e
 }
 
-// sorted keys are rather important for human reads. Especially the Context and Error should always be at the last marshaled keys.
-// as they contain the most amount of data and information, and thus shadows other values at a glance.
-//
-// arguably this is simpler to be done than implementing json.Marshaler interface and doing it manually, key by key
-// without resorting to other libraries.
-type implErrorJsonMarshaler struct {
-	inner   implError
-	Time    string `json:"time,omitempty"`
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-	Caller  Caller `json:"caller,omitempty"`
-	Key     string `json:"key,omitempty"`
-	Level   string `json:"level,omitempty"`
-	Context []any  `json:"context,omitempty"`
-	Error   error  `json:"error,omitempty"`
-}
-
 // richJsonError is a special kind of error that tries to prevent information loss when marshaling to json.
 type richJsonError struct {
 	error
@@ -400,6 +422,9 @@ func (r richJsonError) MarshalJSON() ([]byte, error) {
 	if r.error == nil {
 		return []byte("null"), nil
 	}
+	b := &bytes.Buffer{}
+	enc := json.NewEncoder(b)
+	enc.SetEscapeHTML(false)
 
 	// if the error supports json.Marshaler we use it directly.
 	// this is because we can assume that the error have special marshaling needs for specific output.
@@ -409,37 +434,28 @@ func (r richJsonError) MarshalJSON() ([]byte, error) {
 		return e.MarshalJSON()
 	}
 
-	b, err := json.Marshal(r.error)
+	err := enc.Encode(r.error)
 	if err != nil {
-		return nil, err
+		return b.Bytes(), err
 	}
 
-	summary, _ := json.Marshal(r.error.Error())
-	if len(b) == 2 {
+	summary := r.error.Error()
+	// 3 because it also includes newline after brackets or quotes.
+	if b.Len() == 3 && b.Bytes()[2] == '\n' {
+		v := b.Bytes()
 		switch {
-		case b[0] == '"' && b[1] == '"', b[0] == '{' && b[1] == '}', b[0] == '[' && b[1] == ']':
-			return summary, nil
+		case v[0] == '"', v[0] == '{', v[0] == '[':
+			b.Reset()
+			err := enc.Encode(map[string]string{"summary": summary})
+			return b.Bytes(), err
 		}
 	}
 
-	if bytes.Equal(b, summary) {
-		return summary, nil
-	}
-	return json.Marshal(map[string]json.RawMessage{
-		"summary": summary,
-		"value":   b,
+	content := b.String()
+	b.Reset()
+	err = enc.Encode(map[string]json.RawMessage{
+		"value":   json.RawMessage(content),
+		"summary": json.RawMessage(strconv.Quote(summary)),
 	})
-}
-
-func (i implErrorJsonMarshaler) MarshalJSON() ([]byte, error) {
-	i.Time = i.inner.Time().Format(time.RFC3339)
-	i.Code = i.inner.Code()
-	i.Message = i.inner.Message()
-	i.Caller = i.inner.Caller()
-	i.Key = i.inner.Key()
-	i.Level = i.inner.Level().String()
-	i.Context = i.inner.Context()
-	i.Error = richJsonError{i.inner.inner.origin}
-
-	return json.Marshal(i)
+	return b.Bytes(), err
 }

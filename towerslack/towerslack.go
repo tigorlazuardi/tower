@@ -16,7 +16,7 @@ import (
 
 type (
 	queueItem     = tower.KeyValue[context.Context, tower.MessageContext]
-	fileQueueItem = tower.KeyValue[UploadTarget, *bucket.File]
+	fileQueueItem = tower.KeyValue[UploadTarget, bucket.File]
 )
 
 var _ tower.Messenger = (*SlackBot)(nil)
@@ -52,22 +52,22 @@ func (s *SlackBot) SetBucket(bucket bucket.Bucket) {
 // If you create multiple bot instances, make sure to set different name for each instance. Otherwise, Tower will treat
 // them as same and only registers one instance.
 func NewSlackBot(token string, channel string) *SlackBot {
-	cache := cache.NewMemoryCache()
+	cc := cache.NewMemoryCache()
 	s := &SlackBot{
 		rootContext:   context.Background(),
 		token:         token,
 		channel:       channel,
 		tracer:        tower.NoopTracer{},
 		queue:         queue.New[tower.KeyValue[context.Context, tower.MessageContext]](500),
-		fileQueue:     queue.New[tower.KeyValue[UploadTarget, *bucket.File]](500),
+		fileQueue:     queue.New[tower.KeyValue[UploadTarget, bucket.File]](500),
 		slackTimeout:  time.Second * 30,
 		client:        http.DefaultClient,
-		cache:         cache,
+		cache:         cc,
 		working:       0,
 		uploading:     0,
 		sem:           make(chan struct{}, runtime.NumCPU()/3+2),
 		globalKey:     "global",
-		globalFileKey: cache.Separator(),
+		globalFileKey: cc.Separator(),
 		cooldown:      time.Minute * 15,
 	}
 	s.template = TemplateFunc(s.defaultTemplate)

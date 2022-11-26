@@ -5,6 +5,7 @@
 - **queue:** scrapped nasty bug for queue logic and used native golang implementation instead.
 
 ### Features
+- **discord:** major update and fixes
 - **discord:** separated upload file flow between bucket and discord
 - **discord:** add further implementations
 - **discord:** added hook

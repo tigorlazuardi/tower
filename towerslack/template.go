@@ -23,21 +23,21 @@ type TemplateBuilder interface {
 	// If you have no attachments to upload, a simple nil return on the attachments is safe.
 	//
 	// Note: The blocks are required and must not be nil (returning empty blocks are safe however), regardless of attachments.
-	BuildTemplate(ctx context.Context, msg tower.MessageContext) (blocks block.Blocks, attachments []*bucket.File)
+	BuildTemplate(ctx context.Context, msg tower.MessageContext) (blocks block.Blocks, attachments []bucket.File)
 }
 
 var _ TemplateBuilder = (TemplateFunc)(nil)
 
-type TemplateFunc func(ctx context.Context, msg tower.MessageContext) (block.Blocks, []*bucket.File)
+type TemplateFunc func(ctx context.Context, msg tower.MessageContext) (block.Blocks, []bucket.File)
 
 // BuildTemplate implements Templater interface.
-func (f TemplateFunc) BuildTemplate(ctx context.Context, msg tower.MessageContext) (block.Blocks, []*bucket.File) {
+func (f TemplateFunc) BuildTemplate(ctx context.Context, msg tower.MessageContext) (block.Blocks, []bucket.File) {
 	return f(ctx, msg)
 }
 
-func (s SlackBot) defaultTemplate(ctx context.Context, msg tower.MessageContext) (block.Blocks, []*bucket.File) {
+func (s SlackBot) defaultTemplate(ctx context.Context, msg tower.MessageContext) (block.Blocks, []bucket.File) {
 	blocks := make(block.Blocks, 0, 6)
-	attachments := make([]*bucket.File, 0, 5)
+	attachments := make([]bucket.File, 0, 5)
 	blocks = append(blocks, buildHeadline(msg))
 	blocks = append(blocks, block.NewDividerBlock())
 

@@ -1,6 +1,12 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+
+<a name="v0.1.8"></a>
+## [v0.1.8] - 2022-11-26
+
+<a name="v0.1.7"></a>
+## [v0.1.7] - 2022-11-26
 ### Miscellaneous
 - FIX THOSE TAGS WTF GO PROXY!?
 
@@ -170,7 +176,9 @@
 - added docs support
 
 
-[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.8...HEAD
+[v0.1.8]: https://github.com/tigorlazuardi/tower/compare/v0.1.7...v0.1.8
+[v0.1.7]: https://github.com/tigorlazuardi/tower/compare/v0.1.5...v0.1.7
 [v0.1.5]: https://github.com/tigorlazuardi/tower/compare/v0.1.4...v0.1.5
 [v0.1.4]: https://github.com/tigorlazuardi/tower/compare/v0.1.3...v0.1.4
 [v0.1.3]: https://github.com/tigorlazuardi/tower/compare/v0.1.2...v0.1.3

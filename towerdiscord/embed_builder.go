@@ -34,7 +34,7 @@ func (d Discord) defaultEmbedBuilder(ctx context.Context, msg tower.MessageConte
 		}
 	}
 	{
-		em, file := d.buildDataEmbed(msg)
+		em, file := d.buildContextEmbed(msg)
 		if em != nil {
 			embeds = append(embeds, em)
 		}
@@ -83,10 +83,12 @@ func (d Discord) buildSummary(msg tower.MessageContext) (*Embed, bucket.File) {
 	b.Reset()
 	b.Grow(descriptionLimit)
 
+	_, _ = b.WriteString("**")
 	_, _ = b.WriteString(msg.Message())
+	_, _ = b.WriteString("**")
 	err := msg.Err()
 	if err != nil {
-		_, _ = b.WriteString("\n")
+		_, _ = b.WriteString("\n\n**Error**:\n")
 		_, _ = b.WriteString("```\n")
 		switch err := err.(type) {
 		case tower.SummaryWriter:
@@ -105,7 +107,7 @@ func (d Discord) buildSummary(msg tower.MessageContext) (*Embed, bucket.File) {
 
 	data := msg.Context()
 	if len(data) > 0 {
-		_, _ = b.WriteString("\n")
+		_, _ = b.WriteString("\n\n**Context**:\n")
 		_, _ = b.WriteString("```\n")
 		for _, c := range data {
 			switch c := c.(type) {
@@ -121,13 +123,13 @@ func (d Discord) buildSummary(msg tower.MessageContext) (*Embed, bucket.File) {
 	return d.shouldCreateFile(embed, b, "# Summary")
 }
 
-func (d Discord) buildDataEmbed(msg tower.MessageContext) (*Embed, bucket.File) {
+func (d Discord) buildContextEmbed(msg tower.MessageContext) (*Embed, bucket.File) {
 	if len(msg.Context()) == 0 {
 		return nil, nil
 	}
 	embed := &Embed{
 		Type:  "rich",
-		Title: "Data",
+		Title: "Context",
 		Color: 0x063970, // Dark Blue
 	}
 	b := descBufPool.Get()

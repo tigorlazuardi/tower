@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+- **discord:** better embed structures
+
 ### Miscellaneous
 - synchronize go mod with new tag on tower
 

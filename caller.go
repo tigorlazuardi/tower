@@ -12,18 +12,47 @@ import (
 const sep = string(os.PathSeparator)
 
 type Caller interface {
+	// Function returns the function information.
 	Function() *runtime.Func
-	Origin() string
+	// Name returns the full package/function path of the caller.
+	Name() string
+	// ShortOrigin returns only the latest four items maximum in the package path.
 	ShortOrigin() string
+	// ShortSource returns only the latest three items path in the File Path where the Caller comes from.
 	ShortSource() string
+	// String Sets this caller as `file_path:line` format.
 	String() string
+	// Line returns the line number of the caller.
+	Line() int
+	// File returns the file path of the caller.
+	File() string
+	// PC returns the program counter of the caller.
+	PC() uintptr
+	// FormatAsKey Like .String(), but runes other than letters, digits, `-` and `.` are set to `_`.
 	FormatAsKey() string
 }
 
 type caller struct {
-	PC   uintptr
-	File string
-	Line int
+	pc   uintptr
+	file string
+	line int
+}
+
+func (c caller) Name() string {
+	f := runtime.FuncForPC(c.pc)
+	return f.Name()
+}
+
+func (c caller) Line() int {
+	return c.line
+}
+
+func (c caller) File() string {
+	return c.file
+}
+
+func (c caller) PC() uintptr {
+	return c.pc
 }
 
 func (c caller) MarshalJSON() ([]byte, error) {
@@ -31,12 +60,12 @@ func (c caller) MarshalJSON() ([]byte, error) {
 }
 
 func (c caller) Function() *runtime.Func {
-	f := runtime.FuncForPC(c.PC)
+	f := runtime.FuncForPC(c.pc)
 	return f
 }
 
 func (c caller) Origin() string {
-	f := runtime.FuncForPC(c.PC)
+	f := runtime.FuncForPC(c.pc)
 	return f.Name()
 }
 
@@ -57,7 +86,7 @@ func (c caller) ShortOrigin() string {
 
 // ShortSource returns only the latest three items path in the File Path where the Caller comes from.
 func (c caller) ShortSource() string {
-	s := strings.Split(c.File, sep)
+	s := strings.Split(c.file, sep)
 
 	for len(s) > 3 {
 		s = s[1:]
@@ -69,9 +98,9 @@ func (c caller) ShortSource() string {
 // FormatAsKey Like .String(), but runes other than letters, digits, `-` and `.` are set to `_`.
 func (c caller) FormatAsKey() string {
 	s := &strings.Builder{}
-	strLine := strconv.Itoa(c.Line)
-	s.Grow(len(c.File) + 1 + len(strLine))
-	replaceSymbols(s, c.File, '_')
+	strLine := strconv.Itoa(c.line)
+	s.Grow(len(c.file) + 1 + len(strLine))
+	replaceSymbols(s, c.file, '_')
 	s.WriteRune('_')
 	s.WriteString(strLine)
 	return s.String()
@@ -80,9 +109,9 @@ func (c caller) FormatAsKey() string {
 // String Sets this caller as `file_path:line` format.
 func (c caller) String() string {
 	s := &strings.Builder{}
-	strLine := strconv.Itoa(c.Line)
-	s.Grow(len(c.File) + 1 + len(strLine))
-	s.WriteString(c.File)
+	strLine := strconv.Itoa(c.line)
+	s.Grow(len(c.file) + 1 + len(strLine))
+	s.WriteString(c.file)
 	s.WriteRune(':')
 	s.WriteString(strLine)
 	return s.String()
@@ -106,8 +135,8 @@ func replaceSymbols(builder *strings.Builder, s string, rep rune) {
 func GetCaller(depth int) Caller {
 	pc, file, line, _ := runtime.Caller(depth)
 	return &caller{
-		PC:   pc,
-		File: file,
-		Line: line,
+		pc:   pc,
+		file: file,
+		line: line,
 	}
 }

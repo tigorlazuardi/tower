@@ -13,35 +13,36 @@ type CodeHint interface {
 }
 
 type CallerHint interface {
-	// Gets the caller of this type.
+	// Caller returns the caller of this type.
 	Caller() Caller
 }
 
 type MessageHint interface {
-	// Gets the Message of the type.
+	// Message returns the message of the type.
 	Message() string
 }
 
 type KeyHint interface {
-	// Gets the key for this message.
+	// Key returns the key for this type.
 	Key() string
 }
 
 type ContextHint interface {
-	// Gets the context of this this type.
+	// Context returns the context of this type.
 	Context() []any
 }
 
 type ServiceHint interface {
-	// Gets the service information.
+	// Service returns the service information.
 	Service() Service
 }
 
 type LevelHint interface {
-	// Gets the level of this message.
+	// Level returns the level of this type.
 	Level() Level
 }
 
 type TimeHint interface {
+	// Time returns the time of this type.
 	Time() time.Time
 }

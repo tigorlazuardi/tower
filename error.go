@@ -309,6 +309,7 @@ func (e implError) WriteError(w LineWriter) {
 	w.WriteIndent()
 	msg := e.inner.message
 	if e.inner.origin == nil {
+		// Account for empty string message after wrapping nil error.
 		if len(msg) > 0 {
 			w.WritePrefix()
 			_, _ = w.WriteString(msg)
@@ -321,33 +322,41 @@ func (e implError) WriteError(w LineWriter) {
 		return
 	}
 
-	errMsg := e.inner.origin.Error()
-	if ew, ok := e.inner.origin.(ErrorWriter); ok {
-		if mh, ok := e.inner.origin.(MessageHint); ok && msg != mh.Message() && msg != errMsg {
-			w.WritePrefix()
-			_, _ = w.WriteString(msg)
-			w.WriteSuffix()
-			w.WriteLineBreak()
-		} else if msg != errMsg {
-			w.WritePrefix()
-			_, _ = w.WriteString(msg)
-			w.WriteSuffix()
-			w.WriteLineBreak()
+	writeInner := func(linebreak bool) {
+		if ew, ok := e.inner.origin.(ErrorWriter); ok {
+			if linebreak {
+				w.WriteLineBreak()
+			}
+			ew.WriteError(w)
+		} else {
+			errMsg := e.inner.origin.Error()
+			if errMsg != msg {
+				w.WritePrefix()
+				_, _ = w.WriteString(msg)
+				w.WriteSuffix()
+				w.WriteLineBreak()
+				w.WritePrefix()
+				_, _ = w.WriteString(errMsg)
+				w.WriteSuffix()
+			}
 		}
-		w.WritePrefix()
-		ew.WriteError(w)
-		w.WriteSuffix()
+	}
+
+	var innerMessage string
+	if mh, ok := e.inner.origin.(MessageHint); ok {
+		innerMessage = mh.Message()
+	}
+
+	// Skip writing duplicate or empty messages.
+	if msg == innerMessage || len(msg) == 0 {
+		writeInner(false)
 		return
 	}
-	if msg != errMsg {
-		w.WritePrefix()
-		_, _ = w.WriteString(msg)
-		w.WriteSuffix()
-		w.WriteLineBreak()
-	}
+
 	w.WritePrefix()
-	_, _ = w.WriteString(errMsg)
+	_, _ = w.WriteString(msg)
 	w.WriteSuffix()
+	writeInner(true)
 }
 
 // Code Gets the original code of the type.

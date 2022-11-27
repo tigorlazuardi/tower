@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+- **towererror-WriteError:** fix duplicate output
+
 ### Features
 - **discord:** better embed structures
 

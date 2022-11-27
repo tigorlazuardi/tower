@@ -149,7 +149,7 @@ func (s SlackBot) uploadFile(ctx context.Context, target UploadTarget, file buck
 	payload := slackrest.FilesUploadPayload{
 		File:           file,
 		Filename:       file.Filename(),
-		Filetype:       file.Mimetype(),
+		Filetype:       file.ContentType(),
 		InitialComment: file.Pretext(),
 		Title:          file.Filename(),
 	}

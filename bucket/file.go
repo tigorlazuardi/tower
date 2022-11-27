@@ -5,7 +5,7 @@ import "io"
 type File interface {
 	Data() io.Reader
 	Filename() string
-	Mimetype() string
+	ContentType() string
 	Read(p []byte) (n int, err error)
 	Pretext() string
 	Size() int
@@ -29,7 +29,7 @@ func (f implFile) Filename() string {
 	return f.filename
 }
 
-func (f implFile) Mimetype() string {
+func (f implFile) ContentType() string {
 	return f.mimetype
 }
 

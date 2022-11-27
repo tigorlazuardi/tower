@@ -3,7 +3,6 @@ package towerdiscord
 import (
 	"context"
 	"fmt"
-	"github.com/tigorlazuardi/tower/bucket"
 	"strconv"
 	"strings"
 	"time"
@@ -99,13 +98,9 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 			return nil
 		}
 	case len(files) > 0:
-		return d.PostWebhookMultipart(ctx, payload, files)
+		return d.PostWebhookMultipart(ctx, webhookContext)
 	}
 	return d.PostWebhookJSON(ctx, webhookContext)
-}
-
-func (d Discord) prepareWebhookPayload(ctx context.Context, payload *WebhookPayload, files []bucket.File) *WebhookPayload {
-	return payload
 }
 
 func (d Discord) bucketUpload(ctx context.Context, web *WebhookContext) (*WebhookPayload, error) {
@@ -121,19 +116,26 @@ func (d Discord) bucketUpload(ctx context.Context, web *WebhookContext) (*Webhoo
 		}
 		id := d.snowflake.Generate()
 		var height, width int
-		if imgHint, ok := result.File.(ImageSizeHint); ok {
+		if imgHint, ok := result.File.Data().(ImageSizeHint); ok {
 			height, width = imgHint.ImageSize()
 		}
 		payload.Attachments = append(payload.Attachments, &Attachment{
 			ID:          id,
 			Filename:    result.File.Filename(),
 			Description: result.File.Pretext(),
-			ContentType: result.File.Mimetype(),
+			ContentType: result.File.ContentType(),
 			Size:        result.File.Size(),
 			URL:         result.URL,
 			Height:      height,
 			Width:       width,
 		})
+	}
+	if len(errs) > 0 {
+		return payload, tower.
+			Bail("failed to upload some file(s) to bucket").
+			Caller(web.Message.Caller()).
+			Context(tower.F{"errors": errs}).
+			Freeze()
 	}
 	return payload, nil
 }

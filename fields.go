@@ -42,6 +42,11 @@ func (f Fields) WriteSummary(w LineWriter) {
 		w.WriteIndent()
 		w.WritePrefix()
 		_, _ = fmt.Fprintf(w, "%-*s: ", prefixLength, k)
+		if v == nil {
+			_, _ = w.WriteString("null")
+			w.WriteSuffix()
+			continue
+		}
 		switch v := v.(type) {
 		case SummaryWriter:
 			w.WriteLineBreak()

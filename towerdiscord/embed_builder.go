@@ -97,7 +97,7 @@ func (d Discord) buildSummary(msg tower.MessageContext) (*Embed, bucket.File) {
 		case tower.Summary:
 			_, _ = b.WriteString(err.Summary())
 		case tower.ErrorWriter:
-			lw := tower.NewLineWriter(b).LineBreak(" => ").Build()
+			lw := tower.NewLineWriter(b).LineBreak("\n.. ").Build()
 			err.WriteError(lw)
 		default:
 			_, _ = b.WriteString(err.Error())
@@ -259,9 +259,15 @@ func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContex
 			Inline: true,
 		})
 	}
+	var iteration string
+	if msg.SkipVerification() {
+		iteration = "(skipped verification)"
+	} else {
+		iteration = strconv.Itoa(extra.Iteration)
+	}
 	embed.Fields = append(embed.Fields, &EmbedField{
 		Name:   "Message Iteration",
-		Value:  strconv.Itoa(extra.Iteration),
+		Value:  iteration,
 		Inline: true,
 	})
 	ts := extra.CooldownTimeEnds.Unix()

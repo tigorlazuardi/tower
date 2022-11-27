@@ -69,18 +69,18 @@ func TestIntegration_NoFiles(t *testing.T) {
 	})
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(2)
 	bot := towerdiscord.NewDiscordBot(webhook)
 	bot.SetName("tower-discord-integration-test")
 	bot.SetHook(testHook{t: t, wg: wg})
 	tow.RegisterMessenger(bot)
-	//tow.NewEntry("test %d", 123).Context(tower.F{"foo": "bar", "struct": foo{}}).Notify(ctx)
+	tow.NewEntry("test %d", 123).Context(tower.F{"foo": "bar", "struct": foo{}}).Notify(ctx)
 	origin := tow.Wrap(foo{FooMessage: "something > something < something & Bad Request"}).Code(400).Message("this is bad request error").Context(tower.F{
 		"light": map[string]any{"year": 2021, "month": "january"},
 		"bar":   "baz",
 	}).Freeze()
 	wrapped := tow.WrapFreeze(origin, "wrapping error")
-	_ = tow.Wrap(wrapped).Message("wrapping error").Context(tower.F{"wrapping": 123}).Notify(ctx)
+	_ = tow.Wrap(wrapped).Message("wrapping error").Context(tower.F{"wrapping": 123, "nil_value": nil}).Notify(ctx)
 	err := bot.Wait(ctx)
 	if err != nil {
 		t.Error(err)

@@ -58,10 +58,9 @@ func NewEntry(msg string) EntryBuilder {
 	return export.NewEntry(msg)
 }
 
-type global int
+var Global global
 
-// Global Methods to handle global instance of Tower.
-const Global global = 0
+type global struct{}
 
 var export *Tower
 

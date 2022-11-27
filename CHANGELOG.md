@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **tower-discord:** better summary output
 - **towererror-WriteError:** fix duplicate output
 
 ### Features

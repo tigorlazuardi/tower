@@ -331,9 +331,6 @@ func (e implError) WriteError(w LineWriter) {
 		} else {
 			errMsg := e.inner.origin.Error()
 			if errMsg != msg {
-				w.WritePrefix()
-				_, _ = w.WriteString(msg)
-				w.WriteSuffix()
 				w.WriteLineBreak()
 				w.WritePrefix()
 				_, _ = w.WriteString(errMsg)

@@ -1,6 +1,7 @@
 package tower_test
 
 import (
+	"errors"
 	"fmt"
 	"github.com/tigorlazuardi/tower"
 	"strings"
@@ -31,7 +32,8 @@ func Test_Error_WriteError(t *testing.T) {
 		{
 			name: "No Duplicates - Tail",
 			error: func() tower.Error {
-				err := tower.BailFreeze("bail")
+				err := errors.New("errors.New")
+				err = tower.WrapFreeze(err, "wrap")
 				err = tower.Wrap(err).Freeze()
 				return tower.Wrap(err).Message("foo").Freeze()
 			}(),
@@ -40,7 +42,7 @@ func Test_Error_WriteError(t *testing.T) {
 				lw := tower.NewLineWriter(s).LineBreak(" => ").Build()
 				return lw, s
 			},
-			want: "foo => bail",
+			want: "foo => wrap => errors.New",
 		},
 		{
 			name: "Ensure different messages are written",

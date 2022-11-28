@@ -16,6 +16,7 @@
 - **discord:** added multipart uploads
 - **discord:** better embed structures
 - **implError:** exported implError as ErrorNode
+- **query:** added bottom error query
 - **query:** added CollectErrors query
 - **tower:** added code block marshaler pattern
 - **tower-discord:** implemented file upload native discord

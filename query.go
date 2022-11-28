@@ -189,9 +189,9 @@ func getStackList(err error, input []KeyValue[Caller, error]) []KeyValue[Caller,
 	return getStackList(errors.Unwrap(err), input)
 }
 
-// GetError Gets the outermost tower.Error instance in the error stack.
+// TopError Gets the outermost tower.Error instance in the error stack.
 // Returns nil if no tower.Error instance found in the stack.
-func (query) GetError(err error) Error {
+func (query) TopError(err error) Error {
 	if err == nil {
 		return nil
 	}
@@ -200,5 +200,34 @@ func (query) GetError(err error) Error {
 		return e
 	}
 
-	return Query.GetError(errors.Unwrap(err))
+	return Query.TopError(errors.Unwrap(err))
+}
+
+// BottomError Gets the outermost tower.Error instance in the error stack.
+// Returns nil if no tower.Error instance found in the stack.
+func (query) BottomError(err error) Error {
+	top := Query.TopError(err)
+	if top == nil {
+		return nil
+	}
+	var result Error
+	unwrapped := top.Unwrap()
+	for unwrapped != nil {
+		if e, ok := unwrapped.(Error); ok { //nolint:errorlint
+			result = e
+		}
+		unwrapped = errors.Unwrap(err)
+	}
+
+	return result
+}
+
+// Cause returns the root cause.
+func (query) Cause(err error) error {
+	unwrapped := errors.Unwrap(err)
+	for unwrapped != nil {
+		err = unwrapped
+		unwrapped = errors.Unwrap(err)
+	}
+	return err
 }

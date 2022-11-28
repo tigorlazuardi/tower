@@ -252,26 +252,161 @@ type ErrorUnwrapper interface {
 	Unwrap() error
 }
 
+type marshalFlag uint8
+
+func (m marshalFlag) Has(f marshalFlag) bool {
+	return m&f == f
+}
+
+func (m *marshalFlag) Set(f marshalFlag) {
+	*m |= f
+}
+
+const (
+	marshalAll      marshalFlag = 0
+	marshalSkipCode marshalFlag = 1 << iota
+	marshalSkipMessage
+	marshalSkipLevel
+	marshalSkipCaller
+	marshalSkipContext
+	marshalSkipTime
+	marshalSkipAll = marshalSkipCode + marshalSkipMessage + marshalSkipLevel + marshalSkipTime + marshalSkipContext + marshalSkipCaller
+)
+
 type implError struct {
 	inner *errorBuilder
+	flag  marshalFlag
+}
+
+// sorted keys are rather important for human reads. Especially the Context and Error should always be at the last marshaled keys.
+// as they contain the most amount of data and information, and thus shadows other values at a glance.
+//
+// arguably this is simpler to be done than implementing json.Marshaler interface and doing it manually, key by key
+// without resorting to other libraries.
+type implErrorJsonMarshaler struct {
+	Time    string `json:"time,omitempty"`
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Caller  Caller `json:"caller,omitempty"`
+	Key     string `json:"key,omitempty"`
+	Level   string `json:"level,omitempty"`
+	Context any    `json:"context,omitempty"`
+	Error   error  `json:"error,omitempty"`
+}
+
+type CodeBlockJSONMarshaler interface {
+	CodeBlockJSON() ([]byte, error)
+}
+
+type cbJson struct {
+	inner error
+}
+
+func (c cbJson) Error() string {
+	return c.inner.Error()
+}
+
+func (c cbJson) CodeBlockJSON() ([]byte, error) {
+	return c.MarshalJSON()
+}
+
+func (c cbJson) MarshalJSON() ([]byte, error) {
+	if cb, ok := c.inner.(CodeBlockJSONMarshaler); ok {
+		return cb.CodeBlockJSON()
+	}
+	b := &bytes.Buffer{}
+	enc := json.NewEncoder(b)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+	err := enc.Encode(richJsonError{c.inner})
+	return b.Bytes(), err
+}
+
+func (e *implError) compareAndUpdateFlags(other *implError) {
+	if e.Code() == other.Code() {
+		other.flag.Set(marshalSkipCode)
+	}
+	if e.Message() == other.Message() {
+		other.flag.Set(marshalSkipMessage)
+	}
+	if e.Level() == other.Level() {
+		other.flag.Set(marshalSkipLevel)
+	}
+	if len(other.Context()) == 0 {
+		other.flag.Set(marshalSkipContext)
+	}
+	if e.Time().Sub(other.Time()) < time.Second {
+		other.flag.Set(marshalSkipTime)
+	}
+	if other.flag.Has(marshalSkipCode) &&
+		other.flag.Has(marshalSkipMessage) &&
+		other.flag.Has(marshalSkipLevel) &&
+		other.flag.Has(marshalSkipContext) {
+		other.flag.Set(marshalSkipCaller)
+	}
+}
+
+func (e *implError) createCodeBlockPayload() *implErrorJsonMarshaler {
+	ctx := func() any {
+		if len(e.inner.context) == 0 {
+			return nil
+		}
+		if len(e.inner.context) == 1 {
+			return e.inner.context[0]
+		}
+		return e.inner.context
+	}()
+	marshalAble := implErrorJsonMarshaler{
+		Time:    e.Time().Format(time.RFC3339),
+		Code:    e.Code(),
+		Message: e.Message(),
+		Caller:  e.Caller(),
+		Key:     e.Key(),
+		Level:   e.Level().String(),
+		Context: ctx,
+		Error:   cbJson{e.inner.origin},
+	}
+
+	if e.flag.Has(marshalSkipCode) {
+		marshalAble.Code = 0
+	}
+	if e.flag.Has(marshalSkipMessage) {
+		marshalAble.Message = ""
+	}
+	if e.flag.Has(marshalSkipLevel) {
+		marshalAble.Level = ""
+	}
+	if e.flag.Has(marshalSkipTime) {
+		marshalAble.Time = ""
+	}
+	if e.flag.Has(marshalSkipCaller) {
+		marshalAble.Caller = nil
+	}
+	return &marshalAble
+}
+
+func (e implError) CodeBlockJSON() ([]byte, error) {
+	if origin, ok := e.inner.origin.(*implError); ok {
+		e.compareAndUpdateFlags(origin)
+	}
+	b := &bytes.Buffer{}
+	enc := json.NewEncoder(b)
+	enc.SetEscapeHTML(false)
+	enc.SetIndent("", "  ")
+	// Check if current implError needs to be skipped.
+	if e.flag.Has(marshalSkipAll) {
+		origin := e.inner.origin
+		if cbJson, ok := origin.(CodeBlockJSONMarshaler); ok {
+			return cbJson.CodeBlockJSON()
+		}
+		err := enc.Encode(richJsonError{origin})
+		return b.Bytes(), err
+	}
+	err := enc.Encode(e.createCodeBlockPayload())
+	return b.Bytes(), err
 }
 
 func (e implError) MarshalJSON() ([]byte, error) {
-	// sorted keys are rather important for human reads. Especially the Context and Error should always be at the last marshaled keys.
-	// as they contain the most amount of data and information, and thus shadows other values at a glance.
-	//
-	// arguably this is simpler to be done than implementing json.Marshaler interface and doing it manually, key by key
-	// without resorting to other libraries.
-	type implErrorJsonMarshaler struct {
-		Time    string        `json:"time,omitempty"`
-		Code    int           `json:"code,omitempty"`
-		Message string        `json:"message,omitempty"`
-		Caller  Caller        `json:"caller,omitempty"`
-		Key     string        `json:"key,omitempty"`
-		Level   string        `json:"level,omitempty"`
-		Context any           `json:"context,omitempty"`
-		Error   richJsonError `json:"error,omitempty"`
-	}
 	b := &bytes.Buffer{}
 	enc := json.NewEncoder(b)
 	enc.SetEscapeHTML(false)
@@ -284,6 +419,7 @@ func (e implError) MarshalJSON() ([]byte, error) {
 		}
 		return e.inner.context
 	}()
+
 	err := enc.Encode(implErrorJsonMarshaler{
 		Time:    e.Time().Format(time.RFC3339),
 		Code:    e.Code(),

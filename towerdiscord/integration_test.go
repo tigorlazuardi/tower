@@ -20,26 +20,56 @@ type testHook struct {
 }
 
 func (t testHook) PreMessageHook(ctx context.Context, _ *towerdiscord.WebhookContext) context.Context {
+	ctx = context.WithValue(ctx, "test", "test")
 	return ctx
 }
 
-func (t testHook) PostMessageHook(_ context.Context, _ *towerdiscord.WebhookContext, err error) {
+func (t testHook) PostMessageHook(ctx context.Context, _ *towerdiscord.WebhookContext, err error) {
 	defer t.wg.Done()
 	if err != nil {
 		t.t.Error(err)
 	}
+	if e, ok := ctx.Value("test").(string); ok {
+		if e != "test" {
+			t.t.Errorf("context value of test should have value of 'test' not '%s'", e)
+		}
+	} else {
+		t.t.Error("context value of test should exist in PostMessageHook")
+	}
 }
 
 func (t testHook) PreBucketUploadHook(ctx context.Context, _ *towerdiscord.WebhookContext) context.Context {
+	if e, ok := ctx.Value("test").(string); ok {
+		if e != "test" {
+			t.t.Errorf("context value of test should have value of 'test' not '%s'", e)
+		}
+	} else {
+		t.t.Error("context value of test should exist in PreBucketUploadHook")
+	}
+	ctx = context.WithValue(ctx, "test-bucket", "test-bucket")
 	return ctx
 }
 
-func (t testHook) PostBucketUploadHook(_ context.Context, _ *towerdiscord.WebhookContext, results []bucket.UploadResult) {
+func (t testHook) PostBucketUploadHook(ctx context.Context, _ *towerdiscord.WebhookContext, results []bucket.UploadResult) {
 	defer t.wg.Done()
 	for _, result := range results {
 		if result.Error != nil {
 			t.t.Error(result.Error)
 		}
+	}
+	if e, ok := ctx.Value("test").(string); ok {
+		if e != "test" {
+			t.t.Errorf("context value of test should have value of 'test' not '%s'", e)
+		}
+	} else {
+		t.t.Error("context value of test should exist in PreBucketUploadHook")
+	}
+	if e, ok := ctx.Value("test-bucket").(string); ok {
+		if e != "test-bucket" {
+			t.t.Errorf("context value of test should have value of 'test-bucket' not '%s'", e)
+		}
+	} else {
+		t.t.Error("context value of test-bucket should exist in PostBucketUploadHook")
 	}
 }
 
@@ -51,7 +81,7 @@ func (f foo) Error() string {
 	return f.FooMessage
 }
 
-func TestIntegration_NoFiles(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if testing.Short() {

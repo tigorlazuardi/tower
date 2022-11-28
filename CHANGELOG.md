@@ -20,6 +20,9 @@
 ### Miscellaneous
 - synchronize go mod with new tag on tower
 
+### Test
+- **tower-discord:** tested hooks
+
 
 <a name="v0.1.9"></a>
 ## [v0.1.9] - 2022-11-26

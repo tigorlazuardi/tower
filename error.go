@@ -263,7 +263,7 @@ func (e implError) MarshalJSON() ([]byte, error) {
 	// arguably this is simpler to be done than implementing json.Marshaler interface and doing it manually, key by key
 	// without resorting to other libraries.
 	type implErrorJsonMarshaler struct {
-		Time    time.Time     `json:"time,omitempty"`
+		Time    string        `json:"time,omitempty"`
 		Code    int           `json:"code,omitempty"`
 		Message string        `json:"message,omitempty"`
 		Caller  Caller        `json:"caller,omitempty"`
@@ -285,7 +285,7 @@ func (e implError) MarshalJSON() ([]byte, error) {
 		return e.inner.context
 	}()
 	err := enc.Encode(implErrorJsonMarshaler{
-		Time:    e.Time(),
+		Time:    e.Time().Format(time.RFC3339),
 		Code:    e.Code(),
 		Message: e.Message(),
 		Caller:  e.Caller(),

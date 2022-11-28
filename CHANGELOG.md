@@ -15,6 +15,7 @@
 - **caller:** added missing methods
 - **discord:** added multipart uploads
 - **discord:** better embed structures
+- **tower-discord:** implemented file upload native discord
 - **tower-discord:** added thread id in metadata
 
 ### Miscellaneous

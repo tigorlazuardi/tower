@@ -3,6 +3,8 @@ package tower
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -27,13 +29,16 @@ func (f Fields) Summary() string {
 // WriteSummary Writes the Summary() string to the writer instead of being allocated as value.
 func (f Fields) WriteSummary(w LineWriter) {
 	prefixLength := 0
+	keys := make([]string, 0, len(f))
 	for k := range f {
 		if prefixLength < len(k) {
 			prefixLength = len(k)
 		}
+		keys = append(keys, k)
 	}
-	i := 0
-	for k, v := range f {
+	sort.Strings(keys)
+	for i, k := range keys {
+		v := f[k]
 		if i > 0 {
 			w.WriteLineBreak()
 		}
@@ -49,26 +54,35 @@ func (f Fields) WriteSummary(w LineWriter) {
 		}
 		switch v := v.(type) {
 		case SummaryWriter:
-			w.WriteLineBreak()
-			v.WriteSummary(NewLineWriter(w).Indent("    ").Build())
+			if _, ok := v.(Fields); ok {
+				w.WriteLineBreak()
+			}
+			v.WriteSummary(NewLineWriter(w).Indent("  ").Build())
 		case Summary:
 			_, _ = w.WriteString(v.Summary())
 		case fmt.Stringer:
 			_, _ = w.WriteString(v.String())
 		case json.RawMessage:
 			if len(v) <= 32 {
-				_, _ = w.Write(v)
+				s := strconv.Quote(string(v))
+				_, _ = w.WriteString(s)
 			} else {
-				_, _ = w.WriteString("[object]")
+				_, _ = w.WriteString("[size too big]")
 			}
 		case []byte:
 			if len(v) <= 32 {
-				_, _ = w.Write(v)
+				s := strconv.Quote(string(v))
+				_, _ = w.WriteString(s)
 			} else {
-				_, _ = w.WriteString("[object]")
+				_, _ = w.WriteString("[size too big]")
 			}
 		case string:
-			_, _ = w.WriteString(v)
+			if len(v) <= 32 {
+				s := strconv.Quote(v)
+				_, _ = w.WriteString(s)
+			} else {
+				_, _ = w.WriteString("[size too big]")
+			}
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128:
 			_, _ = fmt.Fprintf(w, "%v", v)
 		default:

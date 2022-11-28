@@ -114,18 +114,17 @@ func (d Discord) bucketUpload(ctx context.Context, web *WebhookContext) (*Webhoo
 	d.hook.PostBucketUploadHook(ctx, web, results)
 	payload := web.Payload
 	errs := make([]error, 0, len(results))
-	for _, result := range results {
+	for i, result := range results {
 		if result.Error != nil {
 			errs = append(errs, result.Error)
 			continue
 		}
-		id := d.snowflake.Generate()
 		var height, width int
 		if imgHint, ok := result.File.Data().(ImageSizeHint); ok {
 			height, width = imgHint.ImageSize()
 		}
 		payload.Attachments = append(payload.Attachments, &Attachment{
-			ID:          id,
+			ID:          i,
 			Filename:    result.File.Filename(),
 			Description: result.File.Pretext(),
 			ContentType: result.File.ContentType(),

@@ -11,6 +11,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 )
 
 type WebhookPayload struct {
@@ -93,16 +94,16 @@ type AllowedMentions struct {
 }
 
 type Attachment struct {
-	ID          snowflake.ID `json:"id,omitempty"`
-	Filename    string       `json:"filename,omitempty"`
-	Description string       `json:"description,omitempty"`
-	ContentType string       `json:"content_type,omitempty"`
-	Size        int          `json:"size,omitempty"`
-	URL         string       `json:"url,omitempty"`
-	ProxyURL    string       `json:"proxy_url,omitempty"`
-	Height      int          `json:"height,omitempty"`
-	Width       int          `json:"width,omitempty"`
-	Ephemeral   bool         `json:"ephemeral,omitempty"`
+	ID          int    `json:"id"`
+	Filename    string `json:"filename,omitempty"`
+	Description string `json:"description,omitempty"`
+	ContentType string `json:"content_type,omitempty"`
+	Size        int    `json:"size,omitempty"`
+	URL         string `json:"url,omitempty"`
+	ProxyURL    string `json:"proxy_url,omitempty"`
+	Height      int    `json:"height,omitempty"`
+	Width       int    `json:"width,omitempty"`
+	Ephemeral   bool   `json:"ephemeral,omitempty"`
 }
 
 type WebhookContext struct {
@@ -157,7 +158,10 @@ func (d Discord) PostWebhookJSON(ctx context.Context, web *WebhookContext) error
 
 func (d Discord) PostWebhookMultipart(ctx context.Context, web *WebhookContext) error {
 	ctx = d.hook.PreMessageHook(ctx, web)
-	requestBody, contentType := d.buildMultipartWebhookBody(ctx, web)
+	requestBody, contentType, err := d.buildMultipartWebhookBody(ctx, web)
+	if err != nil {
+		return fmt.Errorf("failed to build multipart webhook body: %w", err)
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.webhook, requestBody)
 	if err != nil {
 		return fmt.Errorf("failed to create webhook request: %w", err)
@@ -195,71 +199,61 @@ func (d Discord) PostWebhookMultipart(ctx context.Context, web *WebhookContext) 
 	return nil
 }
 
-func (d Discord) buildMultipartWebhookBody(ctx context.Context, web *WebhookContext) (body io.Reader, contentType string) {
-	reader, writer := io.Pipe()
-	multipartWriter := multipart.NewWriter(writer)
+func (d Discord) buildMultipartWebhookBody(ctx context.Context, web *WebhookContext) (body *bytes.Buffer, contentType string, err error) {
+	body = &bytes.Buffer{}
+	multipartWriter := multipart.NewWriter(body)
+	defer multipartWriter.Close()
 	contentType = multipartWriter.FormDataContentType()
-	go func() {
-		payload := web.Payload
-		var err error
-		defer func() {
+	for i, file := range web.Files {
+		err := func(i int, file bucket.File) error {
+			defer func(file bucket.File) {
+				_ = file.Close()
+			}(file)
+			fw, _ := multipartWriter.CreatePart(textproto.MIMEHeader{
+				"Content-Disposition": {fmt.Sprintf(`form-data; name="files[%d]"; filename="%s"`, i, file.Filename())},
+				"Content-Type":        {file.ContentType()},
+			})
+			_, err := io.Copy(fw, file)
 			if err != nil {
-				err = web.Message.Tower().Wrap(err).
-					Message("%s: failed to build multipart/form-data webhook payload", d.Name()).
-					Caller(web.Message.Caller()).
-					Freeze()
-				_ = writer.CloseWithError(err)
-			} else {
-				_ = writer.Close()
+				return err
 			}
-		}()
-		defer func(w *multipart.Writer) {
-			if errClose := w.Close(); errClose != nil {
-				err = errClose
+			var height, width int
+			if img, ok := file.Data().(ImageSizeHint); ok {
+				height, width = img.ImageSize()
 			}
-		}(multipartWriter)
-
-		id := d.snowflake.Generate()
-		filename := id.String() + ".md"
-		fw, err := multipartWriter.CreateFormFile("files[0]", filename)
+			web.Payload.Attachments = append(web.Payload.Attachments, &Attachment{
+				ID:          i,
+				Filename:    file.Filename(),
+				Description: file.Pretext(),
+				ContentType: file.ContentType(),
+				Size:        file.Size(),
+				Height:      height,
+				Width:       width,
+			})
+			return nil
+		}(i, file)
 		if err != nil {
-			return
+			return body, contentType, tower.
+				Wrap(err).
+				Caller(web.Message.Caller()).
+				Message("failed to copy file data to multipart writer").
+				Context(tower.F{"index": i, "filename": file.Filename()}).
+				Freeze()
 		}
+	}
 
-		buf := &bytes.Buffer{}
-		for i, file := range web.Files {
-			if i > 0 {
-				buf.WriteString("\n\n")
-			}
-			buf.WriteString(file.Pretext())
-			buf.WriteString("\n\n")
-			_, err = io.Copy(buf, file.Data())
-			if err != nil {
-				return
-			}
-		}
-		_, err = io.Copy(fw, buf)
-		if err != nil {
-			return
-		}
-
-		payload.Attachments = append(payload.Attachments, &Attachment{
-			ID:          id,
-			Filename:    filename,
-			Description: "File segments",
-			ContentType: "text/markdown",
-			Size:        buf.Len(),
-		})
-
-		fw, err = multipartWriter.CreateFormField("payload_json")
-		if err != nil {
-			return
-		}
-		js, err := payload.BuildMultipartPayloadJSON()
-		if err != nil {
-			return
-		}
-		_, err = io.Copy(fw, bytes.NewReader(js))
-	}()
-	return reader, contentType
+	fw, _ := multipartWriter.CreatePart(textproto.MIMEHeader{
+		"Content-Disposition": {"form-data; name=\"payload_json\""},
+		"Content-Type":        {"application/json"},
+	})
+	j, err := web.Payload.BuildMultipartPayloadJSON()
+	if err != nil {
+		return body, contentType, tower.
+			Wrap(err).
+			Caller(web.Message.Caller()).
+			Message("failed to copy file data to build payload json writer").
+			Freeze()
+	}
+	_, _ = fw.Write(j)
+	return body, contentType, nil
 }

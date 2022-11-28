@@ -19,211 +19,244 @@ var descBufPool = pool.New(func() *bytes.Buffer {
 	return &bytes.Buffer{}
 })
 
-const descriptionLimit = 4096
+const discordLimit = 6000
 
 func (d Discord) defaultEmbedBuilder(ctx context.Context, msg tower.MessageContext, extra *ExtraInformation) ([]*Embed, []bucket.File) {
-	files := make([]bucket.File, 0, 5)
-	embeds := make([]*Embed, 0, 5)
-	{
-		em, file := d.buildSummary(msg)
-		if em != nil {
-			embeds = append(embeds, em)
-		}
-		if file != nil {
-			files = append(files, file)
-		}
+	var (
+		files  = make([]bucket.File, 0, 5)
+		embeds = make([]*Embed, 0, 5)
+		limit  = discordLimit - 150 // we have to take account for titles and timestamps.
+	)
+	summary, fileSummary, written := d.buildSummary(msg, 500, extra)
+	limit -= written
+
+	metadata, fileMetadata, written := d.buildMetadataEmbed(ctx, msg, extra, 500)
+	limit -= written
+
+	errorStackEmbed, fileErrorStack, written := d.buildErrorStackEmbed(msg, 1000, extra)
+	limit -= written
+
+	// Data limit is 50% of the remaining limit at max when error is available, otherwise 100% until 4096.
+	dataLimit := limit
+	if msg.Err() == nil && dataLimit > 4096 {
+		dataLimit = 4096
+	} else {
+		dataLimit /= 2
 	}
-	{
-		em, file := d.buildContextEmbed(msg)
-		if em != nil {
-			embeds = append(embeds, em)
-		}
-		if file != nil {
-			files = append(files, file)
-		}
+
+	dataEmbed, fileData, written := d.buildContextEmbed(msg, dataLimit, extra)
+	limit -= written
+
+	if limit > 4096 {
+		limit = 4096
 	}
-	{
-		em, file := d.buildErrorEmbed(msg)
-		if em != nil {
-			embeds = append(embeds, em)
-		}
-		if file != nil {
-			files = append(files, file)
-		}
+
+	// Error will take the remaining limit.
+	errorEmbed, errorData, written := d.buildErrorEmbed(msg, limit, extra)
+
+	embeds = append(embeds, summary)
+	if errorEmbed != nil {
+		embeds = append(embeds, errorEmbed)
 	}
-	{
-		em, file := d.buildErrorStackEmbed(msg)
-		if em != nil {
-			embeds = append(embeds, em)
-		}
-		if file != nil {
-			files = append(files, file)
-		}
+	if dataEmbed != nil {
+		embeds = append(embeds, dataEmbed)
 	}
-	{
-		em, file := d.buildMetadataEmbed(ctx, msg, extra)
-		if em != nil {
-			embeds = append(embeds, em)
-		}
-		if file != nil {
-			files = append(files, file)
-		}
+	if errorStackEmbed != nil {
+		embeds = append(embeds, errorStackEmbed)
+	}
+	embeds = append(embeds, metadata)
+
+	if fileSummary != nil {
+		files = append(files, fileSummary)
+	}
+	if errorData != nil {
+		files = append(files, errorData)
+	}
+	if fileData != nil {
+		files = append(files, fileData)
+	}
+	if fileErrorStack != nil {
+		files = append(files, fileErrorStack)
+	}
+	if fileMetadata != nil {
+		files = append(files, fileMetadata)
 	}
 	return embeds, files
 }
 
-func (d Discord) buildSummary(msg tower.MessageContext) (*Embed, bucket.File) {
+func (d Discord) buildSummary(msg tower.MessageContext, limit int, extra *ExtraInformation) (*Embed, bucket.File, int) {
 	embed := &Embed{
 		Type:  "rich",
 		Title: "Summary",
 		Color: 0x188544, // Green Jewel
 	}
-	b := descBufPool.Get()
-	defer descBufPool.Put(b)
-	b.Reset()
-	b.Grow(descriptionLimit)
+	display, data := descBufPool.Get(), descBufPool.Get()
+	defer descBufPool.Put(display)
+	defer descBufPool.Put(data)
+	display.Reset()
+	display.Grow(limit)
+	data.Reset()
+	data.Grow(limit)
 
-	_, _ = b.WriteString("**")
-	_, _ = b.WriteString(msg.Message())
-	_, _ = b.WriteString("**")
+	_, _ = display.WriteString("**")
+	_, _ = display.WriteString(msg.Message())
+	_, _ = display.WriteString("**")
 	err := msg.Err()
 	if err != nil {
-		_, _ = b.WriteString("\n\n**Error**:\n")
-		_, _ = b.WriteString("```\n")
+		_, _ = display.WriteString("\n\n**Error**:\n")
+		_, _ = display.WriteString("```\n")
 		switch err := err.(type) {
 		case tower.SummaryWriter:
-			lw := tower.NewLineWriter(b).LineBreak("\n").Build()
+			lw := tower.NewLineWriter(display).LineBreak("\n").Build()
 			err.WriteSummary(lw)
 		case tower.Summary:
-			_, _ = b.WriteString(err.Summary())
+			_, _ = display.WriteString(err.Summary())
 		case tower.ErrorWriter:
-			lw := tower.NewLineWriter(b).LineBreak("\n.. ").Build()
+			lw := tower.NewLineWriter(display).LineBreak("\n.. ").Build()
 			err.WriteError(lw)
 		default:
-			_, _ = b.WriteString(err.Error())
+			_, _ = display.WriteString(err.Error())
 		}
-		_, _ = b.WriteString("\n```")
+		_, _ = display.WriteString("\n```")
 	}
 
-	data := msg.Context()
-	if len(data) > 0 {
-		_, _ = b.WriteString("\n\n**Context**:\n")
-		_, _ = b.WriteString("```\n")
-		for _, c := range data {
+	dataContext := msg.Context()
+	if len(dataContext) > 0 {
+		for _, c := range dataContext {
 			switch c := c.(type) {
 			case tower.SummaryWriter:
-				lw := tower.NewLineWriter(b).LineBreak("\n").Build()
+				_, _ = display.WriteString("\n\n**Context**:\n")
+				_, _ = display.WriteString("```")
+				if _, ok := c.(tower.Fields); ok {
+					_, _ = display.WriteString("yaml")
+				}
+				_, _ = display.WriteString("\n")
+				lw := tower.NewLineWriter(display).LineBreak("\n").Build()
 				c.WriteSummary(lw)
+				_, _ = display.WriteString("\n```")
 			case tower.Summary:
-				_, _ = b.WriteString(c.Summary())
+				_, _ = display.WriteString("\n\n**Context**:\n")
+				_, _ = display.WriteString("```\n")
+				_, _ = display.WriteString(c.Summary())
+				_, _ = display.WriteString("\n```")
 			}
 		}
-		_, _ = b.WriteString("\n```")
 	}
-	return d.shouldCreateFile(embed, b, "# Summary")
+	if display.Len() > limit {
+		_, _ = data.Write(display.Bytes())
+	}
+
+	return shouldCreateFile(&createFileContext{
+		embed:          embed,
+		display:        display,
+		data:           data,
+		contentType:    "text/markdown",
+		fileExtension:  "md",
+		suffixFilename: "_summary",
+		limit:          limit,
+		extra:          extra,
+	})
 }
 
-func (d Discord) buildContextEmbed(msg tower.MessageContext) (*Embed, bucket.File) {
+//goland:noinspection GoUnhandledErrorResult
+func (d Discord) buildContextEmbed(msg tower.MessageContext, limit int, extra *ExtraInformation) (*Embed, bucket.File, int) {
 	if len(msg.Context()) == 0 {
-		return nil, nil
+		return nil, nil, 0
 	}
 	embed := &Embed{
 		Type:  "rich",
 		Title: "Context",
 		Color: 0x063970, // Dark Blue
 	}
-	b := descBufPool.Get()
-	defer descBufPool.Put(b)
-	b.Reset()
-	b.Grow(descriptionLimit)
-	for i, v := range msg.Context() {
-		if i > 0 {
-			_, _ = b.WriteString("\n\n")
-		}
-		_, _ = b.WriteString("```")
-		switch v := v.(type) {
-		case tower.DisplayWriter:
-			if hl, ok := v.(HighlightHint); ok {
-				_, _ = b.WriteString(hl.DiscordHighlight())
-			} else {
-				_, _ = b.WriteString("md")
-			}
-			_, _ = b.WriteRune('\n')
-			lw := tower.NewLineWriter(b).LineBreak("\n").Build()
-			v.WriteDisplay(lw)
-		case tower.Display:
-			if hl, ok := v.(HighlightHint); ok {
-				_, _ = b.WriteString(hl.DiscordHighlight())
-			} else {
-				_, _ = b.WriteString("md")
-			}
-			_, _ = b.WriteRune('\n')
-			_, _ = b.WriteString(v.Display())
-		default:
-			_, _ = b.WriteString("json\n")
-			enc := json.NewEncoder(b)
-			enc.SetIndent("", "    ")
-			enc.SetEscapeHTML(false)
-			err := enc.Encode(v)
-			if err != nil {
-				_, _ = b.WriteString(`{"error":`)
-				_, _ = b.WriteString(strconv.Quote(err.Error()))
-				_, _ = b.WriteString(`}`)
-			}
-		}
-		_, _ = b.WriteString("\n```")
+
+	display, data := descBufPool.Get(), descBufPool.Get()
+	defer descBufPool.Put(display)
+	defer descBufPool.Put(data)
+	display.Reset()
+	display.Grow(limit)
+	data.Reset()
+	data.Grow(limit)
+
+	contextData := msg.Context()
+	err := d.codeBlockBuilder.Build(display, contextData)
+	if err != nil {
+		_, _ = display.WriteString("Error building context: ")
+		display.WriteString("```")
+		_, _ = display.WriteString(err.Error())
+		display.WriteString("```\n")
 	}
-	return d.shouldCreateFile(embed, b, "# Data")
+	if display.Len() > limit {
+		var v any = contextData
+		if len(msg.Context()) == 1 {
+			v = contextData[0]
+		}
+		err := d.dataEncoder.Encode(data, v)
+		if err != nil {
+			display.WriteString("Error encoding context to file: ")
+			display.WriteString("```")
+			display.WriteString(err.Error())
+			display.WriteString("```\n")
+		}
+	}
+
+	return shouldCreateFile(&createFileContext{
+		embed:          embed,
+		display:        display,
+		data:           data,
+		contentType:    d.dataEncoder.ContentType(),
+		fileExtension:  d.dataEncoder.FileExtension(),
+		suffixFilename: "_context",
+		limit:          limit,
+		extra:          extra,
+	})
 }
 
-func (d Discord) buildErrorEmbed(msg tower.MessageContext) (*Embed, bucket.File) {
+func (d Discord) buildErrorEmbed(msg tower.MessageContext, limit int, extra *ExtraInformation) (*Embed, bucket.File, int) {
 	err := msg.Err()
 	if err == nil {
-		return nil, nil
+		return nil, nil, 0
 	}
 	embed := &Embed{
 		Type:  "rich",
 		Title: "Error",
 		Color: 0x71010b, // Venetian Red
 	}
-	b := descBufPool.Get()
-	defer descBufPool.Put(b)
-	b.Reset()
-	b.Grow(descriptionLimit)
-	_, _ = b.WriteString("```")
-	switch err := err.(type) {
-	case tower.DisplayWriter:
-		if err := err.(HighlightHint); err != nil {
-			_, _ = b.WriteString(err.DiscordHighlight())
-		} else {
-			_, _ = b.WriteString("md")
-		}
-		_, _ = b.WriteRune('\n')
-		lw := tower.NewLineWriter(b).LineBreak("\n").Build()
-		err.WriteDisplay(lw)
-	case tower.Display:
-		if err := err.(HighlightHint); err != nil {
-			_, _ = b.WriteString(err.DiscordHighlight())
-		} else {
-			_, _ = b.WriteString("md")
-		}
-		_, _ = b.WriteRune('\n')
-		_, _ = b.WriteString(err.Display())
-	default:
-		_, _ = b.WriteString("json\n")
-		enc := json.NewEncoder(b)
-		enc.SetIndent("", "    ")
-		enc.SetEscapeHTML(false)
-		errEncode := enc.Encode(err)
-		if errEncode != nil {
-			_ = enc.Encode(map[string]string{"error": err.Error()})
+	display, data := descBufPool.Get(), descBufPool.Get()
+	defer descBufPool.Put(display)
+	defer descBufPool.Put(data)
+	display.Reset()
+	display.Grow(limit)
+	data.Reset()
+	data.Grow(limit)
+	if err := d.codeBlockBuilder.BuildError(display, err); err != nil {
+		_, _ = display.WriteString("Error building error as display: ")
+		_, _ = display.WriteString("```")
+		_, _ = display.WriteString(err.Error())
+		_, _ = display.WriteString("```\n")
+	}
+	if display.Len() > limit {
+		err := d.dataEncoder.Encode(data, err)
+		if err != nil {
+			_, _ = display.WriteString("Error encoding error to file: ")
+			_, _ = display.WriteString("```")
+			_, _ = display.WriteString(err.Error())
+			_, _ = display.WriteString("```\n")
 		}
 	}
-	_, _ = b.WriteString("```")
-	return d.shouldCreateFile(embed, b, "# Error")
+	return shouldCreateFile(&createFileContext{
+		embed:          embed,
+		display:        display,
+		data:           data,
+		contentType:    d.dataEncoder.ContentType(),
+		fileExtension:  d.dataEncoder.FileExtension(),
+		suffixFilename: "_error",
+		limit:          limit,
+		extra:          extra,
+	})
 }
 
-func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContext, extra *ExtraInformation) (*Embed, bucket.File) {
+func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContext, extra *ExtraInformation, limit int) (*Embed, bucket.File, int) {
+	count := 0
 	embed := &Embed{
 		Type:      "rich",
 		Title:     "Metadata",
@@ -236,100 +269,152 @@ func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContex
 			Value:  v.Value,
 			Inline: true,
 		})
+		count += len(v.Key) + len(v.Value)
 	}
 	service := msg.Service()
 	if service.Name != "" {
+		const name = "Service"
 		embed.Fields = append(embed.Fields, &EmbedField{
-			Name:   "Service",
+			Name:   name,
 			Value:  service.Name,
 			Inline: true,
 		})
+		count += len(name) + len(service.Name)
 	}
 	if service.Type != "" {
+		const sType = "Type"
 		embed.Fields = append(embed.Fields, &EmbedField{
-			Name:   "Type",
+			Name:   sType,
 			Value:  service.Type,
 			Inline: true,
 		})
+		count += len(sType) + len(service.Type)
 	}
 	if service.Environment != "" {
+		const env = "Environment"
 		embed.Fields = append(embed.Fields, &EmbedField{
-			Name:   "Environment",
+			Name:   env,
 			Value:  service.Environment,
 			Inline: true,
 		})
+		count += len(env) + len(service.Type)
 	}
+	const threadIDName = "Thread ID"
 	embed.Fields = append(embed.Fields, &EmbedField{
-		Name:   "Thread ID",
+		Name:   threadIDName,
 		Value:  extra.ThreadID.String(),
 		Inline: true,
 	})
+	count += len(threadIDName) + len(extra.ThreadID.String())
 	var iteration string
 	if msg.SkipVerification() {
 		iteration = "(skipped verification)"
 	} else {
 		iteration = strconv.Itoa(extra.Iteration)
 	}
+	const messageIteration = "Message Iteration"
 	embed.Fields = append(embed.Fields, &EmbedField{
-		Name:   "Message Iteration",
+		Name:   messageIteration,
 		Value:  iteration,
 		Inline: true,
 	})
+	count += len(messageIteration) + len(iteration)
 	ts := extra.CooldownTimeEnds.Unix()
+	const nextPossibleEarliestRepeat = "Next Possible Earliest Repeat"
+	repeatValue := fmt.Sprintf("<t:%d:F> | <t:%d:R>", ts, ts)
 	embed.Fields = append(embed.Fields, &EmbedField{
-		Name:   "Next Possible Earliest Repeat",
-		Value:  fmt.Sprintf("<t:%d:F> | <t:%d:R>", ts, ts),
+		Name:   nextPossibleEarliestRepeat,
+		Value:  repeatValue,
 		Inline: false,
 	})
+	count += len(messageIteration) + len(iteration)
 	if len(embed.Fields) > 25 {
 		embed.Fields = embed.Fields[:25]
 	}
-	b := descBufPool.Get()
-	defer descBufPool.Put(b)
-	b.Reset()
-	b.Grow(descriptionLimit)
-	_, _ = b.WriteString(`**Caller Origin**`)
-	_, _ = b.WriteString("\n```\n")
-	_, _ = b.WriteString(msg.Caller().String())
-	_, _ = b.WriteString("\n```\n")
-	_, _ = b.WriteString(`**Caller Function**`)
-	_, _ = b.WriteString("\n```\n")
-	_, _ = b.WriteString(msg.Caller().ShortOrigin())
-	_, _ = b.WriteString("\n```\n")
-	_, _ = b.WriteString(`**Cache Key**`)
-	_, _ = b.WriteString("\n```\n")
-	_, _ = b.WriteString(extra.CacheKey)
-	_, _ = b.WriteString("\n```")
-	return d.shouldCreateFile(embed, b, "# Metadata")
+	display, data := descBufPool.Get(), descBufPool.Get()
+	defer descBufPool.Put(display)
+	defer descBufPool.Put(data)
+	display.Reset()
+	display.Grow(limit)
+	data.Reset()
+	data.Grow(limit)
+	_, _ = display.WriteString(`**Caller Origin**`)
+	_, _ = display.WriteString("\n```\n")
+	_, _ = display.WriteString(msg.Caller().String())
+	_, _ = display.WriteString("\n```\n")
+	_, _ = display.WriteString(`**Caller Function**`)
+	_, _ = display.WriteString("\n```\n")
+	_, _ = display.WriteString(msg.Caller().ShortOrigin())
+	_, _ = display.WriteString("\n```\n")
+	_, _ = display.WriteString(`**Cache Key**`)
+	_, _ = display.WriteString("\n```\n")
+	_, _ = display.WriteString(extra.CacheKey)
+	_, _ = display.WriteString("\n```")
+
+	if display.Len() > limit {
+		_, _ = data.Write(display.Bytes())
+		_, _ = data.WriteString("\n```json\n")
+		enc := json.NewEncoder(data)
+		enc.SetIndent("", "    ")
+		enc.SetEscapeHTML(false)
+		_ = enc.Encode(embed.Fields)
+		_, _ = data.WriteString("\n```")
+	}
+
+	embed, file, written := shouldCreateFile(&createFileContext{
+		embed:          embed,
+		display:        display,
+		data:           bytes.NewBufferString(display.String()),
+		contentType:    "text/markdown",
+		fileExtension:  "md",
+		suffixFilename: "_metadata",
+		limit:          limit,
+		extra:          extra,
+	})
+	count += written
+	return embed, file, count
 }
 
-func (d Discord) buildErrorStackEmbed(msg tower.MessageContext) (*Embed, bucket.File) {
+func (d Discord) buildErrorStackEmbed(msg tower.MessageContext, limit int, extra *ExtraInformation) (*Embed, bucket.File, int) {
 	err := msg.Err()
 	if err == nil {
-		return nil, nil
+		return nil, nil, 0
 	}
 	s := make([]string, 0, 4)
 	s = stackAccumulator(s, msg.Err())
 
 	if len(s) == 0 {
-		return nil, nil
+		return nil, nil, 0
 	}
 	reverse(s)
 	content := strings.Join(s, "\n---\n")
-	b := descBufPool.Get()
-	defer descBufPool.Put(b)
-	b.Reset()
-	b.Grow(descriptionLimit)
-	_, _ = b.WriteString("```")
-	_, _ = b.WriteString(content)
-	_, _ = b.WriteString("```")
-	content = b.String()
+	display, data := descBufPool.Get(), descBufPool.Get()
+	defer descBufPool.Put(display)
+	defer descBufPool.Put(data)
+	display.Reset()
+	display.Grow(limit)
+	_, _ = display.WriteString("```")
+	_, _ = display.WriteString(content)
+	_, _ = display.WriteString("```")
+	content = display.String()
 	embed := &Embed{
 		Type:  "rich",
 		Title: "Error Stack",
 		Color: 0x5d0e16, // Cardinal Red Dark
 	}
-	return d.shouldCreateFile(embed, b, "# Error Stack")
+	if display.Len() > limit {
+		_, _ = data.Write(display.Bytes())
+	}
+	return shouldCreateFile(&createFileContext{
+		embed:          embed,
+		display:        display,
+		data:           data,
+		contentType:    "text/plain",
+		fileExtension:  "txt",
+		suffixFilename: "_error_stack",
+		limit:          limit,
+		extra:          extra,
+	})
 }
 
 func stackAccumulator(s []string, err error) []string {
@@ -366,29 +451,39 @@ func closingTicksTruncated(b *bytes.Buffer, countBack int) bool {
 		buf = buf[len(buf)-countBack:]
 	}
 	count := bytes.Count(buf, []byte("```"))
-	return count%2 == 0
+	return count%2 != 0
 }
 
-func (d Discord) shouldCreateFile(embed *Embed, b *bytes.Buffer, pretext string) (em *Embed, file bucket.File) {
-	content := b.String()
-	if b.Len() > descriptionLimit {
+type createFileContext struct {
+	embed          *Embed
+	display        *bytes.Buffer
+	data           *bytes.Buffer
+	contentType    string
+	fileExtension  string
+	suffixFilename string
+	limit          int
+	extra          *ExtraInformation
+}
+
+func shouldCreateFile(ctx *createFileContext) (em *Embed, file bucket.File, written int) {
+	display := ctx.display
+	if display.Len() > ctx.limit {
 		outro := "Content is too long to be displayed fully. See attachment for details"
-		if closingTicksTruncated(b, len(outro)+5) {
+		if closingTicksTruncated(display, len(outro)+5) {
 			outro = "\n```\nContent is too long to be displayed fully. See attachment for details"
 		}
-		b.Truncate(descriptionLimit - len(outro))
-		_, _ = b.WriteString(outro)
-		embed.Description = b.String()
-		buf := strings.NewReader(content)
-		filename := d.snowflake.Generate().String() + ".md"
-		file := bucket.NewFile(
-			buf,
-			"text/markdown",
+		display.Truncate(ctx.limit - len(outro))
+		display.WriteString(outro)
+		ctx.embed.Description = display.String()
+
+		filename := fmt.Sprintf("%s%s.%s", ctx.extra.ThreadID, ctx.suffixFilename, ctx.fileExtension)
+		file = bucket.NewFile(
+			ctx.data,
+			ctx.contentType,
 			bucket.WithFilename(filename),
-			bucket.WithPretext(pretext),
 		)
-		return embed, file
+		return ctx.embed, file, display.Len()
 	}
-	embed.Description = content
-	return embed, nil
+	ctx.embed.Description = display.String()
+	return ctx.embed, nil, display.Len()
 }

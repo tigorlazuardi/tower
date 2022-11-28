@@ -28,20 +28,30 @@ func NewQueueItem(ctx context.Context, messageContext tower.MessageContext) Queu
 }
 
 type Discord struct {
-	name      string
-	webhook   string
-	cache     cache.Cacher
-	queue     *queue.Queue[QueueItem]
-	sem       chan struct{}
-	working   int32
-	trace     tower.TraceCapturer
-	builder   EmbedBuilder
-	bucket    bucket.Bucket
-	globalKey string
-	cooldown  time.Duration
-	snowflake *snowflake.Node
-	client    Client
-	hook      Hook
+	name             string
+	webhook          string
+	cache            cache.Cacher
+	queue            *queue.Queue[QueueItem]
+	sem              chan struct{}
+	working          int32
+	trace            tower.TraceCapturer
+	builder          EmbedBuilder
+	bucket           bucket.Bucket
+	globalKey        string
+	cooldown         time.Duration
+	snowflake        *snowflake.Node
+	client           Client
+	hook             Hook
+	dataEncoder      DataEncoder
+	codeBlockBuilder CodeBlockBuilder
+}
+
+func (d *Discord) SetDataEncoder(dataEncoder DataEncoder) {
+	d.dataEncoder = dataEncoder
+}
+
+func (d *Discord) SetCodeBlockBuilder(codeBlockBuilder CodeBlockBuilder) {
+	d.codeBlockBuilder = codeBlockBuilder
 }
 
 func (d *Discord) SetHook(hook Hook) {
@@ -108,17 +118,19 @@ func (d *Discord) SetSnowflakeGenerator(node *snowflake.Node) {
 func NewDiscordBot(webhook string) *Discord {
 	host, _ := os.Hostname()
 	d := &Discord{
-		name:      "discord",
-		webhook:   webhook,
-		cache:     cache.NewMemoryCache(),
-		queue:     queue.New[QueueItem](500),
-		sem:       make(chan struct{}, (runtime.NumCPU()/3)+2),
-		trace:     tower.NoopTracer{},
-		globalKey: "global",
-		cooldown:  time.Minute * 15,
-		snowflake: generateSnowflakeNodeFromString(host + webhook),
-		client:    http.DefaultClient,
-		hook:      NoopHook{},
+		name:             "discord",
+		webhook:          webhook,
+		cache:            cache.NewMemoryCache(),
+		queue:            queue.New[QueueItem](500),
+		sem:              make(chan struct{}, (runtime.NumCPU()/3)+2),
+		trace:            tower.NoopTracer{},
+		globalKey:        "global",
+		cooldown:         time.Minute * 15,
+		snowflake:        generateSnowflakeNodeFromString(host + webhook),
+		client:           http.DefaultClient,
+		hook:             NoopHook{},
+		dataEncoder:      JSONDataEncoder{},
+		codeBlockBuilder: JSONCodeBlockBuilder{},
 	}
 	d.builder = EmbedBuilderFunc(d.defaultEmbedBuilder)
 	return d

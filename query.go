@@ -150,20 +150,41 @@ func (query) SearchHTTPCode(err error, code int) Error {
 	return Query.SearchHTTPCode(errors.Unwrap(err), code)
 }
 
+// CollectErrors Collects all the tower.Error in the error stack.
+//
+// It is sorted from the top most error to the bottom most error.
+func (query) CollectErrors(err error) []Error {
+	return collectErrors(err, nil)
+}
+
+func collectErrors(err error, input []Error) []Error {
+	if err == nil {
+		return input
+	}
+
+	if err, ok := err.(Error); ok { //nolint:errorlint
+		input = append(input, err)
+	}
+
+	return collectErrors(errors.Unwrap(err), input)
+}
+
 // GetStack Gets the error stack by checking CallerHint.
 //
 // Tower recursively checks the given error if it implements CallerHint until all the error in the stack are checked.
-func (query) GetStack(err error) []Caller {
-	in := make([]Caller, 0, 10)
+//
+// If you wish to get list of tower.Error use CollectErrors instead.
+func (query) GetStack(err error) []KeyValue[Caller, error] {
+	in := make([]KeyValue[Caller, error], 0, 10)
 	return getStackList(err, in)
 }
 
-func getStackList(err error, input []Caller) []Caller {
+func getStackList(err error, input []KeyValue[Caller, error]) []KeyValue[Caller, error] {
 	if err == nil {
 		return input
 	}
 	if ch, ok := err.(CallerHint); ok { //nolint:errorlint
-		return append(input, ch.Caller())
+		return append(input, NewKeyValue(ch.Caller(), err))
 	}
 	return getStackList(errors.Unwrap(err), input)
 }

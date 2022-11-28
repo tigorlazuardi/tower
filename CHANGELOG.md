@@ -5,8 +5,17 @@
 - **tower-discord:** better summary output
 - **towererror-WriteError:** fix duplicate output
 
+### Code Refactoring
+- **caller:** caller is now an interface
+
+### Docs
+- **tower-hints:** comments to satisfy lints
+
 ### Features
+- **caller:** added missing methods
+- **discord:** added multipart uploads
 - **discord:** better embed structures
+- **tower-discord:** added thread id in metadata
 
 ### Miscellaneous
 - synchronize go mod with new tag on tower

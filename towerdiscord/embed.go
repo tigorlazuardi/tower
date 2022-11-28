@@ -2,6 +2,7 @@ package towerdiscord
 
 import (
 	"context"
+	"github.com/bwmarrin/snowflake"
 	"github.com/tigorlazuardi/tower"
 	"github.com/tigorlazuardi/tower/bucket"
 	"time"
@@ -15,6 +16,7 @@ type ExtraInformation struct {
 	Iteration        int
 	CooldownTimeEnds time.Time
 	CacheKey         string
+	ThreadID         snowflake.ID
 }
 
 type EmbedBuilderFunc func(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []bucket.File)

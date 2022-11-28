@@ -16,7 +16,8 @@ func (d Discord) send(ctx context.Context, msg tower.MessageContext) {
 	for d.cache.Exist(ctx, d.globalKey) {
 		<-ticker.C
 	}
-	extra := &ExtraInformation{CacheKey: key}
+	id := d.snowflake.Generate()
+	extra := &ExtraInformation{CacheKey: key, ThreadID: id}
 	ticker.Stop()
 	if err := d.cache.Set(ctx, d.globalKey, []byte("locked"), time.Second*30); err != nil {
 		_ = msg.Tower().Wrap(err).Caller(msg.Caller()).Message("%s: failed to set global lock to cache", d.Name()).Log(ctx)
@@ -69,10 +70,14 @@ func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extr
 		intro = fmt.Sprintf("@here message from service **%s** of type **%s** on environment **%s**", service.Name, service.Type, service.Environment)
 	}
 
+	if extra.ThreadID == 0 {
+		extra.ThreadID = d.snowflake.Generate()
+	}
+
 	embeds, files := d.builder.BuildEmbed(ctx, msg, extra)
 	payload := &WebhookPayload{
 		Wait:     true,
-		ThreadID: d.snowflake.Generate(),
+		ThreadID: extra.ThreadID,
 		Content:  intro,
 		Embeds:   embeds,
 	}

@@ -259,6 +259,11 @@ func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContex
 			Inline: true,
 		})
 	}
+	embed.Fields = append(embed.Fields, &EmbedField{
+		Name:   "Thread ID",
+		Value:  extra.ThreadID.String(),
+		Inline: true,
+	})
 	var iteration string
 	if msg.SkipVerification() {
 		iteration = "(skipped verification)"

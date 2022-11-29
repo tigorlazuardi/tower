@@ -15,16 +15,10 @@ import (
 var clientBodyPool = pool.New(func() *bytes.Buffer { return &bytes.Buffer{} })
 
 type clientBodyCloner struct {
-	inner io.Reader
+	io.Reader
+	io.ReadCloser
 	clone *bytes.Buffer
 	limit int
-}
-
-func (c *clientBodyCloner) Close() error {
-	if cl, ok := c.inner.(io.Closer); ok {
-		return cl.Close()
-	}
-	return nil
 }
 
 func (c clientBodyCloner) Bytes() []byte {
@@ -45,7 +39,7 @@ func (c clientBodyCloner) Len() int {
 	return c.clone.Len()
 }
 
-func (c clientBodyCloner) Reader() io.Reader {
+func (c clientBodyCloner) Buffer() io.Reader {
 	return c.clone
 }
 
@@ -54,7 +48,7 @@ func (c clientBodyCloner) Truncated() bool {
 }
 
 func (c *clientBodyCloner) Read(p []byte) (n int, err error) {
-	n, err = c.inner.Read(p)
+	n, err = c.Read(p)
 	if c.limit > 0 && c.clone.Len() >= c.limit {
 		return n, err
 	}
@@ -64,12 +58,20 @@ func (c *clientBodyCloner) Read(p []byte) (n int, err error) {
 	return n, err
 }
 
-func wrapClientBodyCloner(r io.Reader) *clientBodyCloner {
+func wrapClientBodyCloner(r io.Reader, limit int) *clientBodyCloner {
 	cl := clientBodyPool.Get()
 	cl.Reset()
+	var rc io.ReadCloser
+	if c, ok := r.(io.ReadCloser); ok {
+		rc = c
+	} else {
+		rc = io.NopCloser(r)
+	}
 	return &clientBodyCloner{
-		inner: r,
-		clone: cl,
+		Reader:     r,
+		ReadCloser: rc,
+		clone:      cl,
+		limit:      limit,
 	}
 }
 
@@ -84,8 +86,8 @@ type ClonedBody interface {
 	String() string
 	// Len returns the number of bytes in the body.
 	Len() int
-	// Reader returns a reader that is used to store the body.
-	Reader() io.Reader
+	// Buffer returns a reader that is used to store the body.
+	Buffer() io.Reader
 	// Truncated returns true if the body was truncated.
 	Truncated() bool
 }

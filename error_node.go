@@ -80,7 +80,7 @@ func (c cbJson) MarshalJSON() ([]byte, error) {
 	return b.Bytes(), err
 }
 
-func (e *ErrorNode) createCodeBlockFlag(other *ErrorNode) marshalFlag {
+func (e *ErrorNode) createCodeBlockFlag(other Error) marshalFlag {
 	var m marshalFlag
 	if e.Code() == other.Code() {
 		m.Set(marshalSkipCode)
@@ -147,7 +147,7 @@ func (e *ErrorNode) createCodeBlockPayload(m marshalFlag) *implErrorJsonMarshale
 
 func (e ErrorNode) CodeBlockJSON() ([]byte, error) {
 	var m marshalFlag
-	if origin, ok := e.inner.origin.(*ErrorNode); ok {
+	if origin, ok := e.inner.origin.(Error); ok {
 		m = e.createCodeBlockFlag(origin)
 	}
 	b := &bytes.Buffer{}

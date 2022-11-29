@@ -2,6 +2,7 @@ package towerdiscord_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/tigorlazuardi/tower"
 	"github.com/tigorlazuardi/tower/bucket"
 	"github.com/tigorlazuardi/tower/internal/loader"
@@ -111,7 +112,7 @@ func TestIntegration(t *testing.T) {
 	})
 
 	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	wg.Add(2)
 	bot := towerdiscord.NewDiscordBot(webhook)
 	bot.SetName("tower-discord-integration-test")
 	bot.SetHook(testHook{t: t, wg: wg})
@@ -124,12 +125,12 @@ func TestIntegration(t *testing.T) {
 	wrapped := tow.WrapFreeze(origin, "wrapping error")
 	_ = tow.Wrap(wrapped).Message("wrapping error").Context(tower.F{"wrapping": 123, "nil_value": nil}).Notify(ctx)
 
-	//const loremIpsum = "lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n"
-	//fields := tower.F{}
-	//for i, j := 0, 0; i < 4096; i, j = i+len(loremIpsum), j+1 {
-	//	fields[fmt.Sprintf("field_%d", j)] = loremIpsum
-	//}
-	//tow.NewEntry("test big text").Context(fields).Notify(ctx)
+	const loremIpsum = "lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+	fields := tower.F{}
+	for i, j := 0, 0; i < 4096; i, j = i+len(loremIpsum), j+1 {
+		fields[fmt.Sprintf("field_%d", j)] = loremIpsum
+	}
+	tow.NewEntry("test big text").Context(fields).Notify(ctx)
 	err := bot.Wait(ctx)
 	if err != nil {
 		t.Error(err)

@@ -28,6 +28,10 @@ func (c *clientBodyCloner) Close() error {
 }
 
 func (c clientBodyCloner) Bytes() []byte {
+	return c.clone.Bytes()
+}
+
+func (c clientBodyCloner) CloneBytes() []byte {
 	s := make([]byte, c.clone.Len())
 	copy(s, c.clone.Bytes())
 	return s
@@ -41,7 +45,7 @@ func (c clientBodyCloner) Len() int {
 	return c.clone.Len()
 }
 
-func (c clientBodyCloner) Buffer() *bytes.Buffer {
+func (c clientBodyCloner) Reader() io.Reader {
 	return c.clone
 }
 
@@ -70,14 +74,18 @@ func wrapClientBodyCloner(r io.Reader) *clientBodyCloner {
 }
 
 type ClonedBody interface {
-	// Bytes returns the bytes of the body. The returned slice is a copy of the internal buffer.
+	// Bytes returns the bytes of the body. The returned byte slice are only valid until next client request.
+	//
+	// Use CloneBytes to get a copy of the bytes.
 	Bytes() []byte
+	// CloneBytes returns a copy of the bytes of the body.
+	CloneBytes() []byte
 	// String returns the body as a string.
 	String() string
 	// Len returns the number of bytes in the body.
 	Len() int
-	// Buffer returns the buffer used to store the body.
-	Buffer() *bytes.Buffer
+	// Reader returns a reader that is used to store the body.
+	Reader() io.Reader
 	// Truncated returns true if the body was truncated.
 	Truncated() bool
 }
@@ -153,7 +161,7 @@ func (t towerClientLogger) ReceiveResponseBody(_ *http.Request, response *http.R
 		strings.Contains(contentType, "video/"):
 		return 0
 	default:
-		return 1024 * 1024 * 4
+		return 1024 * 1024
 	}
 }
 
@@ -163,14 +171,12 @@ func (t towerClientLogger) Log(ctx *ClientRequestContext) {
 		"url":    ctx.Request.URL.String(),
 		"header": ctx.Request.Header,
 	}
-	if !ctx.RequestBody.Truncated() && ctx.RequestBody.Len() > 0 {
-		if strings.Contains(ctx.Request.Header.Get("Content-Type"), "application/json") {
+	if ctx.RequestBody.Len() > 0 {
+		if strings.Contains(ctx.Request.Header.Get("Content-Type"), "application/json") && !ctx.RequestBody.Truncated() {
 			requestFields["body"] = json.RawMessage(ctx.RequestBody.Bytes())
 		} else {
 			requestFields["body"] = ctx.RequestBody.String()
 		}
-	} else if ctx.RequestBody.Truncated() {
-		requestFields["body"] = "(truncated)"
 	}
 	var statusCode = http.StatusInternalServerError
 
@@ -212,3 +218,9 @@ func (t towerClientLogger) Log(ctx *ClientRequestContext) {
 func NewTowerClientLogger(t *tower.Tower) ClientLogger {
 	return &towerClientLogger{t: t}
 }
+
+type NoopClientLogger struct{}
+
+func (n NoopClientLogger) ReceiveRequestBody(*http.Request) int                  { return 0 }
+func (n NoopClientLogger) ReceiveResponseBody(*http.Request, *http.Response) int { return 0 }
+func (n NoopClientLogger) Log(*ClientRequestContext)                             {}

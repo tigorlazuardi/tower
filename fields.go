@@ -67,21 +67,21 @@ func (f Fields) WriteSummary(w LineWriter) {
 				s := strconv.Quote(string(v))
 				_, _ = w.WriteString(s)
 			} else {
-				_, _ = w.WriteString("[size too big]")
+				_, _ = w.WriteString("[...]")
 			}
 		case []byte:
 			if len(v) <= 32 {
 				s := strconv.Quote(string(v))
 				_, _ = w.WriteString(s)
 			} else {
-				_, _ = w.WriteString("[size too big]")
+				_, _ = w.WriteString("[...]")
 			}
 		case string:
 			if len(v) <= 32 {
 				s := strconv.Quote(v)
 				_, _ = w.WriteString(s)
 			} else {
-				_, _ = w.WriteString("[size too big]")
+				_, _ = w.WriteString("[...]")
 			}
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128:
 			_, _ = fmt.Fprintf(w, "%v", v)

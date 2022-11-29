@@ -24,9 +24,10 @@ func (J JSONDataEncoder) ContentType() string {
 }
 
 func (J JSONDataEncoder) Encode(w io.Writer, value any) error {
+	const indent = "   "
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
-	enc.SetIndent("", "  ")
+	enc.SetIndent("", indent)
 	err := enc.Encode(value)
 	return err
 }

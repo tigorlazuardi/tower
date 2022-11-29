@@ -19,11 +19,12 @@ type valueMarshaler []any
 var _ tower.CodeBlockJSONMarshaler = (valueMarshaler)(nil)
 
 func (v valueMarshaler) CodeBlockJSON() ([]byte, error) {
+	const indent = "   "
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
-	enc.SetIndent("", "  ")
 	enc.SetEscapeHTML(false)
 	if len(v) == 1 {
+		enc.SetIndent("", indent)
 		err := enc.Encode(v[0])
 		return buf.Bytes(), err
 	}
@@ -45,7 +46,7 @@ func (v valueMarshaler) CodeBlockJSON() ([]byte, error) {
 		j = append(j, json.RawMessage(buf.String()))
 	}
 	buf.Reset()
-	enc.SetIndent("", "  ")
+	enc.SetIndent("", indent)
 	_ = enc.Encode(j)
 	return buf.Bytes(), nil
 }

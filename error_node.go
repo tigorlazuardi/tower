@@ -9,10 +9,11 @@ import (
 	"time"
 )
 
+const codeBlockIndent = "   "
+
 // ErrorNode is the implementation of the Error interface.
 type ErrorNode struct {
 	inner *errorBuilder
-	flag  marshalFlag
 }
 
 // sorted keys are rather important for human reads. Especially the Context and Error should always be at the last marshaled keys.
@@ -42,7 +43,6 @@ func (m *marshalFlag) Set(f marshalFlag) {
 }
 
 const (
-	marshalAll      marshalFlag = 0
 	marshalSkipCode marshalFlag = 1 << iota
 	marshalSkipMessage
 	marshalSkipLevel
@@ -75,36 +75,38 @@ func (c cbJson) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
 	enc := json.NewEncoder(b)
 	enc.SetEscapeHTML(false)
-	enc.SetIndent("", "  ")
+	enc.SetIndent("", codeBlockIndent)
 	err := enc.Encode(richJsonError{c.inner})
 	return b.Bytes(), err
 }
 
-func (e *ErrorNode) compareAndUpdateFlags(other *ErrorNode) {
+func (e *ErrorNode) createCodeBlockFlag(other *ErrorNode) marshalFlag {
+	var m marshalFlag
 	if e.Code() == other.Code() {
-		other.flag.Set(marshalSkipCode)
+		m.Set(marshalSkipCode)
 	}
 	if e.Message() == other.Message() {
-		other.flag.Set(marshalSkipMessage)
+		m.Set(marshalSkipMessage)
 	}
 	if e.Level() == other.Level() {
-		other.flag.Set(marshalSkipLevel)
+		m.Set(marshalSkipLevel)
 	}
 	if len(other.Context()) == 0 {
-		other.flag.Set(marshalSkipContext)
+		m.Set(marshalSkipContext)
 	}
 	if e.Time().Sub(other.Time()) < time.Second {
-		other.flag.Set(marshalSkipTime)
+		m.Set(marshalSkipTime)
 	}
-	if other.flag.Has(marshalSkipCode) &&
-		other.flag.Has(marshalSkipMessage) &&
-		other.flag.Has(marshalSkipLevel) &&
-		other.flag.Has(marshalSkipContext) {
-		other.flag.Set(marshalSkipCaller)
+	if m.Has(marshalSkipCode) &&
+		m.Has(marshalSkipMessage) &&
+		m.Has(marshalSkipLevel) &&
+		m.Has(marshalSkipContext) {
+		m.Set(marshalSkipCaller)
 	}
+	return m
 }
 
-func (e *ErrorNode) createCodeBlockPayload() *implErrorJsonMarshaler {
+func (e *ErrorNode) createCodeBlockPayload(m marshalFlag) *implErrorJsonMarshaler {
 	ctx := func() any {
 		if len(e.inner.context) == 0 {
 			return nil
@@ -125,34 +127,35 @@ func (e *ErrorNode) createCodeBlockPayload() *implErrorJsonMarshaler {
 		Error:   cbJson{e.inner.origin},
 	}
 
-	if e.flag.Has(marshalSkipCode) {
+	if m.Has(marshalSkipCode) {
 		marshalAble.Code = 0
 	}
-	if e.flag.Has(marshalSkipMessage) {
+	if m.Has(marshalSkipMessage) {
 		marshalAble.Message = ""
 	}
-	if e.flag.Has(marshalSkipLevel) {
+	if m.Has(marshalSkipLevel) {
 		marshalAble.Level = ""
 	}
-	if e.flag.Has(marshalSkipTime) {
+	if m.Has(marshalSkipTime) {
 		marshalAble.Time = ""
 	}
-	if e.flag.Has(marshalSkipCaller) {
+	if m.Has(marshalSkipCaller) {
 		marshalAble.Caller = nil
 	}
 	return &marshalAble
 }
 
 func (e ErrorNode) CodeBlockJSON() ([]byte, error) {
+	var m marshalFlag
 	if origin, ok := e.inner.origin.(*ErrorNode); ok {
-		e.compareAndUpdateFlags(origin)
+		m = e.createCodeBlockFlag(origin)
 	}
 	b := &bytes.Buffer{}
 	enc := json.NewEncoder(b)
 	enc.SetEscapeHTML(false)
-	enc.SetIndent("", "  ")
+	enc.SetIndent("", codeBlockIndent)
 	// Check if current ErrorNode needs to be skipped.
-	if e.flag.Has(marshalSkipAll) {
+	if m.Has(marshalSkipAll) {
 		origin := e.inner.origin
 		if cbJson, ok := origin.(CodeBlockJSONMarshaler); ok {
 			return cbJson.CodeBlockJSON()
@@ -160,8 +163,8 @@ func (e ErrorNode) CodeBlockJSON() ([]byte, error) {
 		err := enc.Encode(richJsonError{origin})
 		return b.Bytes(), err
 	}
-	err := enc.Encode(e.createCodeBlockPayload())
-	return b.Bytes(), err
+	err := enc.Encode(e.createCodeBlockPayload(m))
+	return bytes.TrimSpace(b.Bytes()), err
 }
 
 func (e ErrorNode) MarshalJSON() ([]byte, error) {

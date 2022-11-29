@@ -14,6 +14,8 @@ import (
 
 var _ towerdiscord.Hook = (*testHook)(nil)
 
+const codeBlockIndent = "   "
+
 type testHook struct {
 	t                  *testing.T
 	wg                 *sync.WaitGroup

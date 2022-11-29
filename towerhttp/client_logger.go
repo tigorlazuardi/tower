@@ -15,10 +15,18 @@ import (
 var clientBodyPool = pool.New(func() *bytes.Buffer { return &bytes.Buffer{} })
 
 type clientBodyCloner struct {
-	io.Reader
 	io.ReadCloser
-	clone *bytes.Buffer
-	limit int
+	clone    *bytes.Buffer
+	limit    int
+	callback func()
+}
+
+func (c clientBodyCloner) Close() error {
+	clientBodyPool.Put(c.clone)
+	if c.callback != nil {
+		c.callback()
+	}
+	return c.ReadCloser.Close()
 }
 
 func (c clientBodyCloner) Bytes() []byte {
@@ -58,7 +66,7 @@ func (c *clientBodyCloner) Read(p []byte) (n int, err error) {
 	return n, err
 }
 
-func wrapClientBodyCloner(r io.Reader, limit int) *clientBodyCloner {
+func wrapClientBodyCloner(r io.Reader, limit int, callback func()) *clientBodyCloner {
 	cl := clientBodyPool.Get()
 	cl.Reset()
 	var rc io.ReadCloser
@@ -68,10 +76,10 @@ func wrapClientBodyCloner(r io.Reader, limit int) *clientBodyCloner {
 		rc = io.NopCloser(r)
 	}
 	return &clientBodyCloner{
-		Reader:     r,
 		ReadCloser: rc,
 		clone:      cl,
 		limit:      limit,
+		callback:   callback,
 	}
 }
 
@@ -92,6 +100,32 @@ type ClonedBody interface {
 	Truncated() bool
 }
 
+type noopCloneBody struct{}
+
+func (n noopCloneBody) Bytes() []byte {
+	return []byte{}
+}
+
+func (n noopCloneBody) CloneBytes() []byte {
+	return []byte{}
+}
+
+func (n noopCloneBody) String() string {
+	return ""
+}
+
+func (n noopCloneBody) Len() int {
+	return 0
+}
+
+func (n noopCloneBody) Buffer() io.Reader {
+	return &bytes.Buffer{}
+}
+
+func (n noopCloneBody) Truncated() bool {
+	return false
+}
+
 type ClientRequestContext struct {
 	// Context is the context used for the request.
 	Context context.Context
@@ -103,9 +137,13 @@ type ClientRequestContext struct {
 	RequestBody ClonedBody
 	// Response is the response that has been received. The response body have been consumed. It's pointless to consume
 	// the body.
+	//
+	// Response can be nil if the request failed.
 	Response *http.Response
 	// ResponseBody is a clone of response body that has been received.
 	// It is an empty buffer if the response body is nil or if ClientLogger.ReceiveResponseBody returns false.
+	//
+	// ResponseBody is always empty (not nil) if Response is nil.
 	ResponseBody ClonedBody
 	// Error is the error that has been received when sending the request.
 	Error error
@@ -123,7 +161,7 @@ type ClientLogger interface {
 	// A value of -1 (or any negative value) means that the entire request body should be cloned.
 	// A value of n (where n > 0) means that the first n bytes of the request body should be cloned.
 	ReceiveRequestBody(*http.Request) int
-	// ReceiveResponseBody should return true if the request body should be logged.
+	// ReceiveResponseBody should return true if the request body should be cloned for logging.
 	// Implementors must not consume the response body at this stage.
 	//
 	// The returned value is the maximum amount of bytes that is desired to read from the request body.
@@ -141,30 +179,32 @@ type towerClientLogger struct {
 	t *tower.Tower
 }
 
+func isHumanReadable(contentType string) bool {
+	return strings.HasPrefix(contentType, "text/") ||
+		strings.HasPrefix(contentType, "application/json") ||
+		strings.HasPrefix(contentType, "application/xml") ||
+		strings.HasPrefix(contentType, "application/x-www-form-urlencoded")
+}
+
+func isJson(b []byte) bool {
+	var js json.RawMessage
+	return json.Unmarshal(b, &js) == nil
+}
+
 func (t towerClientLogger) ReceiveRequestBody(request *http.Request) int {
 	contentType := request.Header.Get("Content-Type")
-	switch {
-	case strings.Contains(contentType, "image/"),
-		strings.Contains(contentType, "audio/"),
-		strings.Contains(contentType, "zip"),
-		strings.Contains(contentType, "video/"):
-		return 0
-	default:
-		return 1024 * 1024 * 4
+	if isHumanReadable(contentType) {
+		return 1024 * 1024
 	}
+	return 0
 }
 
 func (t towerClientLogger) ReceiveResponseBody(_ *http.Request, response *http.Response) int {
 	contentType := response.Header.Get("Content-Type")
-	switch {
-	case strings.Contains(contentType, "image/"),
-		strings.Contains(contentType, "audio/"),
-		strings.Contains(contentType, "zip"),
-		strings.Contains(contentType, "video/"):
-		return 0
-	default:
+	if isHumanReadable(contentType) {
 		return 1024 * 1024
 	}
+	return 0
 }
 
 func (t towerClientLogger) Log(ctx *ClientRequestContext) {
@@ -175,7 +215,11 @@ func (t towerClientLogger) Log(ctx *ClientRequestContext) {
 	}
 	if ctx.RequestBody.Len() > 0 {
 		if strings.Contains(ctx.Request.Header.Get("Content-Type"), "application/json") && !ctx.RequestBody.Truncated() {
-			requestFields["body"] = json.RawMessage(ctx.RequestBody.Bytes())
+			if isJson(ctx.RequestBody.Bytes()) {
+				requestFields["body"] = json.RawMessage(ctx.RequestBody.CloneBytes())
+			} else {
+				requestFields["body"] = ctx.RequestBody.String()
+			}
 		} else {
 			requestFields["body"] = ctx.RequestBody.String()
 		}
@@ -195,9 +239,11 @@ func (t towerClientLogger) Log(ctx *ClientRequestContext) {
 		}
 		if !ctx.ResponseBody.Truncated() && ctx.ResponseBody.Len() > 0 {
 			if strings.Contains(ctx.Response.Header.Get("Content-Type"), "application/json") {
-				responseFields["body"] = json.RawMessage(ctx.ResponseBody.Bytes())
-			} else {
+				responseFields["body"] = json.RawMessage(ctx.ResponseBody.CloneBytes())
+			} else if isHumanReadable(ctx.Response.Header.Get("Content-Type")) {
 				responseFields["body"] = ctx.ResponseBody.String()
+			} else {
+				responseFields["body"] = "(binary)"
 			}
 		}
 		fields["response"] = responseFields

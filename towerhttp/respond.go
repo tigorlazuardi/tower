@@ -12,6 +12,7 @@ type Responder struct {
 	tower            *tower.Tower
 	compressor       Compression
 	callerDepth      int
+	logger           ServerLogger
 }
 
 // NewResponder creates a new Responder instance.

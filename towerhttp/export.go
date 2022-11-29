@@ -1,5 +1,5 @@
 package towerhttp
 
-type exported int
+type exported struct{}
 
-const Exported exported = 0
+var Exported exported

@@ -54,8 +54,8 @@ func BailFreeze(msg string, args ...any) Error {
 }
 
 // NewEntry Creates a new EntryBuilder. The returned EntryBuilder may be appended with values.
-func NewEntry(msg string) EntryBuilder {
-	return export.NewEntry(msg)
+func NewEntry(msg string, args ...any) EntryBuilder {
+	return export.NewEntry(msg, args...)
 }
 
 var Global global
@@ -72,7 +72,7 @@ func init() {
 // SetGlobal Set the global tower instance.
 // There is no mutex locking, so do not call this method where data race is likely to happen.
 func (global) SetGlobal(t *Tower) {
-	export = t
+	*export = *t
 }
 
 // Tower Returns the global tower instance.

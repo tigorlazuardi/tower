@@ -1,6 +1,7 @@
 package towerhttp
 
 import (
+	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
 	"net/url"
@@ -41,19 +42,49 @@ type closeIdleConnections interface {
 }
 
 type HTTPClient struct {
-	inner  Doer
-	logger ClientLogger
+	inner       Doer
+	logger      ClientLogger
+	callerDepth int
+}
+
+func (H *HTTPClient) SetCallerDepth(callerDepth int) {
+	H.callerDepth = callerDepth
 }
 
 func (H HTTPClient) Do(request *http.Request) (*http.Response, error) {
+	caller := tower.GetCaller(H.callerDepth)
+	var reqBody ClonedBody = noopCloneBody{}
 	if request.Body != nil {
 		bodyRequest := H.logger.ReceiveRequestBody(request)
 		if bodyRequest != 0 {
-			request.Body = wrapClientBodyCloner(request.Body, bodyRequest)
+			clone := wrapClientBodyCloner(request.Body, bodyRequest, nil)
+			request.Body = clone
+			reqBody = clone
 		}
 	}
-	// TODO implement better API
-	return H.inner.Do(request)
+	ctx := &ClientRequestContext{
+		Context:      request.Context(),
+		Request:      request,
+		RequestBody:  reqBody,
+		ResponseBody: noopCloneBody{},
+		Caller:       caller,
+	}
+	resp, err := H.inner.Do(request)
+	ctx.Response = resp
+	ctx.Error = err
+	if err != nil {
+		H.logger.Log(ctx)
+		return resp, err
+	}
+	bodyResponse := H.logger.ReceiveResponseBody(request, resp)
+	if bodyResponse != 0 {
+		clone := wrapClientBodyCloner(resp.Body, bodyResponse, func() {
+			H.logger.Log(ctx)
+		})
+		resp.Body = clone
+		ctx.ResponseBody = clone
+	}
+	return resp, err
 }
 
 func (H HTTPClient) Get(url string) (*http.Response, error) {
@@ -101,4 +132,9 @@ func (H HTTPClient) CloseIdleConnections() {
 	if closer, ok := H.inner.(closeIdleConnections); ok {
 		closer.CloseIdleConnections()
 	}
+}
+
+// WrapClient wraps http client that implements towerhttp.Doer.
+func WrapClient(client Doer) Client {
+	return &HTTPClient{inner: client, logger: NewTowerClientLogger(tower.Global.Tower()), callerDepth: 2}
 }

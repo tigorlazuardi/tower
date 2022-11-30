@@ -1,22 +1,53 @@
 package tower
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
 )
 
-// Prints the variable and returns the given item after printing.
+func printDebugImpl(a any) bool {
+	if a == nil {
+		fmt.Println("nil")
+		return true
+	}
+	if dbg, ok := a.(interface {
+		Debug()
+	}); ok {
+		dbg.Debug()
+		return true
+	}
+	return false
+}
+
+func printDisplayImpl(a any) bool {
+	if a == nil {
+		fmt.Println("nil")
+		return true
+	}
+	if dbg, ok := a.(Display); ok {
+		fmt.Println(dbg.Display())
+		return true
+	}
+	return false
+}
+
+// Dbg Prints the variable and returns the given item after printing.
 // Useful for Debugging without breaking the code flow.
 func Dbg[T any](a T) T {
-	str := &strings.Builder{}
-	enc := json.NewEncoder(str)
-	enc.SetIndent("", "    ")
-	enc.SetEscapeHTML(false)
-	err := enc.Encode(a)
-	if err != nil {
-		str.WriteString(err.Error())
+	if printDebugImpl(a) {
+		return a
 	}
-	fmt.Println(str.String())
+	if printDisplayImpl(a) {
+		return a
+	}
+	fmt.Printf("%#v\n", a)
 	return a
+}
+
+// Cast turns any slice into a slice of any.
+func Cast[T any](in []T) []any {
+	out := make([]any, len(in))
+	for i, v := range in {
+		out[i] = v
+	}
+	return out
 }

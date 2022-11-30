@@ -21,7 +21,7 @@ type ErrorNode struct {
 //
 // arguably this is simpler to be done than implementing json.Marshaler interface and doing it manually, key by key
 // without resorting to other libraries.
-type implErrorJsonMarshaler struct {
+type implJsonMarshaler struct {
 	Time    string `json:"time,omitempty"`
 	Code    int    `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
@@ -106,7 +106,7 @@ func (e *ErrorNode) createCodeBlockFlag(other Error) marshalFlag {
 	return m
 }
 
-func (e *ErrorNode) createCodeBlockPayload(m marshalFlag) *implErrorJsonMarshaler {
+func (e *ErrorNode) createCodeBlockPayload(m marshalFlag) *implJsonMarshaler {
 	ctx := func() any {
 		if len(e.inner.context) == 0 {
 			return nil
@@ -116,7 +116,7 @@ func (e *ErrorNode) createCodeBlockPayload(m marshalFlag) *implErrorJsonMarshale
 		}
 		return e.inner.context
 	}()
-	marshalAble := implErrorJsonMarshaler{
+	marshalAble := implJsonMarshaler{
 		Time:    e.Time().Format(time.RFC3339),
 		Code:    e.Code(),
 		Message: e.Message(),
@@ -181,7 +181,7 @@ func (e ErrorNode) MarshalJSON() ([]byte, error) {
 		return e.inner.context
 	}()
 
-	err := enc.Encode(implErrorJsonMarshaler{
+	err := enc.Encode(implJsonMarshaler{
 		Time:    e.Time().Format(time.RFC3339),
 		Code:    e.Code(),
 		Message: e.Message(),

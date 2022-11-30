@@ -2,6 +2,7 @@ package towerhttp
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/tigorlazuardi/tower"
 )
 
@@ -40,12 +41,14 @@ func (n NoopBodyTransform) BodyTransform(_ context.Context, input any) any {
 type SimpleErrorTransformer struct{}
 
 func (n SimpleErrorTransformer) ErrorBodyTransform(_ context.Context, err error) any {
-	var msg string
+	var msg any
 	switch err := err.(type) {
+	case json.Marshaler:
+		msg = err
 	case tower.MessageHint:
 		msg = err.Message()
 	default:
 		msg = err.Error()
 	}
-	return map[string]string{"error": msg}
+	return map[string]any{"error": msg}
 }

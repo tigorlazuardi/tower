@@ -13,14 +13,19 @@
 
 ### Features
 - **caller:** added missing methods
-- **discord:** added multipart uploads
+- **client-logger:** update client logger
 - **discord:** better embed structures
+- **discord:** added multipart uploads
+- **error_node:** indent now set to 3 spaces
+- **http-client:** wip update
 - **implError:** exported implError as ErrorNode
-- **query:** added bottom error query
 - **query:** added CollectErrors query
+- **query:** added bottom error query
 - **tower:** added code block marshaler pattern
 - **tower-discord:** implemented file upload native discord
 - **tower-discord:** added thread id in metadata
+- **tower-http:** added respond body logger
+- **tower-http:** added client logger
 
 ### Miscellaneous
 - synchronize go mod with new tag on tower

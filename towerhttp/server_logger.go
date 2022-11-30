@@ -21,7 +21,7 @@ type ServerLoggerContext struct {
 	// the body.
 	ResponseHeader http.Header
 	// ResponseBody is a clone of response body that has been received.
-	// It is an empty buffer if the response body is nil or if ServerLogger.ReceiveResponseBody returns false.
+	// It is an empty buffer if the response body is nil or if ServerLogger.ReceiveResponseBodyStream returns false.
 	ResponseBody ClonedBody
 	// Error is the error that has been received when sending the request.
 	Error error
@@ -30,7 +30,7 @@ type ServerLoggerContext struct {
 }
 
 type ServerLogger interface {
-	// ReceiveRequestBody should return true if the request body should be cloned for logging.
+	// ReceiveRequestBody should return value other than 0 if the request body should be cloned for logging.
 	// Implementors must not consume the request body at this stage.
 	//
 	// The returned value is the maximum amount of bytes that is desired to read from the request body.
@@ -39,15 +39,16 @@ type ServerLogger interface {
 	// A value of -1 (or any negative value) means that the entire request body should be cloned.
 	// A value of n (where n > 0) means that the first n bytes of the request body should be cloned.
 	ReceiveRequestBody(*http.Request) int
-	// ReceiveResponseBody should return true if the response body should be cloned for logging.
-	// Implementors must not consume the request body at this stage.
+	// ReceiveResponseBodyStream should return other value other than 0 if the response body wants to be cloned.
+	//
+	// If the user responds with data that is not a stream, the response body will always be sent to ServerLoggerContext.ResponseBody.
 	//
 	// The returned value is the maximum amount of bytes that is desired to read from the request body.
 	//
 	// A value of 0 effectively skips the request body cloning.
 	// A value of -1 (or any negative value) means that the entire request body should be cloned.
 	// A value of n (where n > 0) means that the first n bytes of the request body should be cloned.
-	ReceiveResponseBody(responseContentType string, r *http.Request) int
+	ReceiveResponseBodyStream(responseContentType string, r *http.Request) int
 	// Log will be called after the Request-Response trip is done.
 	// Whether the log will be printed or not depends on the implementation.
 	Log(ctx *ServerLoggerContext)

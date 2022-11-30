@@ -26,35 +26,49 @@ const errInternalServerError errString = "Internal Server Error"
 // if err is nil, it will be replaced with "Internal Server Error" message. It is done this way, because the library
 // assumes that you mishandled the method and to prevent sending empty values, a generic Internal Server Error message
 // will be sent instead. If you wish to send an empty response, use Respond with http.NoBody as body.
-func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, err error, opts ...RespondOption) {
-	if err == nil {
-		err = errInternalServerError
-	}
+func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, errPayload error, opts ...RespondOption) {
 	var (
+		bodyBytes  []byte
+		err        error
 		statusCode = http.StatusInternalServerError
-		errIO      error
 	)
-	if ch, ok := err.(tower.HTTPCodeHint); ok {
+	if errPayload == nil {
+		errPayload = errInternalServerError
+	}
+	if ch, ok := errPayload.(tower.HTTPCodeHint); ok {
 		statusCode = ch.HTTPCode()
 	}
 	opt := r.buildOption(statusCode)
 	for _, o := range opts {
 		o.apply(opt)
 	}
+	defer func() {
+		caller := tower.GetCaller(r.callerDepth)
+		if logger := loggerFromContext(ctx); logger != nil {
+			logger.log(&loggerContext{
+				ctx:            ctx,
+				responseHeader: rw.Header(),
+				responseStatus: opt.statusCode,
+				responseBody:   bodyBytes,
+				caller:         caller,
+				err:            err,
+			})
+		} else if err != nil {
+			_ = r.tower.Wrap(err).Caller(caller).Log(ctx)
+		}
+	}()
 
-	body := r.errorTransformer.ErrorBodyTransform(ctx, err)
-	b, errIO := opt.encoder.Encode(body)
-	if errIO != nil {
-		_ = r.tower.Wrap(errIO).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
+	body := r.errorTransformer.ErrorBodyTransform(ctx, errPayload)
+	bodyBytes, err = opt.encoder.Encode(body)
+	if err != nil {
 		return
 	}
 	contentType := opt.encoder.ContentType()
 	if contentType != "" {
 		rw.Header().Set("Content-Type", contentType)
 	}
-	compressed, errIO := opt.compressor.Compress(b)
-	if errIO != nil {
-		_ = r.tower.Wrap(errIO).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
+	compressed, err := opt.compressor.Compress(bodyBytes)
+	if err != nil {
 		return
 	}
 	contentEncoding := opt.compressor.ContentEncoding()
@@ -63,8 +77,5 @@ func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, err
 	}
 
 	rw.WriteHeader(opt.statusCode)
-	_, errIO = rw.Write(compressed)
-	if errIO != nil {
-		_ = r.tower.Wrap(errIO).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
-	}
+	_, err = rw.Write(compressed)
 }

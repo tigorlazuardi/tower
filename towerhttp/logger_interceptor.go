@@ -8,14 +8,25 @@ import (
 	"net/http"
 )
 
-type serverInterceptor struct {
+var interceptorKey struct{ key int } = struct{ key int }{777}
+
+func contextWithLogger(ctx context.Context, interceptor *loggerInterceptor) context.Context {
+	return context.WithValue(ctx, interceptorKey, interceptor)
+}
+
+func loggerFromContext(ctx context.Context) *loggerInterceptor {
+	interceptor, _ := ctx.Value(interceptorKey).(*loggerInterceptor)
+	return interceptor
+}
+
+type loggerInterceptor struct {
 	request     *http.Request
 	requestBody ClonedBody
 
 	logger ServerLogger
 }
 
-type serverInterceptorContext struct {
+type loggerContext struct {
 	ctx            context.Context
 	responseHeader http.Header
 	responseStatus int
@@ -25,7 +36,7 @@ type serverInterceptorContext struct {
 }
 
 // receiveResponse will be called after the request is sent.
-func (s *serverInterceptor) log(ctx *serverInterceptorContext) {
+func (s *loggerInterceptor) log(ctx *loggerContext) {
 	clone := bytes.NewBuffer(ctx.responseBody)
 	sb := io.NopCloser(clone)
 
@@ -48,7 +59,7 @@ func (s *serverInterceptor) log(ctx *serverInterceptorContext) {
 	})
 }
 
-type serverInterceptorStreamContext struct {
+type loggerStreamContext struct {
 	ctx         context.Context
 	w           http.ResponseWriter
 	contentType string
@@ -56,7 +67,7 @@ type serverInterceptorStreamContext struct {
 	caller      tower.Caller
 }
 
-func (s *serverInterceptor) logStream(ctx *serverInterceptorStreamContext) (wrappedBody io.Reader, wrappedRW responseCallback) {
+func (s *loggerInterceptor) logStream(ctx *loggerStreamContext) (wrappedBody io.Reader, wrappedRW responseCallback) {
 	var clone ClonedBody = noopCloneBody{}
 	wrappedBody = ctx.body
 	size := s.logger.ReceiveResponseBodyStream(ctx.contentType, s.request)

@@ -2,9 +2,8 @@ package towerhttp
 
 import (
 	"context"
-	"net/http"
-
 	"github.com/tigorlazuardi/tower"
+	"net/http"
 )
 
 // Respond with the given body and options.
@@ -22,9 +21,11 @@ import (
 // Body of nil has different treatment with http.NoBody. if body is nil, the nil value is still passed to the BodyTransformer implementer,
 // therefore the final result body may not actually be empty.
 func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
+	caller := tower.GetCaller(r.callerDepth)
 	var (
 		statusCode = http.StatusOK
 		err        error
+		bodyBytes  []byte
 	)
 
 	if ch, ok := body.(tower.HTTPCodeHint); ok {
@@ -35,6 +36,21 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	for _, o := range opts {
 		o.apply(opt)
 	}
+	defer func() {
+		if logger := loggerFromContext(ctx); logger != nil {
+			logger.log(&loggerContext{
+				ctx:            ctx,
+				responseHeader: rw.Header(),
+				responseStatus: opt.statusCode,
+				responseBody:   bodyBytes,
+				caller:         caller,
+				err:            err,
+			})
+		} else if err != nil {
+			_ = r.tower.Wrap(err).Caller(caller).Log(ctx)
+		}
+	}()
+
 	if body == http.NoBody {
 		rw.WriteHeader(opt.statusCode)
 		return
@@ -46,9 +62,13 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 		return
 	}
 
-	b, err := opt.encoder.Encode(body)
+	bodyBytes, err = opt.encoder.Encode(body)
 	if err != nil {
-		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
+		opt.statusCode = http.StatusInternalServerError
+		rw.Header().Set("Content-Type", "text/plain")
+		rw.WriteHeader(opt.statusCode)
+		bodyBytes = []byte("Encoding Error")
+		_, _ = rw.Write(bodyBytes)
 		return
 	}
 	contentType := opt.encoder.ContentType()
@@ -56,14 +76,11 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 		rw.Header().Set("Content-Type", contentType)
 	}
 
-	compressed, err := opt.compressor.Compress(b)
+	compressed, err := opt.compressor.Compress(bodyBytes)
 	if err != nil {
-		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Level(tower.WarnLevel).Log(ctx)
+		_ = r.tower.Wrap(err).Caller(caller).Level(tower.WarnLevel).Log(ctx)
 		rw.WriteHeader(opt.statusCode)
-		_, err = rw.Write(b)
-		if err != nil {
-			_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
-		}
+		_, err = rw.Write(bodyBytes)
 		return
 	}
 
@@ -74,7 +91,4 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 
 	rw.WriteHeader(opt.statusCode)
 	_, err = rw.Write(compressed)
-	if err != nil {
-		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
-	}
 }

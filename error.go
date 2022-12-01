@@ -13,12 +13,12 @@ type ErrorConstructorContext struct {
 }
 
 type ErrorConstructor interface {
-	ContructError(*ErrorConstructorContext) ErrorBuilder
+	ConstructError(*ErrorConstructorContext) ErrorBuilder
 }
 
 type ErrorConstructorFunc func(*ErrorConstructorContext) ErrorBuilder
 
-func (f ErrorConstructorFunc) ContructError(ctx *ErrorConstructorContext) ErrorBuilder {
+func (f ErrorConstructorFunc) ConstructError(ctx *ErrorConstructorContext) ErrorBuilder {
 	return f(ctx)
 }
 
@@ -206,7 +206,12 @@ func (e *errorBuilder) Time(t time.Time) ErrorBuilder {
 }
 
 func (e *errorBuilder) Freeze() Error {
-	return &ErrorNode{inner: e}
+	node := &ErrorNode{inner: e}
+	if child, ok := e.origin.(*ErrorNode); ok {
+		node.next = child
+		child.prev = node
+	}
+	return node
 }
 
 func (e *errorBuilder) Log(ctx context.Context) Error {
@@ -232,6 +237,7 @@ type Error interface {
 	LevelHint
 	MessageHint
 	TimeHint
+	ServiceHint
 
 	/*
 		Logs this error.

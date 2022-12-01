@@ -66,7 +66,7 @@ func (t *Tower) Wrap(err error) ErrorBuilder {
 		err = errors.New("<nil>")
 	}
 	caller := GetCaller(t.callerDepth)
-	return t.errorConstructor.ContructError(&ErrorConstructorContext{
+	return t.errorConstructor.ConstructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
 		Tower:  t,
@@ -98,7 +98,7 @@ func (t *Tower) Bail(msg string, args ...any) ErrorBuilder {
 		err = errors.New(msg)
 	}
 	caller := GetCaller(t.callerDepth)
-	return t.errorConstructor.ContructError(&ErrorConstructorContext{
+	return t.errorConstructor.ConstructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
 		Tower:  t,
@@ -117,7 +117,7 @@ func (t *Tower) BailFreeze(msg string, args ...any) Error {
 		err = errors.New(msg)
 	}
 	caller := GetCaller(t.callerDepth)
-	return t.errorConstructor.ContructError(&ErrorConstructorContext{
+	return t.errorConstructor.ConstructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
 		Tower:  t,
@@ -160,7 +160,7 @@ func (t *Tower) WrapFreeze(err error, message string, args ...any) Error {
 	if len(args) > 0 {
 		message = fmt.Sprintf(message, args...)
 	}
-	return t.errorConstructor.ContructError(&ErrorConstructorContext{
+	return t.errorConstructor.ConstructError(&ErrorConstructorContext{
 		Err:    err,
 		Caller: caller,
 		Tower:  t,

@@ -2,7 +2,9 @@ package towerhttp
 
 import (
 	"bufio"
+	"context"
 	"errors"
+	"io"
 	"net"
 	"net/http"
 )
@@ -10,11 +12,12 @@ import (
 type responseCallbackFunc = func(status, size int, err error)
 
 // newResponseCallback runs the callback after the response is finished written.
-func newResponseCallback(w http.ResponseWriter, callback responseCallbackFunc) responseCallback {
+func newResponseCallback(ctx context.Context, w http.ResponseWriter, callback responseCallbackFunc) responseCallback {
 	listener := &responseListener{
 		w:        w,
 		callback: callback,
 	}
+	listener.Listen(ctx)
 	if cn, ok := w.(http.CloseNotifier); ok {
 		return &responseListenerCN{
 			responseListener: listener,
@@ -35,11 +38,11 @@ type responseCallback interface {
 var _ responseCallback = (*responseListener)(nil)
 
 type responseListener struct {
-	w              http.ResponseWriter
-	status         int
-	size           int
-	callback       responseCallbackFunc
-	callbackCalled bool
+	w          http.ResponseWriter
+	status     int
+	size       int
+	callback   responseCallbackFunc
+	writeError error
 }
 
 func (l *responseListener) Header() http.Header {
@@ -54,9 +57,8 @@ type responseListenerCN struct {
 func (l *responseListener) Write(b []byte) (int, error) {
 	size, err := l.w.Write(b)
 	l.size += size
-	if err != nil && !l.callbackCalled {
-		l.callbackCalled = true
-		l.callback(l.status, l.size, err)
+	if err != nil && err != io.EOF {
+		l.writeError = err
 	}
 	return size, err
 }
@@ -88,4 +90,13 @@ func (l *responseListener) Flush() {
 		return
 	}
 	f.Flush()
+}
+
+func (l *responseListener) Listen(ctx context.Context) {
+	if ctx.Done() != nil && l.callback != nil {
+		go func() {
+			<-ctx.Done()
+			l.callback(l.status, l.size, l.writeError)
+		}()
+	}
 }

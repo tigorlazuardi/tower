@@ -78,7 +78,7 @@ func (s *loggerInterceptor) logStream(ctx *loggerStreamContext) (wrappedBody io.
 		wrappedBody = b
 		clone = b
 	}
-	wrappedRW = newResponseCallback(ctx.w, func(statusCode int, size int, err error) {
+	wrappedRW = newResponseCallback(ctx.ctx, ctx.w, func(statusCode int, size int, err error) {
 		s.logger.Log(&ServerLoggerContext{
 			Context:        ctx.ctx,
 			Request:        s.request,

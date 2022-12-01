@@ -38,14 +38,19 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	}
 	defer func() {
 		if logger := loggerFromContext(ctx); logger != nil {
-			logger.log(&loggerContext{
-				ctx:            ctx,
-				responseHeader: rw.Header(),
-				responseStatus: opt.statusCode,
-				responseBody:   bodyBytes,
-				caller:         caller,
-				err:            err,
-				tower:          r.tower,
+			rw = newResponseCallback(ctx, rw, func(status, size int, errRespond error) {
+				if err == nil && errRespond != nil {
+					err = errRespond
+				}
+				logger.log(&loggerContext{
+					ctx:            ctx,
+					responseHeader: rw.Header(),
+					responseStatus: opt.statusCode,
+					responseBody:   bodyBytes,
+					caller:         caller,
+					err:            err,
+					tower:          r.tower,
+				})
 			})
 		} else if err != nil {
 			_ = r.tower.Wrap(err).Caller(caller).Log(ctx)

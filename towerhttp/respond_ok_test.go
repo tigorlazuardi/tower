@@ -26,8 +26,6 @@ func TestResponder_Respond(t *testing.T) {
 		t := tower.NewTower(tower.Service{
 			Name:        "responder-test",
 			Environment: "testing",
-			Repository:  "",
-			Branch:      "",
 			Type:        "unit-test",
 		})
 		t.SetLogger(logger)
@@ -59,7 +57,6 @@ func TestResponder_Respond(t *testing.T) {
 				tower: towerGen,
 			},
 			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
-				logger.PrettyPrint()
 				if resp.StatusCode != http.StatusOK {
 					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 				}
@@ -79,9 +76,13 @@ func TestResponder_Respond(t *testing.T) {
 					t.Errorf("Failed to read body: %s", err.Error())
 					return
 				}
+				logger.PrettyPrint()
 				body = bytes.TrimSpace(body)
 				if string(body) != want {
 					t.Errorf("Expected body %s len(%d), got %s len(%d)", want, len(want), string(body), len(body))
+				}
+				if len(logger.Bytes()) == 0 {
+					t.Errorf("Expected logger to be called, got empty log")
 				}
 			},
 		},

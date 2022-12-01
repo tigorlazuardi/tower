@@ -14,6 +14,8 @@ const codeBlockIndent = "   "
 // ErrorNode is the implementation of the Error interface.
 type ErrorNode struct {
 	inner *errorBuilder
+	prev  *ErrorNode
+	next  *ErrorNode
 }
 
 // sorted keys are rather important for human reads. Especially the Context and Error should always be at the last marshaled keys.
@@ -22,14 +24,15 @@ type ErrorNode struct {
 // arguably this is simpler to be done than implementing json.Marshaler interface and doing it manually, key by key
 // without resorting to other libraries.
 type implJsonMarshaler struct {
-	Time    string `json:"time,omitempty"`
-	Code    int    `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
-	Caller  Caller `json:"caller,omitempty"`
-	Key     string `json:"key,omitempty"`
-	Level   string `json:"level,omitempty"`
-	Context any    `json:"context,omitempty"`
-	Error   error  `json:"error,omitempty"`
+	Time    string   `json:"time,omitempty"`
+	Code    int      `json:"code,omitempty"`
+	Message string   `json:"message,omitempty"`
+	Caller  Caller   `json:"caller,omitempty"`
+	Key     string   `json:"key,omitempty"`
+	Level   string   `json:"level,omitempty"`
+	Service *Service `json:"service,omitempty"`
+	Context any      `json:"context,omitempty"`
+	Error   error    `json:"error,omitempty"`
 }
 
 type marshalFlag uint8
@@ -49,7 +52,14 @@ const (
 	marshalSkipCaller
 	marshalSkipContext
 	marshalSkipTime
-	marshalSkipAll = marshalSkipCode + marshalSkipMessage + marshalSkipLevel + marshalSkipTime + marshalSkipContext + marshalSkipCaller
+	marshalSkipService
+	marshalSkipAll = marshalSkipCode +
+		marshalSkipMessage +
+		marshalSkipLevel +
+		marshalSkipTime +
+		marshalSkipContext +
+		marshalSkipCaller +
+		marshalSkipService
 )
 
 type CodeBlockJSONMarshaler interface {
@@ -69,7 +79,10 @@ func (c cbJson) CodeBlockJSON() ([]byte, error) {
 }
 
 func (c cbJson) MarshalJSON() ([]byte, error) {
-	if cb, ok := c.inner.(CodeBlockJSONMarshaler); ok {
+	if c.inner == nil {
+		return []byte("null"), nil
+	}
+	if cb, ok := c.inner.(CodeBlockJSONMarshaler); ok && cb != nil {
 		return cb.CodeBlockJSON()
 	}
 	b := &bytes.Buffer{}
@@ -78,6 +91,41 @@ func (c cbJson) MarshalJSON() ([]byte, error) {
 	enc.SetIndent("", codeBlockIndent)
 	err := enc.Encode(richJsonError{c.inner})
 	return b.Bytes(), err
+}
+
+func (e *ErrorNode) createCodeBlockFlagNode() marshalFlag {
+	var m marshalFlag
+	if e.prev == nil {
+		return m
+	}
+	originIsNode := e.next != nil
+	prev, current := e.prev, e
+	if prev.Code() == current.Code() && originIsNode {
+		m.Set(marshalSkipCode)
+	}
+	if prev.Message() == current.Message() && originIsNode {
+		m.Set(marshalSkipMessage)
+	}
+	if prev.Level() == current.Level() && originIsNode {
+		m.Set(marshalSkipLevel)
+	}
+	if len(current.Context()) == 0 {
+		m.Set(marshalSkipContext)
+	}
+	if prev.Time().Sub(current.Time()) < time.Second && originIsNode {
+		m.Set(marshalSkipTime)
+	}
+	if m.Has(marshalSkipCode) &&
+		m.Has(marshalSkipMessage) &&
+		m.Has(marshalSkipLevel) &&
+		m.Has(marshalSkipContext) {
+		m.Set(marshalSkipCaller)
+	}
+	if prev.inner.tower.service == current.inner.tower.service {
+		m.Set(marshalSkipService)
+	}
+
+	return m
 }
 
 func (e *ErrorNode) createCodeBlockFlag(other Error) marshalFlag {
@@ -116,6 +164,12 @@ func (e *ErrorNode) createCodeBlockPayload(m marshalFlag) *implJsonMarshaler {
 		}
 		return e.inner.context
 	}()
+	var next error
+	if e.next != nil {
+		next = e.next
+	} else {
+		next = e.inner.origin
+	}
 	marshalAble := implJsonMarshaler{
 		Time:    e.Time().Format(time.RFC3339),
 		Code:    e.Code(),
@@ -124,7 +178,8 @@ func (e *ErrorNode) createCodeBlockPayload(m marshalFlag) *implJsonMarshaler {
 		Key:     e.Key(),
 		Level:   e.Level().String(),
 		Context: ctx,
-		Error:   cbJson{e.inner.origin},
+		Error:   cbJson{next},
+		Service: &e.inner.tower.service,
 	}
 
 	if m.Has(marshalSkipCode) {
@@ -142,12 +197,20 @@ func (e *ErrorNode) createCodeBlockPayload(m marshalFlag) *implJsonMarshaler {
 	if m.Has(marshalSkipCaller) {
 		marshalAble.Caller = nil
 	}
+	if m.Has(marshalSkipService) {
+		marshalAble.Service = nil
+	}
 	return &marshalAble
 }
 
-func (e ErrorNode) CodeBlockJSON() ([]byte, error) {
+func (e *ErrorNode) CodeBlockJSON() ([]byte, error) {
+	if e == nil {
+		return []byte("null"), nil
+	}
 	var m marshalFlag
-	if origin, ok := e.inner.origin.(Error); ok {
+	if e.prev != nil {
+		m = e.createCodeBlockFlagNode()
+	} else if origin, ok := e.inner.origin.(Error); ok {
 		m = e.createCodeBlockFlag(origin)
 	}
 	b := &bytes.Buffer{}
@@ -157,7 +220,7 @@ func (e ErrorNode) CodeBlockJSON() ([]byte, error) {
 	// Check if current ErrorNode needs to be skipped.
 	if m.Has(marshalSkipAll) {
 		origin := e.inner.origin
-		if cbJson, ok := origin.(CodeBlockJSONMarshaler); ok {
+		if cbJson, ok := origin.(CodeBlockJSONMarshaler); ok && cbJson != nil {
 			return cbJson.CodeBlockJSON()
 		}
 		err := enc.Encode(richJsonError{origin})
@@ -167,7 +230,7 @@ func (e ErrorNode) CodeBlockJSON() ([]byte, error) {
 	return bytes.TrimSpace(b.Bytes()), err
 }
 
-func (e ErrorNode) MarshalJSON() ([]byte, error) {
+func (e *ErrorNode) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
 	enc := json.NewEncoder(b)
 	enc.SetEscapeHTML(false)
@@ -194,7 +257,7 @@ func (e ErrorNode) MarshalJSON() ([]byte, error) {
 	return b.Bytes(), err
 }
 
-func (e ErrorNode) Error() string {
+func (e *ErrorNode) Error() string {
 	s := &strings.Builder{}
 	lw := NewLineWriter(s).LineBreak(" => ").Build()
 	e.WriteError(lw)
@@ -202,7 +265,7 @@ func (e ErrorNode) Error() string {
 }
 
 // WriteError Writes the error.Error to the writer instead of being allocated as value.
-func (e ErrorNode) WriteError(w LineWriter) {
+func (e *ErrorNode) WriteError(w LineWriter) {
 	w.WriteIndent()
 	msg := e.inner.message
 	if e.inner.origin == nil {
@@ -254,12 +317,12 @@ func (e ErrorNode) WriteError(w LineWriter) {
 }
 
 // Code Gets the original code of the type.
-func (e ErrorNode) Code() int {
+func (e *ErrorNode) Code() int {
 	return e.inner.code
 }
 
 // HTTPCode Gets HTTP Status Code for the type.
-func (e ErrorNode) HTTPCode() int {
+func (e *ErrorNode) HTTPCode() int {
 	switch {
 	case e.inner.code >= 200 && e.inner.code <= 599:
 		return e.inner.code
@@ -273,45 +336,49 @@ func (e ErrorNode) HTTPCode() int {
 }
 
 // Message Gets the Message of the type.
-func (e ErrorNode) Message() string {
+func (e *ErrorNode) Message() string {
 	return e.inner.message
 }
 
 // Caller Gets the caller of this type.
-func (e ErrorNode) Caller() Caller {
+func (e *ErrorNode) Caller() Caller {
 	return e.inner.caller
 }
 
 // Context Gets the context of this type.
-func (e ErrorNode) Context() []any {
+func (e *ErrorNode) Context() []any {
 	return e.inner.context
 }
 
-func (e ErrorNode) Level() Level {
+func (e *ErrorNode) Level() Level {
 	return e.inner.level
 }
 
-func (e ErrorNode) Time() time.Time {
+func (e *ErrorNode) Time() time.Time {
 	return e.inner.time
 }
 
-func (e ErrorNode) Key() string {
+func (e *ErrorNode) Key() string {
 	return e.inner.key
 }
 
+func (e *ErrorNode) Service() Service {
+	return e.inner.tower.service
+}
+
 // Unwrap Returns the error that is wrapped by this error. To be used by errors.Is and errors.As functions from errors library.
-func (e ErrorNode) Unwrap() error {
+func (e *ErrorNode) Unwrap() error {
 	return e.inner.origin
 }
 
 // Log this error.
-func (e ErrorNode) Log(ctx context.Context) Error {
+func (e *ErrorNode) Log(ctx context.Context) Error {
 	e.inner.tower.LogError(ctx, e)
 	return e
 }
 
 // Notify this error to Messengers.
-func (e ErrorNode) Notify(ctx context.Context, opts ...MessageOption) Error {
+func (e *ErrorNode) Notify(ctx context.Context, opts ...MessageOption) Error {
 	e.inner.tower.NotifyError(ctx, e, opts...)
 	return e
 }

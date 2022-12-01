@@ -39,6 +39,7 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	defer func() {
 		if logger := loggerFromContext(ctx); logger != nil {
 			rw = newResponseCallback(ctx, rw, func(status, size int, errRespond error) {
+				rw := rw
 				if err == nil && errRespond != nil {
 					err = errRespond
 				}

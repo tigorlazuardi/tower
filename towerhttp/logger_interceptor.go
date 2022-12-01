@@ -20,8 +20,10 @@ func loggerFromContext(ctx context.Context) *loggerInterceptor {
 }
 
 type loggerInterceptor struct {
-	request     *http.Request
-	requestBody ClonedBody
+	request      *http.Request
+	requestBody  ClonedBody
+	response     http.ResponseWriter
+	responseBody ClonedBody
 
 	logger ServerLogger
 }
@@ -34,6 +36,10 @@ type loggerContext struct {
 	err            error
 	caller         tower.Caller
 	tower          *tower.Tower
+}
+
+func (s *loggerInterceptor) captureResponse(w http.ResponseWriter, body any) {
+
 }
 
 // receiveResponse will be called after the request is sent.

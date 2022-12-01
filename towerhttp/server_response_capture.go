@@ -2,7 +2,9 @@ package towerhttp
 
 import (
 	"bufio"
+	"context"
 	"errors"
+	"github.com/tigorlazuardi/tower"
 	"io"
 	"net"
 	"net/http"
@@ -10,43 +12,75 @@ import (
 
 var responseCaptureKey struct{ key int } = struct{ key int }{777}
 
-type responseCapturer interface {
-	http.ResponseWriter
-	http.Hijacker
-	http.Flusher
-	Status() int
-	// Size returns the size of the response body post compression.
-	Size() int
-	// Body returns the response body before compression.
-	Body() ClonedBody
+func contextWithResponseCapture(ctx context.Context, rc *responseCapture) context.Context {
+	return context.WithValue(ctx, responseCaptureKey, rc)
 }
 
+func responseCaptureFromContext(ctx context.Context) *responseCapture {
+	rc, _ := ctx.Value(responseCaptureKey).(*responseCapture)
+	return rc
+}
+
+var (
+	_ http.ResponseWriter = (*responseCapture)(nil)
+	_ http.Hijacker       = (*responseCapture)(nil)
+	_ http.Flusher        = (*responseCapture)(nil)
+)
+
 type responseCapture struct {
+	r          *http.Request
 	w          http.ResponseWriter
 	status     int
 	size       int
 	writeError error
 	body       ClonedBody
+	logger     ServerLogger
+	caller     tower.Caller
+	tower      *tower.Tower
 }
 
-type responseCaptureCN struct {
-	*responseCapture
-	http.CloseNotifier
-}
-
-func newResponseCapture(rw http.ResponseWriter) responseCapturer {
+func newResponseCapture(rw http.ResponseWriter, r *http.Request, logger ServerLogger) *responseCapture {
 	rc := &responseCapture{
 		w:      rw,
 		status: http.StatusOK,
 		body:   noopCloneBody{},
-	}
-	if cn, ok := rw.(http.CloseNotifier); ok {
-		return &responseCaptureCN{rc, cn}
+		logger: logger,
+		r:      r,
 	}
 	return rc
 }
 
-func (r responseCapture) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (r *responseCapture) SetTower(tower *tower.Tower) *responseCapture {
+	r.tower = tower
+	return r
+}
+
+func (r *responseCapture) SetBody(body ClonedBody) *responseCapture {
+	r.body = body
+	return r
+}
+
+func (r *responseCapture) SetCaller(caller tower.Caller) *responseCapture {
+	r.caller = caller
+	return r
+}
+
+func (r *responseCapture) SetError(err error) *responseCapture {
+	r.writeError = err
+	return r
+}
+
+func (r *responseCapture) SetBodyStream(body io.Reader, contentType string) io.Reader {
+	n := r.logger.ReceiveResponseBodyStream(contentType, r.r)
+	if n == 0 {
+		return body
+	}
+	clone := wrapClientBodyCloner(body, n, nil)
+	r.body = clone
+	return clone
+}
+
+func (r *responseCapture) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	h, ok := r.w.(http.Hijacker)
 	if !ok {
 		return nil, nil, errors.New("tower-http: ResponseWriter does not implement http.Hijacker")
@@ -54,7 +88,7 @@ func (r responseCapture) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return h.Hijack()
 }
 
-func (r responseCapture) Flush() {
+func (r *responseCapture) Flush() {
 	f, ok := r.w.(http.Flusher)
 	if !ok {
 		return
@@ -62,23 +96,23 @@ func (r responseCapture) Flush() {
 	f.Flush()
 }
 
-func (r responseCapture) Status() int {
+func (r *responseCapture) Status() int {
 	return r.status
 }
 
-func (r responseCapture) Size() int {
+func (r *responseCapture) Size() int {
 	return r.size
 }
 
-func (r responseCapture) Body() ClonedBody {
+func (r *responseCapture) Body() ClonedBody {
 	return r.body
 }
 
-func (r responseCapture) Header() http.Header {
+func (r *responseCapture) Header() http.Header {
 	return r.w.Header()
 }
 
-func (r responseCapture) Write(bytes []byte) (int, error) {
+func (r *responseCapture) Write(bytes []byte) (int, error) {
 	n, err := r.w.Write(bytes)
 	if err != nil && err != io.EOF {
 		r.writeError = err
@@ -87,7 +121,7 @@ func (r responseCapture) Write(bytes []byte) (int, error) {
 	return n, err
 }
 
-func (r responseCapture) WriteHeader(statusCode int) {
+func (r *responseCapture) WriteHeader(statusCode int) {
 	r.w.WriteHeader(statusCode)
 	r.status = statusCode
 }

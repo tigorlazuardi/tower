@@ -32,6 +32,7 @@ func (e EntryNode) MarshalJSON() ([]byte, error) {
 		Caller:  e.Caller(),
 		Key:     e.Key(),
 		Level:   e.Level().String(),
+		Service: &e.inner.tower.service,
 		Context: ctx,
 	})
 	return b.Bytes(), err

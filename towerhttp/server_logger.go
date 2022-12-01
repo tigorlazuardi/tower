@@ -81,12 +81,14 @@ func (i implServerLogger) ReceiveResponseBodyStream(responseContentType string, 
 func (i implServerLogger) Log(ctx *ServerLoggerContext) {
 	url := ctx.Request.Host + ctx.Request.URL.String()
 	requestFields := tower.F{
-		"method": ctx.Request.Method,
-		"url":    url,
-		"header": ctx.Request.Header,
+		"method":  ctx.Request.Method,
+		"url":     url,
+		"headers": ctx.Request.Header,
 	}
 	if ctx.RequestBody.Len() > 0 {
-		if strings.Contains(ctx.Request.Header.Get("Content-Type"), "application/json") && !ctx.RequestBody.Truncated() {
+		if ctx.RequestBody.Truncated() {
+			requestFields["body"] = fmt.Sprintf("%s (truncated)", ctx.RequestBody.String())
+		} else if strings.Contains(ctx.Request.Header.Get("Content-Type"), "application/json") {
 			if isJson(ctx.RequestBody.Bytes()) {
 				requestFields["body"] = json.RawMessage(ctx.RequestBody.CloneBytes())
 			} else {
@@ -97,8 +99,8 @@ func (i implServerLogger) Log(ctx *ServerLoggerContext) {
 		}
 	}
 	responseFields := tower.F{
-		"status": ctx.ResponseStatus,
-		"header": ctx.ResponseHeader,
+		"status":  ctx.ResponseStatus,
+		"headers": ctx.ResponseHeader,
 	}
 	if ctx.ResponseBody.Len() > 0 {
 		if strings.Contains(ctx.ResponseHeader.Get("Content-Type"), "application/json") && !ctx.ResponseBody.Truncated() {

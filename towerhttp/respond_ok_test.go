@@ -2,11 +2,13 @@ package towerhttp
 
 import (
 	"bytes"
+	"github.com/kinbiko/jsonassert"
 	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -57,6 +59,11 @@ func TestResponder_Respond(t *testing.T) {
 				tower: towerGen,
 			},
 			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				defer func() {
+					if t.Failed() {
+						logger.PrettyPrint()
+					}
+				}()
 				if resp.StatusCode != http.StatusOK {
 					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 				}
@@ -67,7 +74,8 @@ func TestResponder_Respond(t *testing.T) {
 					t.Errorf("Expected content encoding to be empty, got %s", resp.Header.Get("Content-Encoding"))
 				}
 				want := `{"ok":"ok"}`
-				if resp.Header.Get("Content-Length") != strconv.Itoa(len(want)+1) {
+				lenWant := strconv.Itoa(len(want) + 1)
+				if resp.Header.Get("Content-Length") != lenWant {
 					t.Errorf("Expected content length '%d', got '%s'", len(want)+1, resp.Header.Get("Content-Length"))
 				}
 
@@ -76,13 +84,48 @@ func TestResponder_Respond(t *testing.T) {
 					t.Errorf("Failed to read body: %s", err.Error())
 					return
 				}
-				logger.PrettyPrint()
 				body = bytes.TrimSpace(body)
 				if string(body) != want {
 					t.Errorf("Expected body %s len(%d), got %s len(%d)", want, len(want), string(body), len(body))
 				}
 				if len(logger.Bytes()) == 0 {
 					t.Errorf("Expected logger to be called, got empty log")
+				}
+				j := jsonassert.New(t)
+				jsonStr := logger.String()
+				j.Assertf(jsonStr, `
+				{
+					"time": "<<PRESENCE>>",
+					"level": "info",
+					"message": "GET /",
+					"service": {
+						"name": "responder-test",
+						"environment": "testing",
+						"type": "unit-test"
+					},
+					"caller": "<<PRESENCE>>",
+					"context": {
+						"request": {
+							"method": "GET",
+							"url": "%s/",
+							"headers": {
+								"Accept-Encoding": ["gzip"],
+								"User-Agent": ["Go-http-client/1.1"]
+							}
+						},
+						"response": {
+							"status": 200,
+							"headers": {
+								"Content-Length": ["%s"],
+								"Content-Type": ["application/json"]
+							},
+							"body": %s
+						}
+					}
+				}`, resp.Request.Host, lenWant, want)
+				substr := "tower/towerhttp/respond_ok_test.go"
+				if !strings.Contains(jsonStr, "tower/towerhttp/respond_ok_test.go") {
+					t.Errorf("Expected caller to be present to contains '%s'", substr)
 				}
 			},
 		},

@@ -8,7 +8,7 @@ import (
 func newResponseBodyCapture(e Encoder, c Compression) (*responseBodyCapture, Encoder, Compression) {
 	enc := &responseBodyCapture{e, nil}
 	if sc, ok := c.(StreamCompression); ok {
-		return enc, enc, &responseBOdyCaptureStream{enc, c, sc}
+		return enc, enc, &responseBodyCaptureStream{enc, c, sc}
 	}
 	return enc, enc, c
 }
@@ -32,13 +32,13 @@ func (r responseBodyCapture) Encode(input any) ([]byte, error) {
 	return b, nil
 }
 
-type responseBOdyCaptureStream struct {
+type responseBodyCaptureStream struct {
 	*responseBodyCapture
 	Compression
 	comp StreamCompression
 }
 
-func (r responseBOdyCaptureStream) ContentEncoding() string {
+func (r responseBodyCaptureStream) ContentEncoding() string {
 	return r.comp.ContentEncoding()
 }
 
@@ -64,7 +64,7 @@ func newTeeCloser(r io.Reader) (*teeCloser, *bytes.Buffer) {
 	return &teeCloser{r, io.NopCloser(r), buf}, buf
 }
 
-func (r responseBOdyCaptureStream) StreamCompress(origin io.Reader) io.Reader {
+func (r responseBodyCaptureStream) StreamCompress(origin io.Reader) io.Reader {
 	reader, buf := newTeeCloser(origin)
 	r.body = buf
 	return r.comp.StreamCompress(reader)

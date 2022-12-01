@@ -45,6 +45,7 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 				responseBody:   bodyBytes,
 				caller:         caller,
 				err:            err,
+				tower:          r.tower,
 			})
 		} else if err != nil {
 			_ = r.tower.Wrap(err).Caller(caller).Log(ctx)
@@ -56,7 +57,7 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 		return
 	}
 
-	body = opt.transfomer.BodyTransform(ctx, body)
+	body = opt.transformer.BodyTransform(ctx, body)
 	if body == nil {
 		rw.WriteHeader(opt.statusCode)
 		return

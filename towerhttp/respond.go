@@ -12,7 +12,6 @@ type Responder struct {
 	tower            *tower.Tower
 	compressor       Compression
 	callerDepth      int
-	logger           ServerLogger
 }
 
 // NewResponder creates a new Responder instance.
@@ -72,10 +71,10 @@ func (r *Responder) SetCallerDepth(depth int) {
 
 func (r Responder) buildOption(statusCode int) *respondOption {
 	opt := &respondOption{
-		encoder:    r.encoder,
-		transfomer: r.transformer,
-		compressor: r.compressor,
-		statusCode: statusCode,
+		encoder:     r.encoder,
+		transformer: r.transformer,
+		compressor:  r.compressor,
+		statusCode:  statusCode,
 	}
 	return opt
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 )
 
@@ -12,7 +13,7 @@ type TestingJSONLogger struct {
 	mu  sync.Mutex
 }
 
-// NewTestingJSONLogger returns a very basic TestingJSONLogger.
+// NewTestingJSONLogger returns a very basic logger for testing purposes.
 func NewTestingJSONLogger() *TestingJSONLogger {
 	return &TestingJSONLogger{
 		buf: new(bytes.Buffer),
@@ -59,5 +60,22 @@ func (t *TestingJSONLogger) String() string {
 func (t *TestingJSONLogger) Bytes() []byte {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	return t.buf.Bytes()
+	cp := make([]byte, t.buf.Len())
+	copy(cp, t.buf.Bytes())
+	return cp
+}
+
+func (t *TestingJSONLogger) MarshalJSON() ([]byte, error) {
+	return t.buf.Bytes(), nil
+}
+
+func (t *TestingJSONLogger) PrettyPrint() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	var out bytes.Buffer
+	err := json.Indent(&out, t.buf.Bytes(), "", "  ")
+	if err != nil {
+		t.buf.WriteString(err.Error())
+	}
+	fmt.Println(out.String())
 }

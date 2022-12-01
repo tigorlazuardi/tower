@@ -52,7 +52,7 @@ func NewJSONEncoder() *JSONEncoder {
 }
 
 func (j *JSONEncoder) ContentType() string {
-	return "application/json; charset=utf-8"
+	return "application/json"
 }
 
 func (j *JSONEncoder) Encode(input any) ([]byte, error) {

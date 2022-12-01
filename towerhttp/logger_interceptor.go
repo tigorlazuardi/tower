@@ -33,6 +33,7 @@ type loggerContext struct {
 	responseBody   []byte
 	err            error
 	caller         tower.Caller
+	tower          *tower.Tower
 }
 
 // receiveResponse will be called after the request is sent.
@@ -56,6 +57,7 @@ func (s *loggerInterceptor) log(ctx *loggerContext) {
 		ResponseBody:   respBody,
 		Error:          ctx.err,
 		Caller:         ctx.caller,
+		Tower:          ctx.tower,
 	})
 }
 

@@ -81,9 +81,11 @@ func (i implServerLogger) ReceiveResponseBodyStream(responseContentType string, 
 func (i implServerLogger) Log(ctx *ServerLoggerContext) {
 	url := ctx.Request.Host + ctx.Request.URL.String()
 	requestFields := tower.F{
-		"method":  ctx.Request.Method,
-		"url":     url,
-		"headers": ctx.Request.Header,
+		"method": ctx.Request.Method,
+		"url":    url,
+	}
+	if len(ctx.Request.Header) > 0 {
+		requestFields["headers"] = ctx.Request.Header
 	}
 	if ctx.RequestBody.Len() > 0 {
 		if ctx.RequestBody.Truncated() {
@@ -99,8 +101,10 @@ func (i implServerLogger) Log(ctx *ServerLoggerContext) {
 		}
 	}
 	responseFields := tower.F{
-		"status":  ctx.ResponseStatus,
-		"headers": ctx.ResponseHeader,
+		"status": ctx.ResponseStatus,
+	}
+	if len(ctx.ResponseHeader) > 0 {
+		responseFields["headers"] = ctx.ResponseHeader
 	}
 	if ctx.ResponseBody.Len() > 0 {
 		if strings.Contains(ctx.ResponseHeader.Get("Content-Type"), "application/json") && !ctx.ResponseBody.Truncated() {

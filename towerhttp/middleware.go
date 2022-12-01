@@ -25,7 +25,7 @@ func LoggingMiddleware(logger ServerLogger) Middleware {
 			ctx := contextWithResponseCapture(r.Context(), capturer)
 			r.Body = body
 			r = r.WithContext(ctx)
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(capturer, r)
 			var caller tower.Caller
 			if capturer.caller == nil {
 				caller = tower.GetCaller(4)

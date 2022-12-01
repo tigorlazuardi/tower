@@ -148,8 +148,7 @@ func TestResponder_Respond(t *testing.T) {
 				tower: towerGen,
 			},
 			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
-				logger.PrettyPrint()
-				if resp.StatusCode != http.StatusOK {
+				if resp.StatusCode != http.StatusNoContent {
 					t.Errorf("Expected status code %d, got %d", http.StatusNoContent, resp.StatusCode)
 				}
 				if resp.Header.Get("Content-Type") != "" {
@@ -167,6 +166,37 @@ func TestResponder_Respond(t *testing.T) {
 					t.Errorf("Expected body to be empty, got %s", string(body))
 					return
 				}
+				log := `
+				{
+				  "time": "<<PRESENCE>>",
+				  "message": "GET /",
+				  "caller": "<<PRESENCE>>",
+				  "level": "info",
+				  "service": {
+					"name": "responder-test",
+					"environment": "testing",
+					"type": "unit-test"
+				  },
+				  "context": {
+					"request": {
+					  "headers": {
+						"Accept-Encoding": [
+						  "gzip"
+						],
+						"User-Agent": [
+						  "Go-http-client/1.1"
+						]
+					  },
+					  "method": "GET",
+					  "url": "%s/"
+					},
+					"response": {
+					  "status": 204
+					}
+				  }
+				}`
+				j := jsonassert.New(t)
+				j.Assertf(logger.String(), log, resp.Request.Host)
 			},
 		},
 	}

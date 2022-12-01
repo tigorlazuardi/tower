@@ -17,11 +17,12 @@
 - **discord:** better embed structures
 - **discord:** added multipart uploads
 - **entry:** added json marshaler support
+- **error:** added deduped json marshaler support
 - **error_node:** indent now set to 3 spaces
 - **http-client:** wip update
 - **implError:** exported implError as ErrorNode
-- **query:** added bottom error query
 - **query:** added CollectErrors query
+- **query:** added bottom error query
 - **tower:** added code block marshaler pattern
 - **tower-discord:** implemented file upload native discord
 - **tower-discord:** added thread id in metadata
@@ -29,6 +30,9 @@
 - **tower-http:** added respond body logger
 - **tower-http:** added logging middleware
 - **tower-http:** added logging middleware to respond error
+- **tower-http:** added unit test
+- **tower-http:** added unit test
+- **tower-http:** added response capturer
 
 ### Miscellaneous
 - synchronize go mod with new tag on tower

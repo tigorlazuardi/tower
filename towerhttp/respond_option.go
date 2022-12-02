@@ -20,10 +20,11 @@ type OptionRespondGroup interface {
 type optionRespondGroup struct{}
 
 type respondOption struct {
-	encoder     Encoder
-	transformer BodyTransformer
-	compressor  Compressor
-	statusCode  int
+	encoder          Encoder
+	transformer      BodyTransformer
+	compressor       Compressor
+	statusCode       int
+	errorTransformer ErrorBodyTransformer
 }
 
 // Encoder overrides the encoder to be used for encoding the response body.
@@ -37,6 +38,12 @@ func (optionRespondGroup) Encoder(encoder Encoder) RespondOption {
 func (optionRespondGroup) Transformer(transformer BodyTransformer) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
 		o.transformer = transformer
+	})
+}
+
+func (optionRespondGroup) ErrorTransformer(transformer ErrorBodyTransformer) RespondOption {
+	return RespondOptionFunc(func(o *respondOption) {
+		o.errorTransformer = transformer
 	})
 }
 

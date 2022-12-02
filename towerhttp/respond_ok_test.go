@@ -70,11 +70,6 @@ func TestResponder_Respond(t *testing.T) {
 				tower: towerGen,
 			},
 			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
-				defer func() {
-					if t.Failed() {
-						logger.PrettyPrint()
-					}
-				}()
 				if resp.StatusCode != http.StatusOK {
 					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 				}
@@ -460,7 +455,7 @@ func TestResponder_Respond(t *testing.T) {
 			},
 		},
 		{
-			name: "nil body - custom BodyTransform - gzip compression",
+			name: "nil body - custom BodyTransform - gzip compression - skip on data too small",
 			fields: fields{
 				encoder: NewJSONEncoder(),
 				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
@@ -483,11 +478,6 @@ func TestResponder_Respond(t *testing.T) {
 				tower: towerGen,
 			},
 			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
-				defer func() {
-					if t.Failed() {
-						logger.PrettyPrint()
-					}
-				}()
 				if resp.StatusCode != http.StatusOK {
 					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 				}
@@ -533,9 +523,6 @@ func TestResponder_Respond(t *testing.T) {
 								"message": "gzipped body"
 							},
 							"headers": {
-								"Content-Encoding": [
-									"gzip"
-								],
 								"Content-Length": [
 									"%d"
 								],
@@ -549,7 +536,95 @@ func TestResponder_Respond(t *testing.T) {
 				}
 				`
 				j := jsonassert.New(t)
-				j.Assertf(logger.String(), log, resp.Request.Host, len(body)+24) // +24 is the gzip header
+				j.Assertf(logger.String(), log, resp.Request.Host, len(body))
+			},
+		},
+		{
+			name: "nil body - custom BodyTransform - gzip compression",
+			fields: fields{
+				encoder: NewJSONEncoder(),
+				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
+					return map[string]any{
+						"message": "gzipped body",
+						"data":    input,
+					}
+				}),
+				errorTransformer: nil,
+				compressor:       NewGzipCompression(),
+				callerDepth:      2,
+			},
+			gen: gen{
+				server: func(responder *Responder, middleware Middleware) *httptest.Server {
+					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+						input := strings.Repeat("foo ", 400)
+						responder.Respond(request.Context(), writer, input)
+					}))
+					return httptest.NewServer(handler)
+				},
+				tower: towerGen,
+			},
+			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				if resp.StatusCode != http.StatusOK {
+					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+				}
+				if resp.Header.Get("Content-Type") != "application/json" {
+					t.Errorf("Expected content type to be 'application/json', but got '%s'", resp.Header.Get("Content-Type"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Errorf("Error reading response body: %s", err.Error())
+					return
+				}
+				if len(body) == 0 {
+					t.Errorf("Expected body to be not empty")
+					return
+				}
+				input := strings.Repeat("foo ", 400)
+				log := `
+				{
+					"time": "<<PRESENCE>>",
+					"message": "GET /",
+					"caller": "<<PRESENCE>>",
+					"level": "info",
+					"service": {
+						"name": "responder-test",
+						"environment": "testing",
+						"type": "unit-test"
+					},
+					"context": {
+						"request": {
+							"headers": {
+								"Accept-Encoding": [
+									"gzip"
+								],
+								"User-Agent": [
+									"Go-http-client/1.1"
+								]
+							},
+							"method": "GET",
+							"url": "%s/"
+						},
+						"response": {
+							"body": {
+								"data": "%s",
+								"message": "gzipped body"
+							},
+							"headers": {
+								"Content-Length": [
+									"77"
+								],
+								"Content-Encoding": [ "gzip" ],
+								"Content-Type": [
+									"application/json"
+								]
+							},
+							"status": 200
+						}
+					}
+				}
+				`
+				j := jsonassert.New(t)
+				j.Assertf(logger.String(), log, resp.Request.Host, input)
 			},
 		},
 	}
@@ -582,13 +657,14 @@ func TestResponder_Respond(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					t.Errorf("Error closing response body: %s", err.Error())
-				}
-			}(resp.Body)
 			tt.test(t, resp, logger)
+			err = resp.Body.Close()
+			if err != nil {
+				t.Fatalf("Error closing response body: %s", err.Error())
+			}
+			if t.Failed() {
+				logger.PrettyPrint()
+			}
 		})
 	}
 }

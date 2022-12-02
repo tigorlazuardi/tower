@@ -39,6 +39,15 @@ func (g GzipCompression) ContentEncoding() string {
 
 // Compress implements towerhttp.Compressor.
 func (g GzipCompression) Compress(b []byte) ([]byte, bool, error) {
+	// 1500 is the max size of ethernet frame, 60 is the maximum range of TCP Header.
+	//
+	// The tradeoff between compression and cpu usage is not worth it if the size is less than MTU.
+	//
+	// Since the cost is the same: 1 IP packet.
+	const minimumLength = 1500 - 60
+	if len(b) < minimumLength {
+		return b, false, nil
+	}
 	buf := g.pool.Get()
 	buf.Reset()
 	w, err := gzip.NewWriterLevel(buf, g.level)

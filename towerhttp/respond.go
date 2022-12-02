@@ -35,7 +35,7 @@ func NewResponder() *Responder {
 		errorTransformer: SimpleErrorTransformer{},
 		tower:            tower.Global.Tower(),
 		compressor:       NoCompression{},
-		callerDepth:      3,
+		callerDepth:      3, // default to 3, which is wherever the user calls Responder.Respond() or it's derivatives.
 	}
 }
 
@@ -71,10 +71,11 @@ func (r *Responder) SetCallerDepth(depth int) {
 
 func (r Responder) buildOption(statusCode int) *respondOption {
 	opt := &respondOption{
-		encoder:     r.encoder,
-		transformer: r.transformer,
-		compressor:  r.compressor,
-		statusCode:  statusCode,
+		encoder:          r.encoder,
+		transformer:      r.transformer,
+		compressor:       r.compressor,
+		statusCode:       statusCode,
+		errorTransformer: r.errorTransformer,
 	}
 	return opt
 }

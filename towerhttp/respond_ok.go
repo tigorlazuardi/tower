@@ -24,12 +24,21 @@ import (
 // Body of nil has different treatment with http.NoBody. if body is nil, the nil value is still passed to the BodyTransformer implementer,
 // therefore the final result body may not actually be empty.
 func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
-	caller := tower.GetCaller(r.callerDepth)
 	var (
 		statusCode = http.StatusOK
 		err        error
 		bodyBytes  []byte
 	)
+
+	if ch, ok := body.(tower.HTTPCodeHint); ok {
+		statusCode = ch.HTTPCode()
+	}
+
+	opt := r.buildOption(statusCode)
+	for _, o := range opts {
+		o.apply(opt)
+	}
+	caller := tower.GetCaller(opt.callerDepth)
 	defer func() {
 		if capture, ok := rw.(*responseCapture); ok {
 			body := bytes.NewBuffer(bodyBytes)
@@ -51,15 +60,6 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 		}
 	}()
 
-	if ch, ok := body.(tower.HTTPCodeHint); ok {
-		statusCode = ch.HTTPCode()
-	}
-
-	opt := r.buildOption(statusCode)
-	for _, o := range opts {
-		o.apply(opt)
-	}
-
 	if body == http.NoBody {
 		rw.WriteHeader(opt.statusCode)
 		return
@@ -73,6 +73,11 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 
 	bodyBytes, err = opt.encoder.Encode(body)
 	if err != nil {
+		opts := opts
+		opts = append(opts,
+			Option.Respond().StatusCode(http.StatusInternalServerError),
+			Option.Respond().CallerDepth(opt.callerDepth+1),
+		)
 		r.RespondError(ctx, rw, err)
 		return
 	}

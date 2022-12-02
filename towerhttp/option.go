@@ -6,5 +6,5 @@ type option struct{}
 var Option option
 
 func (option) Respond() OptionRespondGroup {
-	return optionRespondGroup{}
+	return OptionRespondGroup{}
 }

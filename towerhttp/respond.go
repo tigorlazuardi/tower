@@ -76,6 +76,7 @@ func (r Responder) buildOption(statusCode int) *respondOption {
 		compressor:       r.compressor,
 		statusCode:       statusCode,
 		errorTransformer: r.errorTransformer,
+		callerDepth:      r.callerDepth,
 	}
 	return opt
 }

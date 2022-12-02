@@ -1,6 +1,7 @@
 package tower
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -66,17 +67,35 @@ func (t *TestingJSONLogger) Bytes() []byte {
 }
 
 func (t *TestingJSONLogger) MarshalJSON() ([]byte, error) {
-	return t.buf.Bytes(), nil
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	out := make([]json.RawMessage, 0, 4)
+	scanner := bufio.NewScanner(t.buf)
+	for scanner.Scan() {
+		out = append(out, json.RawMessage(scanner.Text()))
+	}
+	if len(out) == 1 {
+		return out[0], nil
+	}
+	return json.Marshal(out)
 }
 
 func (t *TestingJSONLogger) PrettyPrint() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	var out bytes.Buffer
-	err := json.Indent(&out, t.buf.Bytes(), "", "    ")
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+	scanner := bufio.NewScanner(t.buf)
+	i := 0
+	for scanner.Scan() {
+		if i > 0 {
+			out.WriteString("\n")
+		}
+		err := json.Indent(&out, scanner.Bytes(), "", "    ")
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		i++
 	}
 	fmt.Println(out.String())
 }

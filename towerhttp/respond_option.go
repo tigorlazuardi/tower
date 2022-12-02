@@ -10,14 +10,7 @@ func (r RespondOptionFunc) apply(o *respondOption) {
 	r(o)
 }
 
-type OptionRespondGroup interface {
-	Encoder(encoder Encoder) RespondOption
-	Transformer(transformer BodyTransformer) RespondOption
-	Compressor(compressor Compressor) RespondOption
-	StatusCode(i int) RespondOption
-}
-
-type optionRespondGroup struct{}
+type OptionRespondGroup struct{}
 
 type respondOption struct {
 	encoder          Encoder
@@ -25,38 +18,45 @@ type respondOption struct {
 	compressor       Compressor
 	statusCode       int
 	errorTransformer ErrorBodyTransformer
+	callerDepth      int
 }
 
 // Encoder overrides the encoder to be used for encoding the response body.
-func (optionRespondGroup) Encoder(encoder Encoder) RespondOption {
+func (OptionRespondGroup) Encoder(encoder Encoder) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
 		o.encoder = encoder
 	})
 }
 
 // Transformer overrides the transformer to be used for transforming the response body.
-func (optionRespondGroup) Transformer(transformer BodyTransformer) RespondOption {
+func (OptionRespondGroup) Transformer(transformer BodyTransformer) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
 		o.transformer = transformer
 	})
 }
 
-func (optionRespondGroup) ErrorTransformer(transformer ErrorBodyTransformer) RespondOption {
+func (OptionRespondGroup) ErrorTransformer(transformer ErrorBodyTransformer) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
 		o.errorTransformer = transformer
 	})
 }
 
 // Compressor overrides the compressor to be used for compressing the response body.
-func (optionRespondGroup) Compressor(compressor Compressor) RespondOption {
+func (OptionRespondGroup) Compressor(compressor Compressor) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
 		o.compressor = compressor
 	})
 }
 
 // StatusCode overrides the status code to be used for the response.
-func (optionRespondGroup) StatusCode(i int) RespondOption {
+func (OptionRespondGroup) StatusCode(i int) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
 		o.statusCode = i
+	})
+}
+
+func (OptionRespondGroup) CallerDepth(i int) RespondOption {
+	return RespondOptionFunc(func(o *respondOption) {
+		o.callerDepth = i
 	})
 }

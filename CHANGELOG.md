@@ -43,6 +43,7 @@
 
 ### Test
 - **tower-discord:** tested hooks
+- **tower-http-respond-ok:** added mock compress error test
 
 
 <a name="v0.1.9"></a>

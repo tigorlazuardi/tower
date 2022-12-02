@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"github.com/tigorlazuardi/tower"
 	"io"
 	"net"
 	"net/http"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 var responseCaptureKey struct{ key int } = struct{ key int }{777}
@@ -37,17 +38,18 @@ type responseCapture struct {
 	logger     ServerLogger
 	caller     tower.Caller
 	tower      *tower.Tower
+	level      tower.Level
 }
 
 func newResponseCapture(rw http.ResponseWriter, r *http.Request, logger ServerLogger) *responseCapture {
-	rc := &responseCapture{
+	return &responseCapture{
 		w:      rw,
 		status: http.StatusOK,
 		body:   noopCloneBody{},
 		logger: logger,
 		r:      r,
+		level:  tower.InfoLevel,
 	}
-	return rc
 }
 
 func (r *responseCapture) SetTower(tower *tower.Tower) *responseCapture {
@@ -78,6 +80,11 @@ func (r *responseCapture) SetBodyStream(body io.Reader, contentType string) io.R
 	clone := wrapClientBodyCloner(body, n, nil)
 	r.body = clone
 	return clone
+}
+
+func (r *responseCapture) SetLevel(level tower.Level) *responseCapture {
+	r.level = level
+	return r
 }
 
 func (r *responseCapture) Hijack() (net.Conn, *bufio.ReadWriter, error) {

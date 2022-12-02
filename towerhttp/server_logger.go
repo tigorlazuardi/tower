@@ -4,12 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/tigorlazuardi/tower"
 	"net/http"
 	"strings"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 type ServerLoggerContext struct {
+	ServerLoggerMessage
+	// Tower is the tower instance that is used by Responder.
+	Tower *tower.Tower
+}
+
+type ServerLoggerMessage struct {
 	// Context is the context used for the request.
 	Context context.Context
 	// Request is the request that has been sent. The request body is more than likely have been consumed. It's
@@ -26,13 +33,16 @@ type ServerLoggerContext struct {
 	// ResponseBody is a clone of response body that has been received.
 	// It is an empty buffer if the response body is nil or if ServerLogger.ReceiveResponseBodyStream returns false.
 	ResponseBody ClonedBody
-	// Error is the error that has been received when sending the response to client.
-	// NOT the error that is passed to Responder.RespondError.
+	// Error is the error that has been received when sending the response to client or from Responder.RespondError parameter.
+	//
+	// If there's no error when sending data to client, Error may be from Responder.RespondError.
+	//
+	// Otherwise, Error is nil.
 	Error error
 	// Caller is where the request is executed.
 	Caller tower.Caller
-	// Tower is the tower instance that is used by Responder.
-	Tower *tower.Tower
+	// Level is the log level.
+	Level tower.Level
 }
 
 type ServerLogger interface {
@@ -124,10 +134,10 @@ func (i implServerLogger) Log(ctx *ServerLoggerContext) {
 	}
 	message := fmt.Sprintf("%s %s", ctx.Request.Method, ctx.Request.URL.String())
 	if ctx.Error != nil {
-		_ = ctx.Tower.Wrap(ctx.Error).Message(message).Caller(ctx.Caller).Context(fields).Log(ctx.Context)
+		_ = ctx.Tower.Wrap(ctx.Error).Level(ctx.Level).Code(ctx.ResponseStatus).Message(message).Caller(ctx.Caller).Context(fields).Log(ctx.Context)
 		return
 	}
-	entry := ctx.Tower.NewEntry(message).Caller(ctx.Caller).Context(fields).Log(ctx.Context)
+	entry := ctx.Tower.NewEntry(message).Level(ctx.Level).Code(ctx.ResponseStatus).Caller(ctx.Caller).Context(fields).Log(ctx.Context)
 	if i.opts.notify {
 		entry.Notify(ctx.Context, i.opts.notifyOption...)
 	}

@@ -1,8 +1,9 @@
 package towerhttp
 
 import (
-	"github.com/tigorlazuardi/tower"
 	"net/http"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 type Middleware func(http.Handler) http.Handler
@@ -21,9 +22,9 @@ func LoggingMiddleware(logger ServerLogger) Middleware {
 				body = clone
 				requestBody = clone
 			}
+			r.Body = body
 			capturer := newResponseCapture(w, r, logger)
 			ctx := contextWithResponseCapture(r.Context(), capturer)
-			r.Body = body
 			r = r.WithContext(ctx)
 			next.ServeHTTP(capturer, r)
 			var caller tower.Caller
@@ -37,15 +38,18 @@ func LoggingMiddleware(logger ServerLogger) Middleware {
 				t = tower.Global.Tower()
 			}
 			logger.Log(&ServerLoggerContext{
-				Context:        ctx,
-				Request:        r,
-				RequestBody:    requestBody,
-				ResponseStatus: capturer.status,
-				ResponseHeader: capturer.w.Header(),
-				ResponseBody:   capturer.body,
-				Error:          capturer.writeError,
-				Caller:         caller,
-				Tower:          t,
+				ServerLoggerMessage: ServerLoggerMessage{
+					Context:        ctx,
+					Request:        r,
+					RequestBody:    requestBody,
+					ResponseStatus: capturer.status,
+					ResponseHeader: capturer.w.Header(),
+					ResponseBody:   capturer.body,
+					Error:          capturer.writeError,
+					Caller:         caller,
+					Level:          capturer.level,
+				},
+				Tower: t,
 			})
 		})
 	}

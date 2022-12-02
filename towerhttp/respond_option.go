@@ -55,8 +55,16 @@ func (OptionRespondGroup) StatusCode(i int) RespondOption {
 	})
 }
 
-func (OptionRespondGroup) CallerDepth(i int) RespondOption {
+// CallerSkip overrides the caller skip to be used for the response to get the caller information.
+func (OptionRespondGroup) CallerSkip(i int) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
 		o.callerDepth = i
+	})
+}
+
+// AddCallerSkip adds the caller skip value to be used for the response to get the caller information.
+func (OptionRespondGroup) AddCallerSkip(i int) RespondOption {
+	return RespondOptionFunc(func(o *respondOption) {
+		o.callerDepth += i
 	})
 }

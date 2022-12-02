@@ -8,3 +8,7 @@ var Option option
 func (option) Respond() OptionRespondGroup {
 	return OptionRespondGroup{}
 }
+
+func (option) ServerLogger() ServerLoggerOptionGroup {
+	return ServerLoggerOptionGroup{}
+}

@@ -3,6 +3,7 @@ package towerhttp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/tigorlazuardi/tower"
 )
 
@@ -42,6 +43,9 @@ type SimpleErrorTransformer struct{}
 
 func (n SimpleErrorTransformer) ErrorBodyTransform(_ context.Context, err error) any {
 	var msg any
+	if err == nil {
+		err = errors.New("[nil]")
+	}
 	switch err := err.(type) {
 	case json.Marshaler:
 		msg = err

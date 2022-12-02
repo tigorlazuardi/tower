@@ -1,8 +1,11 @@
 package towerhttp
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/tigorlazuardi/tower"
 )
@@ -17,7 +20,7 @@ const errInternalServerError errString = "Internal Server Error"
 
 // RespondError writes the given error to the http.ResponseWriter.
 //
-// error is expected to be a serializable type.
+// errPayload is expected to be a serializable type.
 //
 // HTTP Status code by default is http.StatusInternalServerError. If error implements tower.HTTPCodeHint, the status code will be set to the
 // value returned by the tower.HTTPCodeHint method. If the towerhttp.Option.StatusCode RespondOption is set, it will override
@@ -42,40 +45,61 @@ func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, err
 	for _, o := range opts {
 		o.apply(opt)
 	}
+	caller := tower.GetCaller(opt.callerDepth)
 	defer func() {
-		caller := tower.GetCaller(r.callerDepth)
-		if logger := loggerFromContext(ctx); logger != nil {
-			logger.log(&loggerContext{
-				ctx:            ctx,
-				responseHeader: rw.Header(),
-				responseStatus: opt.statusCode,
-				responseBody:   bodyBytes,
-				caller:         caller,
-				err:            err,
-			})
-		} else if err != nil {
-			_ = r.tower.Wrap(err).Caller(caller).Log(ctx)
+		if err == nil {
+			err = errPayload
+		}
+		if capture, ok := rw.(*responseCapture); ok {
+			body := bytes.NewBuffer(bodyBytes)
+			capture.SetBody(&clientBodyCloner{
+				ReadCloser: io.NopCloser(body),
+				clone:      body,
+				limit:      -1,
+				callback:   nil,
+			}).SetCaller(caller).SetTower(r.tower).SetError(err).SetLevel(tower.ErrorLevel)
+		} else if capture := responseCaptureFromContext(ctx); capture != nil {
+			// just in case the response writer is not the one we capture
+			body := bytes.NewBuffer(bodyBytes)
+			capture.SetBody(&clientBodyCloner{
+				ReadCloser: io.NopCloser(body),
+				clone:      body,
+				limit:      -1,
+				callback:   nil,
+			}).SetCaller(caller).SetTower(r.tower).SetError(err).SetLevel(tower.ErrorLevel)
 		}
 	}()
 
 	body := r.errorTransformer.ErrorBodyTransform(ctx, errPayload)
 	bodyBytes, err = opt.encoder.Encode(body)
 	if err != nil {
+		const errMsg = "ENCODING ERROR"
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Header().Set("Content-Type", "text/plain")
+		_, err = io.WriteString(rw, errMsg)
 		return
 	}
 	contentType := opt.encoder.ContentType()
 	if contentType != "" {
 		rw.Header().Set("Content-Type", contentType)
 	}
-	compressed, _, err := opt.compressor.Compress(bodyBytes)
+	compressed, ok, err := opt.compressor.Compress(bodyBytes)
 	if err != nil {
+		_ = r.tower.Wrap(err).Caller(caller).Level(tower.WarnLevel).Log(ctx)
+		rw.Header().Set("Content-Length", strconv.Itoa(len(bodyBytes)))
+		rw.WriteHeader(opt.statusCode)
+		_, err = rw.Write(bodyBytes)
 		return
 	}
-	contentEncoding := opt.compressor.ContentEncoding()
-	if contentEncoding != "" {
+	if ok {
+		contentEncoding := opt.compressor.ContentEncoding()
 		rw.Header().Set("Content-Encoding", contentEncoding)
+		rw.Header().Set("Content-Length", strconv.Itoa(len(compressed)))
+		rw.WriteHeader(opt.statusCode)
+		_, err = rw.Write(compressed)
+		return
 	}
-
+	rw.Header().Set("Content-Length", strconv.Itoa(len(bodyBytes)))
 	rw.WriteHeader(opt.statusCode)
-	_, err = rw.Write(compressed)
+	_, err = rw.Write(bodyBytes)
 }

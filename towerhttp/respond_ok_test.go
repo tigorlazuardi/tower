@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"github.com/kinbiko/jsonassert"
-	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/kinbiko/jsonassert"
+	"github.com/tigorlazuardi/tower"
 )
 
 type statusCreatedBody struct{}
@@ -24,13 +25,13 @@ func (s statusCreatedBody) HTTPCode() int {
 	return http.StatusCreated
 }
 
-type mockErrorCOmpressor struct{}
+type mockErrorCompressor struct{}
 
-func (m mockErrorCOmpressor) ContentEncoding() string {
+func (m mockErrorCompressor) ContentEncoding() string {
 	return ""
 }
 
-func (m mockErrorCOmpressor) Compress(b []byte) (compressed []byte, ok bool, err error) {
+func (m mockErrorCompressor) Compress(_ []byte) (compressed []byte, ok bool, err error) {
 	return nil, false, errors.New("compress error")
 }
 
@@ -114,6 +115,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 					"time": "<<PRESENCE>>",
 					"level": "info",
+					"code": 200,
 					"message": "GET /",
 					"service": {
 						"name": "responder-test",
@@ -187,6 +189,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 				  "time": "<<PRESENCE>>",
 				  "message": "GET /",
+				  "code": 204,
 				  "caller": "<<PRESENCE>>",
 				  "level": "info",
 				  "service": {
@@ -257,6 +260,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 				  "time": "<<PRESENCE>>",
 				  "message": "GET /",
+				  "code": 200,
 				  "caller": "<<PRESENCE>>",
 				  "level": "info",
 				  "service": {
@@ -332,6 +336,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 				  "time": "<<PRESENCE>>",
 				  "message": "GET /",
+				  "code": 200,
 				  "caller": "<<PRESENCE>>",
 				  "level": "info",
 				  "service": {
@@ -422,11 +427,12 @@ func TestResponder_Respond(t *testing.T) {
 				}
 				log := `
 				{
-				  "time": "<<PRESENCE>>",
-				  "message": "GET /",
-				  "caller": "<<PRESENCE>>",
-				  "level": "info",
-				  "service": {
+					"time": "<<PRESENCE>>",
+					"message": "GET /",
+					"code": 200,
+					"caller": "<<PRESENCE>>",
+					"level": "info",
+					"service": {
 					"name": "responder-test",
 					"environment": "testing",
 					"type": "unit-test"
@@ -509,6 +515,7 @@ func TestResponder_Respond(t *testing.T) {
 					"time": "<<PRESENCE>>",
 					"message": "GET /",
 					"caller": "<<PRESENCE>>",
+					"code": 200,
 					"level": "info",
 					"service": {
 						"name": "responder-test",
@@ -595,6 +602,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 					"time": "<<PRESENCE>>",
 					"message": "GET /",
+					"code": 200,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
 					"service": {
@@ -681,6 +689,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 					"time": "<<PRESENCE>>",
 					"message": "GET /",
+					"code": 201,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
 					"service": {
@@ -739,7 +748,7 @@ func TestResponder_Respond(t *testing.T) {
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						var rw struct{ http.ResponseWriter } = struct{ http.ResponseWriter }{writer}
+						rw := struct{ http.ResponseWriter }{writer}
 						responder.Respond(request.Context(), rw, statusCreatedBody{})
 					}))
 					return httptest.NewServer(handler)
@@ -766,6 +775,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 					"time": "<<PRESENCE>>",
 					"message": "GET /",
+					"code": 201,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
 					"service": {
@@ -808,7 +818,7 @@ func TestResponder_Respond(t *testing.T) {
 			},
 		},
 		{
-			name: "error compression still respond properly and the error is logged",
+			name: "error compression still respond properly and the error is logged at warning level",
 			fields: fields{
 				encoder: NewJSONEncoder(),
 				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
@@ -818,13 +828,13 @@ func TestResponder_Respond(t *testing.T) {
 					}
 				}),
 				errorTransformer: nil,
-				compressor:       mockErrorCOmpressor{},
+				compressor:       mockErrorCompressor{},
 				callerDepth:      2,
 			},
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						var rw struct{ http.ResponseWriter } = struct{ http.ResponseWriter }{writer}
+						rw := struct{ http.ResponseWriter }{writer}
 						responder.Respond(request.Context(), rw, statusCreatedBody{})
 					}))
 					return httptest.NewServer(handler)
@@ -874,6 +884,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 					"time": "<<PRESENCE>>",
 					"message": "GET /",
+					"code": 201,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
 					"service": {
@@ -912,6 +923,96 @@ func TestResponder_Respond(t *testing.T) {
 					}
 				}`
 				j.Assertf(logs[1], logRespond, resp.Request.Host, len(body))
+			},
+		},
+		{
+			name: "error on encoding will pass the error to Responder.RespondError and the error is logged at error level",
+			fields: fields{
+				encoder: NewJSONEncoder(),
+				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
+					return map[string]any{
+						"message": "status created",
+						"data":    input,
+					}
+				}),
+				errorTransformer: SimpleErrorTransformer{},
+				compressor:       NoCompression{},
+				callerDepth:      2,
+			},
+			gen: gen{
+				server: func(responder *Responder, middleware Middleware) *httptest.Server {
+					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+						responder.Respond(request.Context(), writer, map[string]any{
+							"should error": func() {},
+						})
+					}))
+					return httptest.NewServer(handler)
+				},
+				tower: towerGen,
+			},
+			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				if resp.StatusCode != http.StatusInternalServerError {
+					t.Errorf("Expected status code %d, got %d", http.StatusInternalServerError, resp.StatusCode)
+				}
+				if resp.Header.Get("Content-Type") != "application/json" {
+					t.Errorf("Expected content type to be 'application/json', but got '%s'", resp.Header.Get("Content-Type"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Errorf("Error reading response body: %s", err.Error())
+					return
+				}
+				if len(body) == 0 {
+					t.Errorf("Expected body to be not empty")
+					return
+				}
+				logRespond := `
+				{
+					"time": "<<PRESENCE>>",
+					"code": 500,
+					"message": "GET /",
+					"caller": "<<PRESENCE>>",
+					"level": "error",
+					"service": {
+						"name": "responder-test",
+						"environment": "testing",
+						"type": "unit-test"
+					},
+					"context": {
+						"request": {
+							"headers": {
+								"Accept-Encoding": [
+									"gzip"
+								],
+								"User-Agent": [
+									"Go-http-client/1.1"
+								]
+							},
+							"method": "GET",
+							"url": "%s/"
+						},
+						"response": {
+							"body": {
+								"error": "json: unsupported type: func()"
+							},
+							"headers": {
+								"Content-Length": [
+									"%d"
+								],
+								"Content-Type": [
+									"application/json"
+								]
+							},
+							"status": 500
+						}
+					},
+					"error": {
+						"summary": "json: unsupported type: func()",
+						"value": "<<PRESENCE>>"
+					}
+				}`
+				j := jsonassert.New(t)
+				j.Assertf(logger.String(), logRespond, resp.Request.Host, len(body))
 			},
 		},
 	}

@@ -3,10 +3,11 @@ package towerhttp
 import (
 	"bytes"
 	"context"
-	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
 	"strconv"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 // Respond with the given body and options.
@@ -25,9 +26,10 @@ import (
 // therefore the final result body may not actually be empty.
 func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
 	var (
-		statusCode = http.StatusOK
-		err        error
-		bodyBytes  []byte
+		statusCode  = http.StatusOK
+		err         error
+		bodyBytes   []byte
+		rejectDefer bool
 	)
 
 	if ch, ok := body.(tower.HTTPCodeHint); ok {
@@ -40,23 +42,25 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 	}
 	caller := tower.GetCaller(opt.callerDepth)
 	defer func() {
-		if capture, ok := rw.(*responseCapture); ok {
-			body := bytes.NewBuffer(bodyBytes)
-			capture.SetBody(&clientBodyCloner{
-				ReadCloser: io.NopCloser(body),
-				clone:      body,
-				limit:      -1,
-				callback:   nil,
-			}).SetCaller(caller).SetTower(r.tower).SetError(err)
-		} else if capture := responseCaptureFromContext(ctx); capture != nil {
-			// just in case the response writer is not the one we capture
-			body := bytes.NewBuffer(bodyBytes)
-			capture.SetBody(&clientBodyCloner{
-				ReadCloser: io.NopCloser(body),
-				clone:      body,
-				limit:      -1,
-				callback:   nil,
-			}).SetCaller(caller).SetTower(r.tower).SetError(err)
+		if !rejectDefer {
+			if capture, ok := rw.(*responseCapture); ok {
+				body := bytes.NewBuffer(bodyBytes)
+				capture.SetBody(&clientBodyCloner{
+					ReadCloser: io.NopCloser(body),
+					clone:      body,
+					limit:      -1,
+					callback:   nil,
+				}).SetCaller(caller).SetTower(r.tower).SetError(err)
+			} else if capture := responseCaptureFromContext(ctx); capture != nil {
+				// just in case the response writer is not the one we capture
+				body := bytes.NewBuffer(bodyBytes)
+				capture.SetBody(&clientBodyCloner{
+					ReadCloser: io.NopCloser(body),
+					clone:      body,
+					limit:      -1,
+					callback:   nil,
+				}).SetCaller(caller).SetTower(r.tower).SetError(err)
+			}
 		}
 	}()
 
@@ -73,12 +77,12 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 
 	bodyBytes, err = opt.encoder.Encode(body)
 	if err != nil {
-		opts := opts
-		opts = append(opts,
+		opts := append(opts,
 			Option.Respond().StatusCode(http.StatusInternalServerError),
-			Option.Respond().CallerDepth(opt.callerDepth+1),
+			Option.Respond().AddCallerSkip(1),
 		)
-		r.RespondError(ctx, rw, err)
+		r.RespondError(ctx, rw, err, opts...)
+		rejectDefer = true
 		return
 	}
 	contentType := opt.encoder.ContentType()

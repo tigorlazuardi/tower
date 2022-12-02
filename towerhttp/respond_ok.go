@@ -73,11 +73,7 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 
 	bodyBytes, err = opt.encoder.Encode(body)
 	if err != nil {
-		opt.statusCode = http.StatusInternalServerError
-		rw.Header().Set("Content-Type", "text/plain")
-		rw.WriteHeader(opt.statusCode)
-		bodyBytes = []byte("Encoding Error")
-		_, _ = rw.Write(bodyBytes)
+		r.RespondError(ctx, rw, err)
 		return
 	}
 	contentType := opt.encoder.ContentType()
@@ -85,21 +81,23 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 		rw.Header().Set("Content-Type", contentType)
 	}
 
-	compressed, err := opt.compressor.Compress(bodyBytes)
+	compressed, ok, err := opt.compressor.Compress(bodyBytes)
 	if err != nil {
 		_ = r.tower.Wrap(err).Caller(caller).Level(tower.WarnLevel).Log(ctx)
+		rw.Header().Set("Content-Length", strconv.Itoa(len(bodyBytes)))
 		rw.WriteHeader(opt.statusCode)
 		_, err = rw.Write(bodyBytes)
 		return
 	}
-
-	contentEncoding := opt.compressor.ContentEncoding()
-	if contentEncoding != "" {
+	if ok {
+		contentEncoding := opt.compressor.ContentEncoding()
 		rw.Header().Set("Content-Encoding", contentEncoding)
+		rw.Header().Set("Content-Length", strconv.Itoa(len(compressed)))
+		rw.WriteHeader(opt.statusCode)
+		_, err = rw.Write(compressed)
+		return
 	}
-
-	rw.Header().Set("Content-Length", strconv.Itoa(len(compressed)))
-
+	rw.Header().Set("Content-Length", strconv.Itoa(len(bodyBytes)))
 	rw.WriteHeader(opt.statusCode)
-	_, err = rw.Write(compressed)
+	_, err = rw.Write(bodyBytes)
 }

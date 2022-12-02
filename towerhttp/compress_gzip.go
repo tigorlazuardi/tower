@@ -3,27 +3,32 @@ package towerhttp
 import (
 	"bytes"
 	"compress/gzip"
+	"github.com/tigorlazuardi/tower/internal/pool"
 	"io"
-	"sync"
 )
 
 var (
-	_ Compression       = (*GzipCompression)(nil)
+	_ Compressor        = (*GzipCompression)(nil)
 	_ StreamCompression = (*GzipCompression)(nil)
 )
 
 type GzipCompression struct {
-	pool *sync.Pool
+	pool  *pool.Pool[*bytes.Buffer]
+	level int
 }
 
 // NewGzipCompression creates a new GzipCompression.
 func NewGzipCompression() *GzipCompression {
+	return NewGzipCompressionWithLevel(gzip.DefaultCompression)
+}
+
+// NewGzipCompressionWithLevel creates a new GzipCompression with specified compression level.
+func NewGzipCompressionWithLevel(lvl int) *GzipCompression {
 	return &GzipCompression{
-		pool: &sync.Pool{
-			New: func() interface{} {
-				return new(bytes.Buffer)
-			},
-		},
+		pool: pool.New(func() *bytes.Buffer {
+			return &bytes.Buffer{}
+		}),
+		level: lvl,
 	}
 }
 
@@ -32,23 +37,25 @@ func (g GzipCompression) ContentEncoding() string {
 	return "gzip"
 }
 
-// Compress implements towerhttp.Compression.
-func (g GzipCompression) Compress(b []byte) ([]byte, error) {
-	buf := g.pool.Get().(*bytes.Buffer) //nolint
+// Compress implements towerhttp.Compressor.
+func (g GzipCompression) Compress(b []byte) ([]byte, bool, error) {
+	buf := g.pool.Get()
 	buf.Reset()
-	w, _ := gzip.NewWriterLevel(buf, gzip.BestCompression)
-	defer w.Close()
-	_, err := w.Write(b)
+	w, err := gzip.NewWriterLevel(buf, g.level)
 	if err != nil {
-		return b, err
+		return b, false, err
 	}
-	if buf.Len() > len(b) {
-		return b, err
+	_, err = w.Write(b)
+	if err != nil {
+		return b, false, err
 	}
+	w.Close()
 	c := make([]byte, buf.Len())
+	// bytes.Buffer bytes method points to an array that will be reused by the pool.
+	// So we need to copy the bytes to a new array.
 	copy(c, buf.Bytes())
 	g.pool.Put(buf)
-	return c, err
+	return c, true, err
 }
 
 // StreamCompress implements towerhttp.StreamCompression.

@@ -12,7 +12,7 @@ import (
 //
 // If the stream implements tower.HTTPCodeHint, the status code will be set to the value returned by the tower.HTTPCodeHint.
 //
-// If the Compression supports StreamCompression, the stream will be compressed by said StreamCompression and
+// If the Compressor supports StreamCompression, the stream will be compressed by said StreamCompression and
 // written to the http.ResponseWriter.
 //
 // There's a special case if you pass http.NoBody as body, there will be no respond body related operations executed.

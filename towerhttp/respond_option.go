@@ -13,7 +13,7 @@ func (r RespondOptionFunc) apply(o *respondOption) {
 type OptionRespondGroup interface {
 	Encoder(encoder Encoder) RespondOption
 	Transformer(transformer BodyTransformer) RespondOption
-	Compressor(compressor Compression) RespondOption
+	Compressor(compressor Compressor) RespondOption
 	StatusCode(i int) RespondOption
 }
 
@@ -22,7 +22,7 @@ type optionRespondGroup struct{}
 type respondOption struct {
 	encoder     Encoder
 	transformer BodyTransformer
-	compressor  Compression
+	compressor  Compressor
 	statusCode  int
 }
 
@@ -41,7 +41,7 @@ func (optionRespondGroup) Transformer(transformer BodyTransformer) RespondOption
 }
 
 // Compressor overrides the compressor to be used for compressing the response body.
-func (optionRespondGroup) Compressor(compressor Compression) RespondOption {
+func (optionRespondGroup) Compressor(compressor Compressor) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
 		o.compressor = compressor
 	})

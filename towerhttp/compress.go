@@ -10,7 +10,7 @@ type ContentEncodingHint interface {
 	ContentEncoding() string
 }
 
-type Compression interface {
+type Compressor interface {
 	ContentEncodingHint
 	// Compress the given bytes. If the compressed bytes are smaller than the original bytes, the compressed bytes will
 	// be returned. Otherwise, the original bytes will be returned.
@@ -19,7 +19,7 @@ type Compression interface {
 	// value returned from ContentEncoding method. Otherwise, the original bytes will be used.
 	//
 	// If err is not nil, the original bytes will be used and the error will be logged by Tower at warn level.
-	Compress(b []byte) (compressed []byte, err error)
+	Compress(b []byte) (compressed []byte, ok bool, err error)
 }
 
 type StreamCompression interface {
@@ -31,7 +31,7 @@ type StreamCompression interface {
 	StreamCompress(origin io.Reader) io.Reader
 }
 
-var _ Compression = (*NoCompression)(nil)
+var _ Compressor = (*NoCompression)(nil)
 
 // NoCompression is a compressor that does nothing. Basically it's an Uncompressed operation.
 type NoCompression struct{}
@@ -43,4 +43,4 @@ func NewNoCompression() *NoCompression {
 
 func (n NoCompression) StreamCompress(origin io.Reader) io.Reader { return origin }
 func (n NoCompression) ContentEncoding() string                   { return "" }
-func (n NoCompression) Compress(bytes []byte) ([]byte, error)     { return bytes, nil }
+func (n NoCompression) Compress(b []byte) ([]byte, bool, error)   { return b, false, nil }

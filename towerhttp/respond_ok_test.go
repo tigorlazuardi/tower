@@ -2,6 +2,7 @@ package towerhttp
 
 import (
 	"bytes"
+	"context"
 	"github.com/kinbiko/jsonassert"
 	"github.com/tigorlazuardi/tower"
 	"io"
@@ -12,12 +13,22 @@ import (
 	"testing"
 )
 
+type statusCreatedBody struct{}
+
+func (s statusCreatedBody) MarshalJSON() ([]byte, error) {
+	return []byte(`{"status":"created"}`), nil
+}
+
+func (s statusCreatedBody) HTTPCode() int {
+	return http.StatusCreated
+}
+
 func TestResponder_Respond(t *testing.T) {
 	type fields struct {
 		encoder          Encoder
 		transformer      BodyTransformer
 		errorTransformer ErrorBodyTransformer
-		compressor       Compression
+		compressor       Compressor
 		callerDepth      int
 	}
 	type gen struct {
@@ -40,7 +51,7 @@ func TestResponder_Respond(t *testing.T) {
 		test   func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger)
 	}{
 		{
-			name: "Expected result",
+			name: "normal state",
 			fields: fields{
 				encoder:          NewJSONEncoder(),
 				transformer:      NoopBodyTransform{},
@@ -130,7 +141,7 @@ func TestResponder_Respond(t *testing.T) {
 			},
 		},
 		{
-			name: "Expected result - no body",
+			name: "http.NoBody",
 			fields: fields{
 				encoder:          NewJSONEncoder(),
 				transformer:      NoopBodyTransform{},
@@ -199,6 +210,348 @@ func TestResponder_Respond(t *testing.T) {
 				j.Assertf(logger.String(), log, resp.Request.Host)
 			},
 		},
+		{
+			name: "nil body - on default BodyTransform",
+			fields: fields{
+				encoder:          NewJSONEncoder(),
+				transformer:      NoopBodyTransform{},
+				errorTransformer: nil,
+				compressor:       NoCompression{},
+				callerDepth:      2,
+			},
+			gen: gen{
+				server: func(responder *Responder, middleware Middleware) *httptest.Server {
+					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+						responder.Respond(request.Context(), writer, nil)
+					}))
+					return httptest.NewServer(handler)
+				},
+				tower: towerGen,
+			},
+			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				if resp.StatusCode != http.StatusOK {
+					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+				}
+				if resp.Header.Get("Content-Type") != "" {
+					t.Errorf("Expected content type to be empty, but got %s", resp.Header.Get("Content-Type"))
+				}
+				if resp.Header.Get("Content-Encoding") != "" {
+					t.Errorf("Expected content encoding to be empty, got %s", resp.Header.Get("Content-Encoding"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Errorf("Error reading response body: %s", err.Error())
+					return
+				}
+				if len(body) != 0 {
+					t.Errorf("Expected body to be empty, got %s", string(body))
+					return
+				}
+				log := `
+				{
+				  "time": "<<PRESENCE>>",
+				  "message": "GET /",
+				  "caller": "<<PRESENCE>>",
+				  "level": "info",
+				  "service": {
+					"name": "responder-test",
+					"environment": "testing",
+					"type": "unit-test"
+				  },
+				  "context": {
+					"request": {
+					  "headers": {
+						"Accept-Encoding": [
+						  "gzip"
+						],
+						"User-Agent": [
+						  "Go-http-client/1.1"
+						]
+					  },
+					  "method": "GET",
+					  "url": "%s/"
+					},
+					"response": {
+					  "status": %d
+					}
+				  }
+				}`
+				j := jsonassert.New(t)
+				j.Assertf(logger.String(), log, resp.Request.Host, resp.StatusCode)
+			},
+		},
+		{
+			name: "nil body - custom BodyTransform",
+			fields: fields{
+				encoder: NewJSONEncoder(),
+				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
+					return map[string]any{
+						"message": "custom body transform",
+						"data":    input,
+					}
+				}),
+				errorTransformer: nil,
+				compressor:       NoCompression{},
+				callerDepth:      2,
+			},
+			gen: gen{
+				server: func(responder *Responder, middleware Middleware) *httptest.Server {
+					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+						responder.Respond(request.Context(), writer, nil)
+					}))
+					return httptest.NewServer(handler)
+				},
+				tower: towerGen,
+			},
+			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				if resp.StatusCode != http.StatusOK {
+					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+				}
+				if resp.Header.Get("Content-Type") != "application/json" {
+					t.Errorf("Expected content type to be 'application/json', but got '%s'", resp.Header.Get("Content-Type"))
+				}
+				if resp.Header.Get("Content-Encoding") != "" {
+					t.Errorf("Expected content encoding to be empty, got %s", resp.Header.Get("Content-Encoding"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Errorf("Error reading response body: %s", err.Error())
+					return
+				}
+				if len(body) == 0 {
+					t.Errorf("Expected body to be not empty")
+					return
+				}
+				log := `
+				{
+				  "time": "<<PRESENCE>>",
+				  "message": "GET /",
+				  "caller": "<<PRESENCE>>",
+				  "level": "info",
+				  "service": {
+					"name": "responder-test",
+					"environment": "testing",
+					"type": "unit-test"
+				  },
+				  "context": {
+					"request": {
+					  "headers": {
+						"Accept-Encoding": [
+						  "gzip"
+						],
+						"User-Agent": [
+						  "Go-http-client/1.1"
+						]
+					  },
+					  "method": "GET",
+					  "url": "%s/"
+					},
+					"response": {
+					  "status": %d,
+                      "body": {
+						"message": "custom body transform",
+						"data": null
+					  },
+                      "headers": {
+						"Content-Type": [
+						  "application/json"
+						],
+						"Content-Length": [
+						  "%s"
+						]
+					  }
+					}
+				  }
+				}`
+				j := jsonassert.New(t)
+				j.Assertf(logger.String(), log, resp.Request.Host, resp.StatusCode, resp.Header.Get("Content-Length"))
+			},
+		},
+		{
+			name: "nil body - custom BodyTransform - From option override",
+			fields: fields{
+				encoder: NewJSONEncoder(),
+				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
+					return map[string]any{
+						"message": "should be overridden",
+						"data":    input,
+					}
+				}),
+				errorTransformer: nil,
+				compressor:       NoCompression{},
+				callerDepth:      2,
+			},
+			gen: gen{
+				server: func(responder *Responder, middleware Middleware) *httptest.Server {
+					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+						responder.Respond(request.Context(), writer, nil, Option.Respond().Transformer(BodyTransformFunc(func(_ context.Context, input any) any {
+							return map[string]any{
+								"message": "custom body transform",
+								"data":    input,
+							}
+						})))
+					}))
+					return httptest.NewServer(handler)
+				},
+				tower: towerGen,
+			},
+			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				if resp.StatusCode != http.StatusOK {
+					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+				}
+				if resp.Header.Get("Content-Type") != "application/json" {
+					t.Errorf("Expected content type to be 'application/json', but got '%s'", resp.Header.Get("Content-Type"))
+				}
+				if resp.Header.Get("Content-Encoding") != "" {
+					t.Errorf("Expected content encoding to be empty, got %s", resp.Header.Get("Content-Encoding"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Errorf("Error reading response body: %s", err.Error())
+					return
+				}
+				if len(body) == 0 {
+					t.Errorf("Expected body to be not empty")
+					return
+				}
+				log := `
+				{
+				  "time": "<<PRESENCE>>",
+				  "message": "GET /",
+				  "caller": "<<PRESENCE>>",
+				  "level": "info",
+				  "service": {
+					"name": "responder-test",
+					"environment": "testing",
+					"type": "unit-test"
+				  },
+				  "context": {
+					"request": {
+					  "headers": {
+						"Accept-Encoding": [
+						  "gzip"
+						],
+						"User-Agent": [
+						  "Go-http-client/1.1"
+						]
+					  },
+					  "method": "GET",
+					  "url": "%s/"
+					},
+					"response": {
+					  "status": %d,
+                      "body": {
+						"message": "custom body transform",
+						"data": null
+					  },
+                      "headers": {
+						"Content-Type": [
+						  "application/json"
+						],
+						"Content-Length": [
+						  "%s"
+						]
+					  }
+					}
+				  }
+				}`
+				j := jsonassert.New(t)
+				j.Assertf(logger.String(), log, resp.Request.Host, resp.StatusCode, resp.Header.Get("Content-Length"))
+			},
+		},
+		{
+			name: "nil body - custom BodyTransform - gzip compression",
+			fields: fields{
+				encoder: NewJSONEncoder(),
+				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
+					return map[string]any{
+						"message": "gzipped body",
+						"data":    input,
+					}
+				}),
+				errorTransformer: nil,
+				compressor:       NewGzipCompression(),
+				callerDepth:      2,
+			},
+			gen: gen{
+				server: func(responder *Responder, middleware Middleware) *httptest.Server {
+					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+						responder.Respond(request.Context(), writer, nil)
+					}))
+					return httptest.NewServer(handler)
+				},
+				tower: towerGen,
+			},
+			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				defer func() {
+					if t.Failed() {
+						logger.PrettyPrint()
+					}
+				}()
+				if resp.StatusCode != http.StatusOK {
+					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+				}
+				if resp.Header.Get("Content-Type") != "application/json" {
+					t.Errorf("Expected content type to be 'application/json', but got '%s'", resp.Header.Get("Content-Type"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Errorf("Error reading response body: %s", err.Error())
+					return
+				}
+				if len(body) == 0 {
+					t.Errorf("Expected body to be not empty")
+					return
+				}
+				log := `
+				{
+					"time": "<<PRESENCE>>",
+					"message": "GET /",
+					"caller": "<<PRESENCE>>",
+					"level": "info",
+					"service": {
+						"name": "responder-test",
+						"environment": "testing",
+						"type": "unit-test"
+					},
+					"context": {
+						"request": {
+							"headers": {
+								"Accept-Encoding": [
+									"gzip"
+								],
+								"User-Agent": [
+									"Go-http-client/1.1"
+								]
+							},
+							"method": "GET",
+							"url": "%s/"
+						},
+						"response": {
+							"body": {
+								"data": null,
+								"message": "gzipped body"
+							},
+							"headers": {
+								"Content-Encoding": [
+									"gzip"
+								],
+								"Content-Length": [
+									"%d"
+								],
+								"Content-Type": [
+									"application/json"
+								]
+							},
+							"status": 200
+						}
+					}
+				}
+				`
+				j := jsonassert.New(t)
+				j.Assertf(logger.String(), log, resp.Request.Host, len(body)+24) // +24 is the gzip header
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -215,6 +568,16 @@ func TestResponder_Respond(t *testing.T) {
 			middleware := LoggingMiddleware(NewServerLogger())
 			server := tt.gen.server(&r, middleware)
 			defer server.Close()
+			req, err := http.NewRequest(http.MethodGet, server.URL, nil)
+			if err != nil {
+				t.Errorf("Error creating request: %s", err.Error())
+				return
+			}
+			if tt.fields.compressor.ContentEncoding() != "" {
+				req.Header.Set("Accept-Encoding", tt.fields.compressor.ContentEncoding())
+			}
+			// req.Close prevents the client from reusing the connection
+			req.Close = true
 			resp, err := http.Get(server.URL)
 			if err != nil {
 				t.Fatal(err)

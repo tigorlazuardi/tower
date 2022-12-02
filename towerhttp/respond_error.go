@@ -67,7 +67,7 @@ func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, err
 	if contentType != "" {
 		rw.Header().Set("Content-Type", contentType)
 	}
-	compressed, err := opt.compressor.Compress(bodyBytes)
+	compressed, _, err := opt.compressor.Compress(bodyBytes)
 	if err != nil {
 		return
 	}

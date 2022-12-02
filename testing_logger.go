@@ -73,7 +73,7 @@ func (t *TestingJSONLogger) PrettyPrint() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	var out bytes.Buffer
-	err := json.Indent(&out, t.buf.Bytes(), "", "  ")
+	err := json.Indent(&out, t.buf.Bytes(), "", "    ")
 	if err != nil {
 		fmt.Println(err.Error())
 		return

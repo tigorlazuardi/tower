@@ -1012,7 +1012,58 @@ func TestResponder_Respond(t *testing.T) {
 					}
 				}`
 				j := jsonassert.New(t)
-				j.Assertf(logger.String(), logRespond, resp.Request.Host, len(body))
+				log := logger.String()
+				j.Assertf(log, logRespond, resp.Request.Host, len(body))
+				if !strings.Contains(log, "tower/towerhttp/respond_ok_test.go") {
+					t.Errorf("Expected correct caller location target")
+				}
+			},
+		},
+		{
+			name: "no logging when context and response writer is not supported",
+			fields: fields{
+				encoder: NewJSONEncoder(),
+				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
+					return map[string]any{
+						"message": "status created",
+						"data":    input,
+					}
+				}),
+				errorTransformer: SimpleErrorTransformer{},
+				compressor:       NoCompression{},
+				callerDepth:      2,
+			},
+			gen: gen{
+				server: func(responder *Responder, middleware Middleware) *httptest.Server {
+					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+						rw := struct{ http.ResponseWriter }{writer}
+						responder.Respond(context.Background(), rw, map[string]any{
+							"ok": true,
+						})
+					}))
+					return httptest.NewServer(handler)
+				},
+				tower: towerGen,
+			},
+			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				if resp.StatusCode != http.StatusOK {
+					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+				}
+				if resp.Header.Get("Content-Type") != "application/json" {
+					t.Errorf("Expected content type to be 'application/json', but got '%s'", resp.Header.Get("Content-Type"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Errorf("Error reading response body: %s", err.Error())
+					return
+				}
+				if len(body) == 0 {
+					t.Errorf("Expected body to be not empty")
+				}
+				log := logger.String()
+				if len(log) > 0 {
+					t.Errorf("Expected logger to be empty")
+				}
 			},
 		},
 	}

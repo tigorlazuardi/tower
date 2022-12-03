@@ -10,7 +10,7 @@ var exportedResponder *Responder
 
 func init() {
 	exportedResponder = NewResponder()
-	exportedResponder.SetCallerDepth(4)
+	exportedResponder.SetCallerDepth(3)
 }
 
 // Responder returns the global responder instance.

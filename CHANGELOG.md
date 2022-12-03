@@ -21,22 +21,23 @@
 - **error_node:** indent now set to 3 spaces
 - **http-client:** wip update
 - **implError:** exported implError as ErrorNode
-- **query:** added CollectErrors query
 - **query:** added bottom error query
+- **query:** added CollectErrors query
 - **tower:** added code block marshaler pattern
-- **tower-discord:** implemented file upload native discord
 - **tower-discord:** added thread id in metadata
-- **tower-http:** added response capturer
+- **tower-discord:** implemented file upload native discord
 - **tower-http:** added client logger
+- **tower-http:** added unit test
+- **tower-http:** added response capturer
+- **tower-http:** unit tested respond ok
+- **tower-http:** added unit test
+- **tower-http:** unit tested respond ok with http no body
 - **tower-http:** added respond body logger
 - **tower-http:** added logging middleware
 - **tower-http:** added logging middleware to respond error
-- **tower-http:** added unit test
-- **tower-http:** added unit test
-- **tower-http:** more unit test to Respond Ok
-- **tower-http:** unit tested respond ok
-- **tower-http:** unit tested respond ok with http no body
 - **tower-http:** major bug fixes with compressions
+- **tower-http:** more unit test to Respond Ok
+- **tower-http-gzip:** skip compression on data too small
 - **tower-http-gzip:** skip compression on data too small
 
 ### Miscellaneous

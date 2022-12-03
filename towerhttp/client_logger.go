@@ -180,10 +180,10 @@ type towerClientLogger struct {
 }
 
 func isHumanReadable(contentType string) bool {
-	return strings.HasPrefix(contentType, "text/") ||
-		strings.HasPrefix(contentType, "application/json") ||
+	return strings.HasPrefix(contentType, "application/json") ||
 		strings.HasPrefix(contentType, "application/xml") ||
-		strings.HasPrefix(contentType, "application/x-www-form-urlencoded")
+		strings.HasPrefix(contentType, "application/x-www-form-urlencoded") ||
+		strings.HasPrefix(contentType, "text/")
 }
 
 func isJson(b []byte) bool {

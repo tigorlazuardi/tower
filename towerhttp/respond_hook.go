@@ -57,8 +57,23 @@ type hookRequest struct {
 	responseBody int
 }
 
-type CheckedHook struct {
-	hooks map[RespondHook]*hookRequest
+type CloneRequest struct {
+	hooks           map[RespondHook]*hookRequest
+	requestReadMax  int
+	responseReadMax int
+}
+
+func (cr *CloneRequest) ReadRequestBody(h RespondHook, size int) {
+	hook, ok := cr.hooks[h]
+	if !ok {
+		newHook := &hookRequest{}
+		hook = newHook
+		cr.hooks[h] = hook
+	}
+	hook.requestBody = size
+	if cr.requestReadMax > 0 && size > cr.requestReadMax {
+		cr.requestReadMax = size
+	}
 }
 
 type RespondHook interface {

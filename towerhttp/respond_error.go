@@ -33,13 +33,10 @@ func (r Responder) RespondError(rw http.ResponseWriter, request *http.Request, e
 		ctx        = request.Context()
 		bodyBytes  []byte
 		err        error
-		statusCode = http.StatusInternalServerError
+		statusCode = tower.Query.GetHTTPCode(errPayload)
 	)
 	if errPayload == nil {
 		errPayload = errInternalServerError
-	}
-	if ch, ok := errPayload.(tower.HTTPCodeHint); ok {
-		statusCode = ch.HTTPCode()
 	}
 	opt := r.buildOption(statusCode)
 	for _, o := range opts {
@@ -62,6 +59,10 @@ func (r Responder) RespondError(rw http.ResponseWriter, request *http.Request, e
 	}()
 
 	body := r.errorTransformer.ErrorBodyTransform(ctx, errPayload)
+	if body == nil {
+		rw.WriteHeader(opt.statusCode)
+		return
+	}
 	bodyBytes, err = opt.encoder.Encode(body)
 	if err != nil {
 		const errMsg = "ENCODING ERROR"

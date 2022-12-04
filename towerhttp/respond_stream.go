@@ -30,13 +30,10 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 	if body == nil {
 		body = http.NoBody
 	}
-	opt := r.buildOption(statusCode)
 	if ch, ok := body.(tower.HTTPCodeHint); ok {
-		opt.statusCode = ch.HTTPCode()
+		statusCode = ch.HTTPCode()
 	}
-	for _, o := range opts {
-		o.apply(opt)
-	}
+	opt := r.buildOption(statusCode, opts...)
 	if body == http.NoBody {
 		rw.WriteHeader(opt.statusCode)
 		return

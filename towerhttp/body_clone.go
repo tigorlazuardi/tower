@@ -105,8 +105,16 @@ func wrapBodyCloner(r io.Reader, limit int) *bodyCloner {
 	} else {
 		rc = io.NopCloser(r)
 	}
-	cl := clonePool.Get().(BufferedReadWriter)
-	cl.Reset()
+	var cl BufferedReadWriter
+	if buf, ok := r.(BufferedReader); ok {
+		// Underlying type is already like bytes.Buffer, so no need for copy-like operations effectively. Since the data
+		// is already in memory, we can just point to those arrays directly. We just have to make sure there's no write operations
+		// to those underlying array.
+		cl = wrapNoopWriter(buf)
+	} else {
+		cl = clonePool.Get()
+		cl.Reset()
+	}
 	return &bodyCloner{
 		ReadCloser: rc,
 		clone:      cl,

@@ -13,12 +13,12 @@ func (r RespondOptionFunc) apply(o *respondOption) {
 type OptionRespondGroup struct{}
 
 type respondOption struct {
-	encoder          Encoder
-	transformer      BodyTransformer
-	compressor       Compressor
-	statusCode       int
-	errorTransformer ErrorBodyTransformer
-	callerDepth      int
+	encoder              Encoder
+	bodyTransformer      BodyTransformer
+	compressor           Compressor
+	statusCode           int
+	errorBodyTransformer ErrorBodyTransformer
+	callerDepth          int
 }
 
 // Encoder overrides the encoder to be used for encoding the response body.
@@ -31,13 +31,13 @@ func (OptionRespondGroup) Encoder(encoder Encoder) RespondOption {
 // Transformer overrides the transformer to be used for transforming the response body.
 func (OptionRespondGroup) Transformer(transformer BodyTransformer) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
-		o.transformer = transformer
+		o.bodyTransformer = transformer
 	})
 }
 
 func (OptionRespondGroup) ErrorTransformer(transformer ErrorBodyTransformer) RespondOption {
 	return RespondOptionFunc(func(o *respondOption) {
-		o.errorTransformer = transformer
+		o.errorBodyTransformer = transformer
 	})
 }
 

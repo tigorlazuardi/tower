@@ -26,16 +26,17 @@
 - **tower:** added code block marshaler pattern
 - **tower-discord:** added thread id in metadata
 - **tower-discord:** implemented file upload native discord
-- **tower-http:** added client logger
-- **tower-http:** added unit test
-- **tower-http:** added response capturer
+- **tower-http:** unit tested respond ok with http no body
+- **tower-http:** update
 - **tower-http:** unit tested respond ok
 - **tower-http:** added unit test
-- **tower-http:** unit tested respond ok with http no body
+- **tower-http:** major bug fixes with compressions
 - **tower-http:** added respond body logger
 - **tower-http:** added logging middleware
+- **tower-http:** added client logger
 - **tower-http:** added logging middleware to respond error
-- **tower-http:** major bug fixes with compressions
+- **tower-http:** added response capturer
+- **tower-http:** added unit test
 - **tower-http:** more unit test to Respond Ok
 - **tower-http-gzip:** skip compression on data too small
 - **tower-http-gzip:** skip compression on data too small

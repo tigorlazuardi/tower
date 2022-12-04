@@ -56,7 +56,7 @@ func (r Responder) Respond(rw http.ResponseWriter, request *http.Request, body a
 		return
 	}
 
-	body = opt.transformer.BodyTransform(ctx, body)
+	body = opt.bodyTransformer.BodyTransform(ctx, body)
 	if body == nil {
 		rw.WriteHeader(opt.statusCode)
 		return

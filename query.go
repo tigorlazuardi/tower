@@ -15,8 +15,6 @@ GetHTTPCode Search for any error in the stack that implements HTTPCodeHint and r
 The API searches from the outermost error, and will return the first value it found.
 
 Return 500 if there's no error that implements HTTPCodeHint in the stack.
-
-Used by Tower to search HTTP Code.
 */
 func (query) GetHTTPCode(err error) (code int) {
 	if err == nil {

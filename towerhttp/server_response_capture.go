@@ -45,7 +45,7 @@ func newResponseCapture(rw http.ResponseWriter, r *http.Request, logger ServerLo
 	return &responseCapture{
 		w:      rw,
 		status: http.StatusOK,
-		body:   noopCloneBody{},
+		body:   NoopCloneBody{},
 		logger: logger,
 		r:      r,
 		level:  tower.InfoLevel,
@@ -77,7 +77,7 @@ func (r *responseCapture) SetBodyStream(body io.Reader, contentType string) io.R
 	if n == 0 {
 		return body
 	}
-	clone := wrapClientBodyCloner(body, n, nil)
+	clone := wrapBodyCloner(body, n)
 	r.body = clone
 	return clone
 }

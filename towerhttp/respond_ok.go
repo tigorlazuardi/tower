@@ -2,8 +2,6 @@ package towerhttp
 
 import (
 	"bytes"
-	"context"
-	"io"
 	"net/http"
 	"strconv"
 
@@ -24,42 +22,31 @@ import (
 //
 // Body of nil has different treatment with http.NoBody. if body is nil, the nil value is still passed to the BodyTransformer implementer,
 // therefore the final result body may not actually be empty.
-func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
+func (r Responder) Respond(rw http.ResponseWriter, request *http.Request, body any, opts ...RespondOption) {
 	var (
 		statusCode  = http.StatusOK
 		err         error
 		bodyBytes   []byte
 		rejectDefer bool
+		ctx         = request.Context()
 	)
 
 	if ch, ok := body.(tower.HTTPCodeHint); ok {
 		statusCode = ch.HTTPCode()
 	}
 
-	opt := r.buildOption(statusCode)
-	for _, o := range opts {
-		o.apply(opt)
-	}
+	opt := r.buildOption(statusCode, opts...)
 	caller := tower.GetCaller(opt.callerDepth)
 	defer func() {
 		if !rejectDefer {
-			if capture, ok := rw.(*responseCapture); ok {
-				body := bytes.NewBuffer(bodyBytes)
-				capture.SetBody(&clientBodyCloner{
-					ReadCloser: io.NopCloser(body),
-					clone:      body,
-					limit:      -1,
-					callback:   nil,
-				}).SetCaller(caller).SetTower(r.tower).SetError(err)
-			} else if capture := responseCaptureFromContext(ctx); capture != nil {
-				// just in case the response writer is not the one we capture
-				body := bytes.NewBuffer(bodyBytes)
-				capture.SetBody(&clientBodyCloner{
-					ReadCloser: io.NopCloser(body),
-					clone:      body,
-					limit:      -1,
-					callback:   nil,
-				}).SetCaller(caller).SetTower(r.tower).SetError(err)
+			capture, _ := rw.(*responseCapture)
+			if capture == nil {
+				// just in case the response writer is not the one we capture. e.g. wrapped in another response writer implementer.
+				capture = responseCaptureFromContext(ctx)
+			}
+			if capture != nil {
+				clonedBody := wrapBodyCloner(bytes.NewReader(bodyBytes), -1)
+				capture.SetBody(clonedBody).SetCaller(caller).SetTower(r.tower).SetError(err).SetLevel(tower.ErrorLevel)
 			}
 		}
 	}()
@@ -81,7 +68,7 @@ func (r Responder) Respond(ctx context.Context, rw http.ResponseWriter, body any
 			Option.Respond().StatusCode(http.StatusInternalServerError),
 			Option.Respond().AddCallerSkip(1),
 		)
-		r.RespondError(ctx, rw, err, opts...)
+		r.RespondError(rw, request, err, opts...)
 		rejectDefer = true
 		return
 	}

@@ -2,7 +2,6 @@ package towerhttp
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 	"strconv"
@@ -29,8 +28,9 @@ const errInternalServerError errString = "Internal Server Error"
 // if err is nil, it will be replaced with "Internal Server Error" message. It is done this way, because the library
 // assumes that you mishandled the method and to prevent sending empty values, a generic Internal Server Error message
 // will be sent instead. If you wish to send an empty response, use Respond with http.NoBody as body.
-func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, errPayload error, opts ...RespondOption) {
+func (r Responder) RespondError(rw http.ResponseWriter, request *http.Request, errPayload error, opts ...RespondOption) {
 	var (
+		ctx        = request.Context()
 		bodyBytes  []byte
 		err        error
 		statusCode = http.StatusInternalServerError
@@ -50,23 +50,14 @@ func (r Responder) RespondError(ctx context.Context, rw http.ResponseWriter, err
 		if err == nil {
 			err = errPayload
 		}
-		if capture, ok := rw.(*responseCapture); ok {
-			body := bytes.NewBuffer(bodyBytes)
-			capture.SetBody(&clientBodyCloner{
-				ReadCloser: io.NopCloser(body),
-				clone:      body,
-				limit:      -1,
-				callback:   nil,
-			}).SetCaller(caller).SetTower(r.tower).SetError(err).SetLevel(tower.ErrorLevel)
-		} else if capture := responseCaptureFromContext(ctx); capture != nil {
-			// just in case the response writer is not the one we capture
-			body := bytes.NewBuffer(bodyBytes)
-			capture.SetBody(&clientBodyCloner{
-				ReadCloser: io.NopCloser(body),
-				clone:      body,
-				limit:      -1,
-				callback:   nil,
-			}).SetCaller(caller).SetTower(r.tower).SetError(err).SetLevel(tower.ErrorLevel)
+		capture, _ := rw.(*responseCapture)
+		if capture == nil {
+			// just in case the response writer is not the one we capture. e.g. wrapped in another response writer implementer.
+			capture = responseCaptureFromContext(ctx)
+		}
+		if capture != nil {
+			clonedBody := wrapBodyCloner(bytes.NewReader(bodyBytes), -1)
+			capture.SetBody(clonedBody).SetCaller(caller).SetTower(r.tower).SetError(err).SetLevel(tower.ErrorLevel)
 		}
 	}()
 

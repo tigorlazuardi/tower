@@ -75,7 +75,7 @@ func TestResponder_Respond(t *testing.T) {
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						body := map[string]string{"ok": "ok"}
-						responder.Respond(request.Context(), writer, body)
+						responder.Respond(writer, request, body)
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -160,7 +160,7 @@ func TestResponder_Respond(t *testing.T) {
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						responder.Respond(request.Context(), writer, http.NoBody, Option.Respond().StatusCode(http.StatusNoContent))
+						responder.Respond(writer, request, http.NoBody, Option.Respond().StatusCode(http.StatusNoContent))
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -231,7 +231,7 @@ func TestResponder_Respond(t *testing.T) {
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						responder.Respond(request.Context(), writer, nil)
+						responder.Respond(writer, request, nil)
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -307,7 +307,7 @@ func TestResponder_Respond(t *testing.T) {
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						responder.Respond(request.Context(), writer, nil)
+						responder.Respond(writer, request, nil)
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -395,7 +395,7 @@ func TestResponder_Respond(t *testing.T) {
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						responder.Respond(request.Context(), writer, nil, Option.Respond().Transformer(BodyTransformFunc(func(_ context.Context, input any) any {
+						responder.Respond(writer, request, nil, Option.Respond().Transformer(BodyTransformFunc(func(_ context.Context, input any) any {
 							return map[string]any{
 								"message": "custom body transform",
 								"data":    input,
@@ -488,7 +488,7 @@ func TestResponder_Respond(t *testing.T) {
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						responder.Respond(request.Context(), writer, nil)
+						responder.Respond(writer, request, nil)
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -575,7 +575,7 @@ func TestResponder_Respond(t *testing.T) {
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						input := strings.Repeat("foo ", 400)
-						responder.Respond(request.Context(), writer, input)
+						responder.Respond(writer, request, input)
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -663,7 +663,7 @@ func TestResponder_Respond(t *testing.T) {
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						responder.Respond(request.Context(), writer, statusCreatedBody{})
+						responder.Respond(writer, request, statusCreatedBody{})
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -749,7 +749,7 @@ func TestResponder_Respond(t *testing.T) {
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						rw := struct{ http.ResponseWriter }{writer}
-						responder.Respond(request.Context(), rw, statusCreatedBody{})
+						responder.Respond(rw, request, statusCreatedBody{})
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -835,7 +835,7 @@ func TestResponder_Respond(t *testing.T) {
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						rw := struct{ http.ResponseWriter }{writer}
-						responder.Respond(request.Context(), rw, statusCreatedBody{})
+						responder.Respond(rw, request, statusCreatedBody{})
 					}))
 					return httptest.NewServer(handler)
 				},
@@ -942,7 +942,7 @@ func TestResponder_Respond(t *testing.T) {
 			gen: gen{
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						responder.Respond(request.Context(), writer, map[string]any{
+						responder.Respond(writer, request, map[string]any{
 							"should error": func() {},
 						})
 					}))
@@ -1037,7 +1037,7 @@ func TestResponder_Respond(t *testing.T) {
 				server: func(responder *Responder, middleware Middleware) *httptest.Server {
 					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						rw := struct{ http.ResponseWriter }{writer}
-						responder.Respond(context.Background(), rw, map[string]any{
+						responder.Respond(rw, request, map[string]any{
 							"ok": true,
 						})
 					}))

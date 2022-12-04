@@ -47,6 +47,9 @@
 - **tower-discord:** tested hooks
 - **tower-http-respond-ok:** added mock compress error test
 
+### Wip
+- **tower-http:** refactor signature
+
 
 <a name="v0.1.9"></a>
 ## [v0.1.9] - 2022-11-26

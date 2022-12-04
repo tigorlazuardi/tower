@@ -10,7 +10,7 @@ var exportedResponder *Responder
 
 func init() {
 	exportedResponder = NewResponder()
-	exportedResponder.SetCallerDepth(3)
+	exportedResponder.SetCallerDepth(4)
 }
 
 // Responder returns the global responder instance.
@@ -37,8 +37,8 @@ func (exported) SetResponder(r *Responder) {
 //
 // Body of nil has different treatment with http.NoBody. if body is nil, the nil value is still passed to the BodyTransformer implementer,
 // therefore the final result body may not actually be empty.
-func Respond(ctx context.Context, rw http.ResponseWriter, body any, opts ...RespondOption) {
-	exportedResponder.Respond(ctx, rw, body, opts...)
+func Respond(rw http.ResponseWriter, request *http.Request, body any, opts ...RespondOption) {
+	exportedResponder.Respond(rw, request, body, opts...)
 }
 
 // RespondStream writes the given stream to the http.ResponseWriter.

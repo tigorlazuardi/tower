@@ -69,7 +69,7 @@ func (r *Responder) SetCallerDepth(depth int) {
 	r.callerDepth = depth
 }
 
-func (r Responder) buildOption(statusCode int) *respondOption {
+func (r Responder) buildOption(statusCode int, opts ...RespondOption) *respondOption {
 	opt := &respondOption{
 		encoder:          r.encoder,
 		transformer:      r.transformer,
@@ -77,6 +77,9 @@ func (r Responder) buildOption(statusCode int) *respondOption {
 		statusCode:       statusCode,
 		errorTransformer: r.errorTransformer,
 		callerDepth:      r.callerDepth,
+	}
+	for _, o := range opts {
+		o.apply(opt)
 	}
 	return opt
 }

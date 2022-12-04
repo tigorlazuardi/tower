@@ -14,11 +14,11 @@ func LoggingMiddleware(logger ServerLogger) Middleware {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var (
 				body                   = r.Body
-				requestBody ClonedBody = noopCloneBody{}
+				requestBody ClonedBody = NoopCloneBody{}
 			)
 			n := logger.ReceiveRequestBody(r)
 			if n != 0 {
-				clone := wrapClientBodyCloner(body, n, nil)
+				clone := wrapBodyCloner(body, n)
 				body = clone
 				requestBody = clone
 			}

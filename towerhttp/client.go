@@ -36,15 +36,15 @@ package towerhttp
 // type HTTPClient struct {
 // 	inner       Doer
 // 	logger      ClientLogger
-// 	callerDepth int
+// 	CallerDepth int
 // }
 //
-// func (H *HTTPClient) SetCallerDepth(callerDepth int) {
-// 	H.callerDepth = callerDepth
+// func (H *HTTPClient) SetCallerDepth(CallerDepth int) {
+// 	H.CallerDepth = CallerDepth
 // }
 //
 // func (H HTTPClient) Do(request *http.Request) (*http.Response, error) {
-// 	caller := tower.GetCaller(H.callerDepth)
+// 	caller := tower.GetCaller(H.CallerDepth)
 // 	var reqBody ClonedBody = NoopCloneBody{}
 // 	if request.Body != nil {
 // 		bodyRequest := H.logger.ReceiveRequestBody(request)
@@ -129,5 +129,5 @@ package towerhttp
 //
 // // WrapClient wraps http client that implements towerhttp.Doer.
 // func WrapClient(client Doer) Client {
-// 	return &HTTPClient{inner: client, logger: NewTowerClientLogger(tower.Global.Tower()), callerDepth: 2}
+// 	return &HTTPClient{inner: client, logger: NewTowerClientLogger(tower.Global.Tower()), CallerDepth: 2}
 // }

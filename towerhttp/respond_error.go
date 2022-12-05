@@ -1,7 +1,6 @@
 package towerhttp
 
 import (
-	"bytes"
 	"io"
 	"net/http"
 	"strconv"
@@ -30,40 +29,51 @@ const errInternalServerError errString = "Internal Server Error"
 // will be sent instead. If you wish to send an empty response, use Respond with http.NoBody as body.
 func (r Responder) RespondError(rw http.ResponseWriter, request *http.Request, errPayload error, opts ...RespondOption) {
 	var (
-		ctx        = request.Context()
-		bodyBytes  []byte
-		err        error
-		statusCode = tower.Query.GetHTTPCode(errPayload)
+		ctx            = request.Context()
+		encodedBody    []byte
+		err            error
+		statusCode     = tower.Query.GetHTTPCode(errPayload)
+		compressedBody []byte
 	)
 	if errPayload == nil {
 		errPayload = errInternalServerError
 	}
-	opt := r.buildOption(statusCode)
-	for _, o := range opts {
-		o.apply(opt)
+	opt := r.buildOption(statusCode, opts...)
+	if len(r.hooks) > 0 {
+		defer func() {
+			var requestBody ClonedBody = NoopCloneBody{}
+			if b, ok := request.Body.(ClonedBody); ok {
+				requestBody = b
+			} else if c := clonedBodyFromContext(request.Context()); c != nil {
+				requestBody = c
+			}
+			hookContext := &RespondErrorHookContext{
+				baseHook: &baseHook{
+					Context:        opt,
+					Request:        request,
+					RequestBody:    requestBody,
+					ResponseStatus: opt.StatusCode,
+					ResponseHeader: rw.Header(),
+					Tower:          r.tower,
+					Error:          err,
+				},
+				ResponseBody: RespondErrorBody{
+					PreEncoded:     errPayload,
+					PostEncoded:    encodedBody,
+					PostCompressed: compressedBody,
+				},
+			}
+			for _, hook := range r.hooks {
+				hook.RespondErrorHookContext(hookContext)
+			}
+		}()
 	}
-	caller := tower.GetCaller(opt.callerDepth)
-	defer func() {
-		if err == nil {
-			err = errPayload
-		}
-		capture, _ := rw.(*responseCapture)
-		if capture == nil {
-			// just in case the response writer is not the one we capture. e.g. wrapped in another response writer implementer.
-			capture = responseCaptureFromContext(ctx)
-		}
-		if capture != nil {
-			clonedBody := wrapBodyCloner(bytes.NewReader(bodyBytes), -1)
-			capture.SetBody(clonedBody).SetCaller(caller).SetTower(r.tower).SetError(err).SetLevel(tower.ErrorLevel)
-		}
-	}()
-
 	body := r.errorTransformer.ErrorBodyTransform(ctx, errPayload)
 	if body == nil {
-		rw.WriteHeader(opt.statusCode)
+		rw.WriteHeader(opt.StatusCode)
 		return
 	}
-	bodyBytes, err = opt.encoder.Encode(body)
+	encodedBody, err = opt.Encoder.Encode(body)
 	if err != nil {
 		const errMsg = "ENCODING ERROR"
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -71,27 +81,27 @@ func (r Responder) RespondError(rw http.ResponseWriter, request *http.Request, e
 		_, err = io.WriteString(rw, errMsg)
 		return
 	}
-	contentType := opt.encoder.ContentType()
+	contentType := opt.Encoder.ContentType()
 	if contentType != "" {
 		rw.Header().Set("Content-Type", contentType)
 	}
-	compressed, ok, err := opt.compressor.Compress(bodyBytes)
+	compressedBody, ok, err := opt.Compressor.Compress(encodedBody)
 	if err != nil {
-		_ = r.tower.Wrap(err).Caller(caller).Level(tower.WarnLevel).Log(ctx)
-		rw.Header().Set("Content-Length", strconv.Itoa(len(bodyBytes)))
-		rw.WriteHeader(opt.statusCode)
-		_, err = rw.Write(bodyBytes)
+		_ = r.tower.Wrap(err).Caller(opt.Caller).Level(tower.WarnLevel).Log(ctx)
+		rw.Header().Set("Content-Length", strconv.Itoa(len(encodedBody)))
+		rw.WriteHeader(opt.StatusCode)
+		_, err = rw.Write(encodedBody)
 		return
 	}
 	if ok {
-		contentEncoding := opt.compressor.ContentEncoding()
+		contentEncoding := opt.Compressor.ContentEncoding()
 		rw.Header().Set("Content-Encoding", contentEncoding)
-		rw.Header().Set("Content-Length", strconv.Itoa(len(compressed)))
-		rw.WriteHeader(opt.statusCode)
-		_, err = rw.Write(compressed)
+		rw.Header().Set("Content-Length", strconv.Itoa(len(compressedBody)))
+		rw.WriteHeader(opt.StatusCode)
+		_, err = rw.Write(compressedBody)
 		return
 	}
-	rw.Header().Set("Content-Length", strconv.Itoa(len(bodyBytes)))
-	rw.WriteHeader(opt.statusCode)
-	_, err = rw.Write(bodyBytes)
+	rw.Header().Set("Content-Length", strconv.Itoa(len(encodedBody)))
+	rw.WriteHeader(opt.StatusCode)
+	_, err = rw.Write(encodedBody)
 }

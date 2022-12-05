@@ -46,25 +46,6 @@ type ServerLoggerMessage struct {
 }
 
 type ServerLogger interface {
-	// ReceiveRequestBody should return value other than 0 if the request body should be cloned for logging.
-	// Implementors must not consume the request body at this stage.
-	//
-	// The returned value is the maximum amount of bytes that is desired to read from the request body.
-	//
-	// A value of 0 effectively skips the request body cloning.
-	// A value of -1 (or any negative value) means that the entire request body should be cloned.
-	// A value of n (where n > 0) means that the first n bytes of the request body should be cloned.
-	ReceiveRequestBody(*http.Request) int
-	// ReceiveResponseBodyStream should return other value other than 0 if the response body wants to be cloned.
-	//
-	// If the user responds with data that is not a stream, the response body will always be sent to ServerLoggerContext.ResponseBody.
-	//
-	// The returned value is the maximum amount of bytes that is desired to read from the request body.
-	//
-	// A value of 0 effectively skips the request body cloning.
-	// A value of -1 (or any negative value) means that the entire response body should be cloned.
-	// A value of n (where n > 0) means that the first n bytes of the response body should be cloned.
-	ReceiveResponseBodyStream(responseContentType string, r *http.Request) int
 	// Log will be called after the Request-Response trip is done.
 	// Whether the log will be printed or not depends on the implementation.
 	Log(ctx *ServerLoggerContext)
@@ -74,18 +55,9 @@ type implServerLogger struct {
 	opts *serverLoggerOpts
 }
 
-func (i implServerLogger) ReceiveRequestBody(request *http.Request) int {
-	if i.opts.requestFilter != nil && !i.opts.requestFilter(request) {
-		return 0
-	}
-	return i.opts.limit
-}
-
-func (i implServerLogger) ReceiveResponseBodyStream(responseContentType string, r *http.Request) int {
-	if i.opts.responseFilter != nil && !i.opts.responseFilter(responseContentType, r) {
-		return 0
-	}
-	return i.opts.limit
+func isJson(b []byte) bool {
+	var js json.RawMessage
+	return json.Unmarshal(b, &js) == nil
 }
 
 func (i implServerLogger) Log(ctx *ServerLoggerContext) {
@@ -141,6 +113,13 @@ func (i implServerLogger) Log(ctx *ServerLoggerContext) {
 	if i.opts.notify {
 		entry.Notify(ctx.Context, i.opts.notifyOption...)
 	}
+}
+
+func isHumanReadable(contentType string) bool {
+	return contentType == "" ||
+		strings.Contains(contentType, "text/") ||
+		strings.Contains(contentType, "application/json") ||
+		strings.Contains(contentType, "application/xml")
 }
 
 // NewServerLogger creates a new built-in implementation of ServerLogger.

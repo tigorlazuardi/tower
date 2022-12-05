@@ -1,7 +1,6 @@
 package towerhttp
 
 import (
-	"bytes"
 	"net/http"
 	"strconv"
 
@@ -26,9 +25,12 @@ func (r Responder) Respond(rw http.ResponseWriter, request *http.Request, body a
 	var (
 		statusCode  = http.StatusOK
 		err         error
-		bodyBytes   []byte
 		rejectDefer bool
 		ctx         = request.Context()
+	)
+	var (
+		encodedBody    []byte
+		compressedBody []byte
 	)
 
 	if ch, ok := body.(tower.HTTPCodeHint); ok {
@@ -36,33 +38,51 @@ func (r Responder) Respond(rw http.ResponseWriter, request *http.Request, body a
 	}
 
 	opt := r.buildOption(statusCode, opts...)
-	caller := tower.GetCaller(opt.callerDepth)
-	defer func() {
-		if !rejectDefer {
-			capture, _ := rw.(*responseCapture)
-			if capture == nil {
-				// just in case the response writer is not the one we capture. e.g. wrapped in another response writer implementer.
-				capture = responseCaptureFromContext(ctx)
+	caller := tower.GetCaller(opt.CallerDepth)
+	if len(r.hooks) > 0 {
+		defer func() {
+			if !rejectDefer {
+				var requestBody ClonedBody = NoopCloneBody{}
+				if b, ok := request.Body.(ClonedBody); ok {
+					requestBody = b
+				} else if c := clonedBodyFromContext(request.Context()); c != nil {
+					requestBody = c
+				}
+				hookContext := &RespondHookContext{
+					baseHook: &baseHook{
+						Context:        opt,
+						Request:        request,
+						RequestBody:    requestBody,
+						ResponseStatus: opt.StatusCode,
+						ResponseHeader: rw.Header(),
+						Tower:          r.tower,
+						Error:          err,
+					},
+					ResponseBody: RespondBody{
+						PreEncoded:     body,
+						PostEncoded:    encodedBody,
+						PostCompressed: compressedBody,
+					},
+				}
+				for _, hook := range r.hooks {
+					hook.RespondHook(hookContext)
+				}
 			}
-			if capture != nil {
-				clonedBody := wrapBodyCloner(bytes.NewReader(bodyBytes), -1)
-				capture.SetBody(clonedBody).SetCaller(caller).SetTower(r.tower).SetError(err).SetLevel(tower.ErrorLevel)
-			}
-		}
-	}()
+		}()
+	}
 
 	if body == http.NoBody {
-		rw.WriteHeader(opt.statusCode)
+		rw.WriteHeader(opt.StatusCode)
 		return
 	}
 
-	body = opt.bodyTransformer.BodyTransform(ctx, body)
+	body = opt.BodyTransformer.BodyTransform(ctx, body)
 	if body == nil {
-		rw.WriteHeader(opt.statusCode)
+		rw.WriteHeader(opt.StatusCode)
 		return
 	}
 
-	bodyBytes, err = opt.encoder.Encode(body)
+	encodedBody, err = opt.Encoder.Encode(body)
 	if err != nil {
 		opts := append(opts,
 			Option.Respond().StatusCode(http.StatusInternalServerError),
@@ -72,28 +92,28 @@ func (r Responder) Respond(rw http.ResponseWriter, request *http.Request, body a
 		rejectDefer = true
 		return
 	}
-	contentType := opt.encoder.ContentType()
+	contentType := opt.Encoder.ContentType()
 	if contentType != "" {
 		rw.Header().Set("Content-Type", contentType)
 	}
 
-	compressed, ok, err := opt.compressor.Compress(bodyBytes)
+	compressedBody, ok, err := opt.Compressor.Compress(encodedBody)
 	if err != nil {
 		_ = r.tower.Wrap(err).Caller(caller).Level(tower.WarnLevel).Log(ctx)
-		rw.Header().Set("Content-Length", strconv.Itoa(len(bodyBytes)))
-		rw.WriteHeader(opt.statusCode)
-		_, err = rw.Write(bodyBytes)
+		rw.Header().Set("Content-Length", strconv.Itoa(len(encodedBody)))
+		rw.WriteHeader(opt.StatusCode)
+		_, err = rw.Write(encodedBody)
 		return
 	}
 	if ok {
-		contentEncoding := opt.compressor.ContentEncoding()
+		contentEncoding := opt.Compressor.ContentEncoding()
 		rw.Header().Set("Content-Encoding", contentEncoding)
-		rw.Header().Set("Content-Length", strconv.Itoa(len(compressed)))
-		rw.WriteHeader(opt.statusCode)
-		_, err = rw.Write(compressed)
+		rw.Header().Set("Content-Length", strconv.Itoa(len(compressedBody)))
+		rw.WriteHeader(opt.StatusCode)
+		_, err = rw.Write(compressedBody)
 		return
 	}
-	rw.Header().Set("Content-Length", strconv.Itoa(len(bodyBytes)))
-	rw.WriteHeader(opt.statusCode)
-	_, err = rw.Write(bodyBytes)
+	rw.Header().Set("Content-Length", strconv.Itoa(len(encodedBody)))
+	rw.WriteHeader(opt.StatusCode)
+	_, err = rw.Write(encodedBody)
 }

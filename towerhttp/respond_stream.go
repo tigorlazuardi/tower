@@ -35,11 +35,11 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 	}
 	opt := r.buildOption(statusCode, opts...)
 	if body == http.NoBody {
-		rw.WriteHeader(opt.statusCode)
+		rw.WriteHeader(opt.StatusCode)
 		return
 	}
 
-	if sc, ok := opt.compressor.(StreamCompression); ok {
+	if sc, ok := opt.Compressor.(StreamCompression); ok {
 		body = sc.StreamCompress(body)
 		contentEncoding := sc.ContentEncoding()
 		if contentEncoding != "" {
@@ -47,7 +47,7 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 		}
 	}
 	rw.Header().Set("Content-Type", contentType)
-	rw.WriteHeader(opt.statusCode)
+	rw.WriteHeader(opt.StatusCode)
 	_, err = io.Copy(rw, body)
 	if err != nil {
 		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)

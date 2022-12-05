@@ -33,10 +33,10 @@ type StreamCompression interface {
 
 var _ Compressor = (*NoCompression)(nil)
 
-// NoCompression is a compressor that does nothing. Basically it's an Uncompressed operation.
+// NoCompression is a Compressor that does nothing. Basically it's an Uncompressed operation.
 type NoCompression struct{}
 
-// NewNoCompression creates a new NoCompression. A compressor that does nothing.
+// NewNoCompression creates a new NoCompression. A Compressor that does nothing.
 func NewNoCompression() *NoCompression {
 	return &NoCompression{}
 }

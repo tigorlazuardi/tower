@@ -1,85 +1,69 @@
 package towerhttp
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/tigorlazuardi/tower"
 )
 
-type RespondHookContext struct {
+type baseHook struct {
+	Context        *RespondContext
 	Request        *http.Request
 	RequestBody    ClonedBody
 	ResponseStatus int
 	ResponseHeader http.Header
-	Body           struct {
-		PreEncoded     any
-		PostEncoded    []byte
-		PostCompressed []byte
-	}
-	Caller tower.Caller
-	Tower  *tower.Tower
-	Error  error
+	Tower          *tower.Tower
+	Error          error
+}
+
+type RespondBody struct {
+	PreEncoded     any
+	PostEncoded    []byte
+	PostCompressed []byte
+}
+
+type RespondHookContext struct {
+	*baseHook
+	ResponseBody RespondBody
+}
+
+type RespondErrorBody struct {
+	PreEncoded     error
+	PostEncoded    []byte
+	PostCompressed []byte
 }
 
 type RespondErrorHookContext struct {
-	Request        *http.Request
-	RequestBody    ClonedBody
-	ResponseStatus int
-	ResponseHeader http.Header
-	Body           struct {
-		PreEncoded     error
-		PostEncoded    []byte
-		PostCompressed []byte
-	}
-	Caller tower.Caller
-	Tower  *tower.Tower
-	Error  error
+	*baseHook
+	ResponseBody RespondErrorBody
 }
 
 type RespondStreamHookContext struct {
-	Request        *http.Request
-	RequestBody    ClonedBody
-	ResponseStatus int
-	ResponseHeader http.Header
-	Body           struct {
+	*baseHook
+	ResponseBody struct {
 		Value          ClonedBody
 		IsCompressed   bool
 		PostCompressed ClonedBody
-	}
-	Caller tower.Caller
-	Tower  *tower.Tower
-	Error  error
-}
-
-type hookRequest struct {
-	requestBody  int
-	responseBody int
-}
-
-type CloneRequest struct {
-	hooks           map[RespondHook]*hookRequest
-	requestReadMax  int
-	responseReadMax int
-}
-
-func (cr *CloneRequest) ReadRequestBody(h RespondHook, size int) {
-	hook, ok := cr.hooks[h]
-	if !ok {
-		newHook := &hookRequest{}
-		hook = newHook
-		cr.hooks[h] = hook
-	}
-	hook.requestBody = size
-	if cr.requestReadMax > 0 && size > cr.requestReadMax {
-		cr.requestReadMax = size
 	}
 }
 
 type RespondHook interface {
 	AcceptRequestBodySize(r *http.Request) int
-	AcceptResponseBodyStreamSize(contentType string, body io.Reader) int
+	AcceptResponseBodyStreamSize(respondContentType string, request *http.Request) int
+
+	BeforeRespond(ctx *RespondContext) *RespondContext
 	RespondHook(ctx *RespondHookContext)
 	RespondErrorHookContext(ctx *RespondErrorHookContext)
 	RespondStreamHookContext(ctx *RespondStreamHookContext)
+}
+
+type (
+	BeforeRespondFunc      = func(ctx *RespondContext) *RespondContext
+	ResponseHookFunc       = func(ctx *RespondHookContext)
+	ResponseErrorHookFunc  = func(ctx *RespondErrorHookContext)
+	ResponseStreamHookFunc = func(ctx *RespondStreamHookContext)
+)
+
+func (r *Responder) RegisterHook(hook RespondHook) {
+	r.hooks = append(r.hooks, hook)
 }

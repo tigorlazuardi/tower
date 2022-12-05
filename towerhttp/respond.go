@@ -1,6 +1,7 @@
 package towerhttp
 
 import (
+	"context"
 	"github.com/tigorlazuardi/tower"
 )
 
@@ -12,6 +13,7 @@ type Responder struct {
 	tower            *tower.Tower
 	compressor       Compressor
 	callerDepth      int
+	hooks            []RespondHook
 }
 
 // NewResponder creates a new Responder instance.
@@ -23,7 +25,7 @@ type Responder struct {
 // - BodyTransformer: NoopBodyTransform (does nothing to whatever value you pass in)
 //
 // - ErrorBodyTransformer: SimpleErrorTransformer (encodes error to {"error": "message/err.Error()"}) with JSONEncoder.
-// Different encoder may have different output.
+// Different Encoder may have different output.
 //
 // - Tower: points to the global tower instance
 //
@@ -44,7 +46,7 @@ func (r *Responder) SetErrorTransformer(errorTransformer ErrorBodyTransformer) {
 	r.errorTransformer = errorTransformer
 }
 
-// SetEncoder sets the encoder to be used by the Responder.
+// SetEncoder sets the Encoder to be used by the Responder.
 func (r *Responder) SetEncoder(encoder Encoder) {
 	r.encoder = encoder
 }
@@ -69,17 +71,32 @@ func (r *Responder) SetCallerDepth(depth int) {
 	r.callerDepth = depth
 }
 
-func (r Responder) buildOption(statusCode int, opts ...RespondOption) *respondOption {
-	opt := &respondOption{
-		encoder:              r.encoder,
-		bodyTransformer:      r.transformer,
-		compressor:           r.compressor,
-		statusCode:           statusCode,
-		errorBodyTransformer: r.errorTransformer,
-		callerDepth:          r.callerDepth,
+func (r Responder) buildOption(statusCode int, opts ...RespondOption) *RespondContext {
+	opt := &RespondContext{
+		Encoder:              r.encoder,
+		BodyTransformer:      r.transformer,
+		Compressor:           r.compressor,
+		StatusCode:           statusCode,
+		ErrorBodyTransformer: r.errorTransformer,
+		CallerDepth:          r.callerDepth,
 	}
 	for _, o := range opts {
 		o.apply(opt)
 	}
+	opt.Caller = tower.GetCaller(opt.CallerDepth + 1)
 	return opt
+}
+
+var requestBodyKey = struct{ key int }{777}
+
+func clonedBodyFromContext(ctx context.Context) ClonedBody {
+	body, ok := ctx.Value(requestBodyKey).(ClonedBody)
+	if !ok {
+		return nil
+	}
+	return body
+}
+
+func contextWithClonedBody(ctx context.Context, body ClonedBody) context.Context {
+	return context.WithValue(ctx, requestBodyKey, body)
 }

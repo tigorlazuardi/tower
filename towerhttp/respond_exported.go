@@ -10,7 +10,7 @@ var exportedResponder *Responder
 
 func init() {
 	exportedResponder = NewResponder()
-	exportedResponder.SetCallerDepth(4)
+	exportedResponder.SetCallerDepth(3)
 }
 
 // Responder returns the global responder instance.
@@ -70,6 +70,6 @@ func RespondStream(ctx context.Context, rw http.ResponseWriter, contentType stri
 // if err is nil, it will be replaced with "Internal Server Error" message. It is done this way, because the library
 // assumes that you mishandled the method and to prevent sending empty values, a generic Internal Server Error message
 // will be sent instead. If you wish to send an empty response, use Respond with http.NoBody as body.
-func RespondError(ctx context.Context, rw http.ResponseWriter, err error, opts ...RespondOption) {
-	exportedResponder.RespondError(ctx, rw, err, opts...)
+func RespondError(rw http.ResponseWriter, request *http.Request, err error, opts ...RespondOption) {
+	exportedResponder.RespondError(rw, request, err, opts...)
 }

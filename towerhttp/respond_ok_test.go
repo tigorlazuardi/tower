@@ -44,7 +44,7 @@ func TestResponder_Respond(t *testing.T) {
 		callerDepth      int
 	}
 	type gen struct {
-		server func(*Responder, Middleware) *httptest.Server
+		server func(*Responder) *httptest.Server
 		tower  func(logger tower.Logger) *tower.Tower
 	}
 	towerGen := func(logger tower.Logger) *tower.Tower {
@@ -72,8 +72,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						body := map[string]string{"ok": "ok"}
 						responder.Respond(writer, request, body)
 					}))
@@ -116,7 +116,7 @@ func TestResponder_Respond(t *testing.T) {
 					"time": "<<PRESENCE>>",
 					"level": "info",
 					"code": 200,
-					"message": "GET /",
+					"message": "GET / HTTP/1.1",
 					"service": {
 						"name": "responder-test",
 						"environment": "testing",
@@ -158,8 +158,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						responder.Respond(writer, request, http.NoBody, Option.Respond().StatusCode(http.StatusNoContent))
 					}))
 					return httptest.NewServer(handler)
@@ -188,7 +188,7 @@ func TestResponder_Respond(t *testing.T) {
 				log := `
 				{
 				  "time": "<<PRESENCE>>",
-				  "message": "GET /",
+				  "message": "GET / HTTP/1.1",
 				  "code": 204,
 				  "caller": "<<PRESENCE>>",
 				  "level": "info",
@@ -229,8 +229,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						responder.Respond(writer, request, nil)
 					}))
 					return httptest.NewServer(handler)
@@ -259,7 +259,7 @@ func TestResponder_Respond(t *testing.T) {
 				log := `
 				{
 				  "time": "<<PRESENCE>>",
-				  "message": "GET /",
+				  "message": "GET / HTTP/1.1",
 				  "code": 200,
 				  "caller": "<<PRESENCE>>",
 				  "level": "info",
@@ -305,8 +305,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						responder.Respond(writer, request, nil)
 					}))
 					return httptest.NewServer(handler)
@@ -335,7 +335,7 @@ func TestResponder_Respond(t *testing.T) {
 				log := `
 				{
 				  "time": "<<PRESENCE>>",
-				  "message": "GET /",
+				  "message": "GET / HTTP/1.1",
 				  "code": 200,
 				  "caller": "<<PRESENCE>>",
 				  "level": "info",
@@ -393,8 +393,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						responder.Respond(writer, request, nil, Option.Respond().Transformer(BodyTransformFunc(func(_ context.Context, input any) any {
 							return map[string]any{
 								"message": "custom body transform",
@@ -428,7 +428,7 @@ func TestResponder_Respond(t *testing.T) {
 				log := `
 				{
 					"time": "<<PRESENCE>>",
-					"message": "GET /",
+					"message": "GET / HTTP/1.1",
 					"code": 200,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
@@ -486,8 +486,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						responder.Respond(writer, request, nil)
 					}))
 					return httptest.NewServer(handler)
@@ -513,7 +513,7 @@ func TestResponder_Respond(t *testing.T) {
 				log := `
 				{
 					"time": "<<PRESENCE>>",
-					"message": "GET /",
+					"message": "GET / HTTP/1.1",
 					"caller": "<<PRESENCE>>",
 					"code": 200,
 					"level": "info",
@@ -572,8 +572,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						input := strings.Repeat("foo ", 400)
 						responder.Respond(writer, request, input)
 					}))
@@ -601,7 +601,7 @@ func TestResponder_Respond(t *testing.T) {
 				log := `
 				{
 					"time": "<<PRESENCE>>",
-					"message": "GET /",
+					"message": "GET / HTTP/1.1",
 					"code": 200,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
@@ -661,8 +661,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						responder.Respond(writer, request, statusCreatedBody{})
 					}))
 					return httptest.NewServer(handler)
@@ -688,7 +688,7 @@ func TestResponder_Respond(t *testing.T) {
 				log := `
 				{
 					"time": "<<PRESENCE>>",
-					"message": "GET /",
+					"message": "GET / HTTP/1.1",
 					"code": 201,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
@@ -746,8 +746,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						rw := struct{ http.ResponseWriter }{writer}
 						responder.Respond(rw, request, statusCreatedBody{})
 					}))
@@ -774,7 +774,7 @@ func TestResponder_Respond(t *testing.T) {
 				log := `
 				{
 					"time": "<<PRESENCE>>",
-					"message": "GET /",
+					"message": "GET / HTTP/1.1",
 					"code": 201,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
@@ -832,8 +832,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						rw := struct{ http.ResponseWriter }{writer}
 						responder.Respond(rw, request, statusCreatedBody{})
 					}))
@@ -883,7 +883,7 @@ func TestResponder_Respond(t *testing.T) {
 				logRespond := `
 				{
 					"time": "<<PRESENCE>>",
-					"message": "GET /",
+					"message": "GET / HTTP/1.1",
 					"code": 201,
 					"caller": "<<PRESENCE>>",
 					"level": "info",
@@ -940,8 +940,8 @@ func TestResponder_Respond(t *testing.T) {
 				callerDepth:      2,
 			},
 			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				server: func(responder *Responder) *httptest.Server {
+					handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 						responder.Respond(writer, request, map[string]any{
 							"should error": func() {},
 						})
@@ -970,7 +970,7 @@ func TestResponder_Respond(t *testing.T) {
 				{
 					"time": "<<PRESENCE>>",
 					"code": 500,
-					"message": "GET /",
+					"message": "json: unsupported type: func()",
 					"caller": "<<PRESENCE>>",
 					"level": "error",
 					"service": {
@@ -1019,53 +1019,6 @@ func TestResponder_Respond(t *testing.T) {
 				}
 			},
 		},
-		{
-			name: "no logging when context and response writer is not supported",
-			fields: fields{
-				encoder: NewJSONEncoder(),
-				transformer: BodyTransformFunc(func(ctx context.Context, input any) any {
-					return map[string]any{
-						"message": "status created",
-						"data":    input,
-					}
-				}),
-				errorTransformer: SimpleErrorTransformer{},
-				compressor:       NoCompression{},
-				callerDepth:      2,
-			},
-			gen: gen{
-				server: func(responder *Responder, middleware Middleware) *httptest.Server {
-					handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-						rw := struct{ http.ResponseWriter }{writer}
-						responder.Respond(rw, request, map[string]any{
-							"ok": true,
-						})
-					}))
-					return httptest.NewServer(handler)
-				},
-				tower: towerGen,
-			},
-			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
-				if resp.StatusCode != http.StatusOK {
-					t.Errorf("Expected status code %d, got %d", http.StatusOK, resp.StatusCode)
-				}
-				if resp.Header.Get("Content-Type") != "application/json" {
-					t.Errorf("Expected content type to be 'application/json', but got '%s'", resp.Header.Get("Content-Type"))
-				}
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					t.Errorf("Error reading response body: %s", err.Error())
-					return
-				}
-				if len(body) == 0 {
-					t.Errorf("Expected body to be not empty")
-				}
-				log := logger.String()
-				if len(log) > 0 {
-					t.Errorf("Expected logger to be empty")
-				}
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1079,8 +1032,8 @@ func TestResponder_Respond(t *testing.T) {
 				compressor:       tt.fields.compressor,
 				callerDepth:      tt.fields.callerDepth,
 			}
-			middleware := LoggingMiddleware(NewServerLogger())
-			server := tt.gen.server(&r, middleware)
+			r.RegisterHook(NewLoggerHook())
+			server := tt.gen.server(&r)
 			defer server.Close()
 			req, err := http.NewRequest(http.MethodGet, server.URL, nil)
 			if err != nil {
@@ -1090,8 +1043,6 @@ func TestResponder_Respond(t *testing.T) {
 			if tt.fields.compressor.ContentEncoding() != "" {
 				req.Header.Set("Accept-Encoding", tt.fields.compressor.ContentEncoding())
 			}
-			// req.Close prevents the client from reusing the connection
-			req.Close = true
 			resp, err := http.Get(server.URL)
 			if err != nil {
 				t.Fatal(err)

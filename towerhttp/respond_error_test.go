@@ -63,7 +63,7 @@ func TestResponder_RespondError(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		server  func(*Responder, Middleware) *httptest.Server
+		server  func(*Responder) *httptest.Server
 		request func(server *httptest.Server) *http.Request
 		test    func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger)
 	}{
@@ -77,9 +77,9 @@ func TestResponder_RespondError(t *testing.T) {
 				callerDepth:      2,
 			},
 			args: args{},
-			server: func(responder *Responder, middleware Middleware) *httptest.Server {
-				handler := middleware(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-					responder.RespondError(request.Context(), writer, errors.New("foo"))
+			server: func(responder *Responder) *httptest.Server {
+				handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+					responder.RespondError(writer, request, errors.New("test error"))
 				}))
 				return httptest.NewServer(handler)
 			},
@@ -106,8 +106,8 @@ func TestResponder_RespondError(t *testing.T) {
 				compressor:       tt.fields.compressor,
 				callerDepth:      tt.fields.callerDepth,
 			}
-			middleware := LoggingMiddleware(NewServerLogger())
-			server := tt.server(&r, middleware)
+			r.RegisterHook(NewLoggerHook())
+			server := tt.server(&r)
 			defer server.Close()
 			resp, err := http.DefaultClient.Do(tt.request(server))
 			if err != nil {

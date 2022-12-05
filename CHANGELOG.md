@@ -26,20 +26,25 @@
 - **tower:** added code block marshaler pattern
 - **tower-discord:** added thread id in metadata
 - **tower-discord:** implemented file upload native discord
-- **tower-http:** unit tested respond ok with http no body
+- **tower-http:** added unit test
 - **tower-http:** update
-- **tower-http:** unit tested respond ok
-- **tower-http:** added unit test
-- **tower-http:** major bug fixes with compressions
-- **tower-http:** added respond body logger
-- **tower-http:** added logging middleware
-- **tower-http:** added client logger
+- **tower-http:** unit tested global respond
 - **tower-http:** added logging middleware to respond error
-- **tower-http:** added response capturer
-- **tower-http:** added unit test
+- **tower-http:** added logging middleware
+- **tower-http:** added respond body logger
+- **tower-http:** added client logger
 - **tower-http:** more unit test to Respond Ok
+- **tower-http:** unit tested respond ok
+- **tower-http:** unit tested respond ok with http no body
+- **tower-http:** update error body
+- **tower-http:** added unit test
+- **tower-http:** unit tested major refactor
+- **tower-http:** added response capturer
+- **tower-http:** major bug fixes with compressions
+- **tower-http-exported:** added env to skip test global instances
 - **tower-http-gzip:** skip compression on data too small
 - **tower-http-gzip:** skip compression on data too small
+- **travis-ci:** added travis ci to run tests
 
 ### Miscellaneous
 - synchronize go mod with new tag on tower

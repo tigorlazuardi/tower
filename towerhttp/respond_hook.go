@@ -38,27 +38,29 @@ type RespondErrorHookContext struct {
 	ResponseBody RespondErrorBody
 }
 
+type RespondStreamBody struct {
+	Value          ClonedBody
+	IsCompressed   bool
+	PostCompressed ClonedBody
+}
+
 type RespondStreamHookContext struct {
 	*baseHook
-	ResponseBody struct {
-		Value          ClonedBody
-		IsCompressed   bool
-		PostCompressed ClonedBody
-	}
+	ResponseBody RespondStreamBody
 }
 
 type RespondHook interface {
 	AcceptRequestBodySize(r *http.Request) int
 	AcceptResponseBodyStreamSize(respondContentType string, request *http.Request) int
 
-	BeforeRespond(ctx *RespondContext) *RespondContext
+	BeforeRespond(ctx *RespondContext, request *http.Request) *RespondContext
 	RespondHook(ctx *RespondHookContext)
 	RespondErrorHookContext(ctx *RespondErrorHookContext)
 	RespondStreamHookContext(ctx *RespondStreamHookContext)
 }
 
 type (
-	BeforeRespondFunc      = func(ctx *RespondContext) *RespondContext
+	BeforeRespondFunc      = func(ctx *RespondContext, request *http.Request) *RespondContext
 	ResponseHookFunc       = func(ctx *RespondHookContext)
 	ResponseErrorHookFunc  = func(ctx *RespondErrorHookContext)
 	ResponseStreamHookFunc = func(ctx *RespondStreamHookContext)

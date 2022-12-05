@@ -3,6 +3,7 @@ package towerhttp
 import (
 	"context"
 	"github.com/tigorlazuardi/tower"
+	"net/http"
 )
 
 // Responder handles the response and writing to http.ResponseWriter.
@@ -37,7 +38,7 @@ func NewResponder() *Responder {
 		errorTransformer: SimpleErrorTransformer{},
 		tower:            tower.Global.Tower(),
 		compressor:       NoCompression{},
-		callerDepth:      3, // default to 3, which is wherever the user calls Responder.Respond() or it's derivatives.
+		callerDepth:      2, // default to 3, which is wherever the user calls Responder.Respond() or it's derivatives.
 	}
 }
 
@@ -71,7 +72,7 @@ func (r *Responder) SetCallerDepth(depth int) {
 	r.callerDepth = depth
 }
 
-func (r Responder) buildOption(statusCode int, opts ...RespondOption) *RespondContext {
+func (r Responder) buildOption(statusCode int, request *http.Request, opts ...RespondOption) *RespondContext {
 	opt := &RespondContext{
 		Encoder:              r.encoder,
 		BodyTransformer:      r.transformer,
@@ -84,6 +85,9 @@ func (r Responder) buildOption(statusCode int, opts ...RespondOption) *RespondCo
 		o.apply(opt)
 	}
 	opt.Caller = tower.GetCaller(opt.CallerDepth + 1)
+	for _, hook := range r.hooks {
+		opt = hook.BeforeRespond(opt, request)
+	}
 	return opt
 }
 

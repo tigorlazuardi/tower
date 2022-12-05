@@ -27,10 +27,10 @@ type respondHook struct {
 	readRespondLimit    int
 	filterRequest       FilterRequest
 	filterRespondStream FilterRespond
-	beforeRespond       func(*RespondContext) *RespondContext
-	onRespond           func(ctx *RespondHookContext)
-	onRespondError      func(ctx *RespondErrorHookContext)
-	onRespondStream     func(ctx *RespondStreamHookContext)
+	beforeRespond       BeforeRespondFunc
+	onRespond           ResponseHookFunc
+	onRespondError      ResponseErrorHookFunc
+	onRespondStream     ResponseStreamHookFunc
 }
 
 func NewRespondHook(opts ...RespondHookOption) RespondHook {
@@ -55,11 +55,11 @@ func (r2 respondHook) AcceptResponseBodyStreamSize(contentType string, request *
 	return 0
 }
 
-func (r2 respondHook) BeforeRespond(ctx *RespondContext) *RespondContext {
+func (r2 respondHook) BeforeRespond(ctx *RespondContext, request *http.Request) *RespondContext {
 	if r2.beforeRespond == nil {
 		return ctx
 	}
-	return r2.beforeRespond(ctx)
+	return r2.beforeRespond(ctx, request)
 }
 
 func (r2 respondHook) RespondHook(ctx *RespondHookContext) {

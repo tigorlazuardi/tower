@@ -1,7 +1,6 @@
 package towerhttp
 
 import (
-	"context"
 	"io"
 	"net/http"
 
@@ -22,8 +21,9 @@ import (
 // and end the process.
 //
 // Body of nil will be treated as http.NoBody.
-func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, contentType string, body io.Reader, opts ...RespondOption) {
+func (r Responder) RespondStream(rw http.ResponseWriter, request *http.Request, contentType string, body io.Reader, opts ...RespondOption) {
 	var (
+		ctx        = request.Context()
 		statusCode = http.StatusOK
 		err        error
 	)
@@ -33,7 +33,7 @@ func (r Responder) RespondStream(ctx context.Context, rw http.ResponseWriter, co
 	if ch, ok := body.(tower.HTTPCodeHint); ok {
 		statusCode = ch.HTTPCode()
 	}
-	opt := r.buildOption(statusCode, opts...)
+	opt := r.buildOption(statusCode, request, opts...)
 	if body == http.NoBody {
 		rw.WriteHeader(opt.StatusCode)
 		return

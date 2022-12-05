@@ -16,6 +16,8 @@ type Caller interface {
 	Function() *runtime.Func
 	// Name returns the full package/function path of the caller.
 	Name() string
+	// ShortName returns only function name of the caller.
+	ShortName() string
 	// ShortOrigin returns only the latest four items maximum in the package path.
 	ShortOrigin() string
 	// ShortSource returns only the latest three items path in the File Path where the Caller comes from.
@@ -41,6 +43,11 @@ type caller struct {
 func (c caller) Name() string {
 	f := runtime.FuncForPC(c.pc)
 	return f.Name()
+}
+
+func (c caller) ShortName() string {
+	s := strings.Split(c.Name(), "/")
+	return s[len(s)-1]
 }
 
 func (c caller) Line() int {

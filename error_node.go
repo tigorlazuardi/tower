@@ -100,29 +100,23 @@ func (c cbJson) MarshalJSON() ([]byte, error) {
 // createCodeBlockMarshalFlag creates a flag that skips the fields that have the same value as the parent *ErrorNode.
 func (e *ErrorNode) createCodeBlockMarshalFlag() marshalFlag {
 	var m marshalFlag
-	if e.prev == nil {
+	origin, ok := e.inner.origin.(Error)
+	if !ok {
 		return m
 	}
-	// only skip the fields if the previous node has the same values and only when the next node is also an ErrorNode.
-	// This will de-noise the output, and only show the fields that are different.
-	//
-	// If the next node is not an ErrorNode, we will still display the fields. This is because the most important values
-	// lies closer to the root of the error tree, and thus we want to show them.
-	originIsNode := e.next != nil
-	prev, current := e.prev, e
-	if prev.Code() == current.Code() && originIsNode {
+	if origin.Code() == e.Code() {
 		m.Set(marshalSkipCode)
 	}
-	if prev.Message() == current.Message() && originIsNode {
+	if origin.Message() == e.Message() {
 		m.Set(marshalSkipMessage)
 	}
-	if prev.Level() == current.Level() && originIsNode {
+	if origin.Level() == e.Level() {
 		m.Set(marshalSkipLevel)
 	}
-	if len(current.Context()) == 0 {
+	if len(origin.Context()) == 0 {
 		m.Set(marshalSkipContext)
 	}
-	if prev.Time().Sub(current.Time()) < time.Second && originIsNode {
+	if origin.Time().Sub(e.Time()) < time.Second {
 		m.Set(marshalSkipTime)
 	}
 	if m.Has(marshalSkipCode) &&
@@ -131,10 +125,9 @@ func (e *ErrorNode) createCodeBlockMarshalFlag() marshalFlag {
 		m.Has(marshalSkipContext) {
 		m.Set(marshalSkipCaller)
 	}
-	if prev.inner.tower.service == current.inner.tower.service {
+	if origin.Service() == e.Service() {
 		m.Set(marshalSkipService)
 	}
-
 	return m
 }
 
@@ -264,12 +257,7 @@ func (e *ErrorNode) CodeBlockJSON() ([]byte, error) {
 	if e == nil {
 		return []byte("null"), nil
 	}
-	var m marshalFlag
-	if e.prev != nil {
-		m = e.createCodeBlockMarshalFlag()
-	} else if origin, ok := e.inner.origin.(Error); ok {
-		m = e.deduplicateCodeBlockFields(origin)
-	}
+	m := e.createCodeBlockMarshalFlag()
 	b := &bytes.Buffer{}
 	enc := json.NewEncoder(b)
 	enc.SetEscapeHTML(false)

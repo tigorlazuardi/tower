@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/kinbiko/jsonassert"
 	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -90,6 +92,64 @@ func TestResponder_RespondError(t *testing.T) {
 				}
 				if resp.Header.Get("Content-Type") != "application/json" {
 					t.Errorf("expected content type %s, got %s", "application/json", resp.Header.Get("Content-Type"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Fatalf("failed to read response body: %v", err)
+				}
+				if len(body) == 0 {
+					t.Error("expected response body, got empty")
+				}
+				wantBody := `{"error":"test error"}`
+				j := jsonassert.New(t)
+				j.Assertf(string(body), wantBody)
+				wantLog := `
+				{
+					"time": "<<PRESENCE>>",
+					"code": 500,
+					"message": "test error",
+					"caller": "<<PRESENCE>>",
+					"level": "error",
+					"service": {
+						"name": "responder-test",
+						"environment": "testing",
+						"type": "unit-test"
+					},
+					"context": {
+						"request": {
+							"headers": {
+								"Accept-Encoding": [
+									"gzip"
+								],
+								"User-Agent": [
+									"Go-http-client/1.1"
+								]
+							},
+							"method": "POST",
+							"url": "%s/"
+						},
+						"response": {
+							"body": {
+								"error": "test error"
+							},
+							"headers": {
+								"Content-Length": [
+									"23"
+								],
+								"Content-Type": [
+									"application/json"
+								]
+							},
+							"status": 500
+						}
+					},
+					"error": {
+						"summary": "test error"
+					}
+				}`
+				j.Assertf(logger.String(), wantLog, resp.Request.Host)
+				if !strings.Contains(logger.String(), "towerhttp/respond_error_test.go") {
+					t.Error("expected caller to be in towerhttp/respond_error_test.go")
 				}
 			},
 		},

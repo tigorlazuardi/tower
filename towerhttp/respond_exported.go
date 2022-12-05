@@ -1,7 +1,6 @@
 package towerhttp
 
 import (
-	"context"
 	"io"
 	"net/http"
 )
@@ -55,8 +54,8 @@ func Respond(rw http.ResponseWriter, request *http.Request, body any, opts ...Re
 // and end the process.
 //
 // Body of nil will be treated as http.NoBody.
-func RespondStream(ctx context.Context, rw http.ResponseWriter, contentType string, body io.Reader, opts ...RespondOption) {
-	exportedResponder.RespondStream(ctx, rw, contentType, body, opts...)
+func RespondStream(rw http.ResponseWriter, request *http.Request, contentType string, body io.Reader, opts ...RespondOption) {
+	exportedResponder.RespondStream(rw, request, contentType, body, opts...)
 }
 
 // RespondError writes the given error to the http.ResponseWriter.
@@ -64,12 +63,16 @@ func RespondStream(ctx context.Context, rw http.ResponseWriter, contentType stri
 // error is expected to be a serializable type.
 //
 // HTTP Status code by default is http.StatusInternalServerError. If error implements tower.HTTPCodeHint, the status code will be set to the
-// value returned by the tower.HTTPCodeHint method. If the towerhttp.Option.StatusCode RespondOption is set, it will override
+// value returned by the tower.HTTPCodeHint method. If the Option.Responder().SetStatusCode() RespondOption is set, it will override
 // the status regardless of the tower.HTTPCodeHint.
 //
 // if err is nil, it will be replaced with "Internal Server Error" message. It is done this way, because the library
-// assumes that you mishandled the method and to prevent sending empty values, a generic Internal Server Error message
+// assumes that the user mishandled the method and to prevent sending empty values, a generic Internal Server Error message
 // will be sent instead. If you wish to send an empty response, use Respond with http.NoBody as body.
 func RespondError(rw http.ResponseWriter, request *http.Request, err error, opts ...RespondOption) {
 	exportedResponder.RespondError(rw, request, err, opts...)
+}
+
+func RequestBodyCloner() Middleware {
+	return exportedResponder.RequestBodyCloner()
 }

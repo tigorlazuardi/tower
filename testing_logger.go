@@ -14,6 +14,13 @@ type TestingJSONLogger struct {
 	mu  sync.Mutex
 }
 
+func NewTestingTower(service Service) (*Tower, *TestingJSONLogger) {
+	t := NewTower(service)
+	logger := NewTestingJSONLogger()
+	t.logger = logger
+	return t, logger
+}
+
 // NewTestingJSONLogger returns a very basic logger for testing purposes.
 func NewTestingJSONLogger() *TestingJSONLogger {
 	return &TestingJSONLogger{

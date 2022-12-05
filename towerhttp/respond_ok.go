@@ -37,7 +37,7 @@ func (r Responder) Respond(rw http.ResponseWriter, request *http.Request, body a
 		statusCode = ch.HTTPCode()
 	}
 
-	opt := r.buildOption(statusCode, opts...)
+	opt := r.buildOption(statusCode, request, opts...)
 	caller := tower.GetCaller(opt.CallerDepth)
 	if len(r.hooks) > 0 {
 		defer func() {

@@ -1043,7 +1043,7 @@ func TestResponder_Respond(t *testing.T) {
 			if tt.fields.compressor.ContentEncoding() != "" {
 				req.Header.Set("Accept-Encoding", tt.fields.compressor.ContentEncoding())
 			}
-			resp, err := http.Get(server.URL)
+			resp, err := http.DefaultClient.Do(req)
 			if err != nil {
 				t.Fatal(err)
 			}

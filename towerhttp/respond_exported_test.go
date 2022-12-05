@@ -11,8 +11,9 @@ import (
 )
 
 func TestGlobalRespond(t *testing.T) {
-	if os.Getenv("TOWERHTTP_TEST_GLOBAL_RESPOND_OK") == "" {
-		t.Skip("skipping test; set TOWERHTTP_TEST_GLOBAL_RESPOND_OK to run")
+	const envKey = "TOWER_HTTP_TEST_EXPORTED"
+	if os.Getenv(envKey) == "" {
+		t.Skipf("skipping test; set %s env to run", envKey)
 	}
 	towerGen := func(logger tower.Logger) *tower.Tower {
 		t := tower.NewTower(tower.Service{

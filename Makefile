@@ -26,8 +26,15 @@ lint-binary:
 lint: lint-binary
 	@./bin/go/golangci-lint run
 
+test-ci:
+	@go test -v ./...
+	@go test -v ./towerhttp/...
+	@TOWER_HTTP_TEST_EXPORTED=true go test -v ./towerhttp -run "^TestGlobalRespond"
+
 test: test-binaries
-	@./bin/go/gotest -v ${GO_PACKAGES}
+	@./bin/go/gotest -v ./...
+	@./bin/go/gotest -v ./towerhttp/...
+	@TOWER_HTTP_TEST_EXPORTED=true ./bin/go/gotest -v ./towerhttp -run "^TestGlobalRespond"
 
 test-integration: test-binaries
 	@IN_TEST=true ./bin/go/gotest -v ./...

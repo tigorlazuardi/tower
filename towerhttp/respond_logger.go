@@ -69,15 +69,15 @@ func buildLoggerFields(hook *baseHook, respBody []byte, truncated bool) tower.F 
 	}
 
 	if hook.RequestBody.Len() > 0 {
-		if hook.RequestBody.Truncated() {
+		contentType := hook.Request.Header.Get("Content-Type")
+		switch {
+		case hook.RequestBody.Truncated():
 			requestFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String())
-		} else if strings.Contains(hook.Request.Header.Get("Content-Type"), "application/json") {
-			if isJson(hook.RequestBody.Bytes()) {
-				requestFields["body"] = json.RawMessage(hook.RequestBody.CloneBytes())
-			} else {
-				requestFields["body"] = hook.RequestBody.String()
-			}
-		} else {
+		case strings.Contains(contentType, "application/json") && isJson(hook.RequestBody.Bytes()):
+			requestFields["body"] = json.RawMessage(hook.RequestBody.CloneBytes())
+		case contentType == "" && isJsonLite(hook.RequestBody.Bytes()) && isJson(hook.RequestBody.Bytes()):
+			requestFields["body"] = json.RawMessage(hook.RequestBody.CloneBytes())
+		default:
 			requestFields["body"] = hook.RequestBody.String()
 		}
 	}
@@ -89,15 +89,15 @@ func buildLoggerFields(hook *baseHook, respBody []byte, truncated bool) tower.F 
 		responseFields["headers"] = hook.ResponseHeader
 	}
 	if len(respBody) > 0 {
-		if truncated {
+		contentType := hook.ResponseHeader.Get("Content-Type")
+		switch {
+		case truncated:
 			responseFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String())
-		} else if strings.Contains(hook.ResponseHeader.Get("Content-Type"), "application/json") {
-			if isJson(respBody) {
-				responseFields["body"] = json.RawMessage(respBody)
-			} else {
-				responseFields["body"] = string(respBody)
-			}
-		} else {
+		case strings.Contains(contentType, "application/json") && isJson(respBody):
+			responseFields["body"] = json.RawMessage(respBody)
+		case contentType == "" && isJsonLite(respBody) && isJson(respBody):
+			responseFields["body"] = json.RawMessage(respBody)
+		default:
 			responseFields["body"] = string(respBody)
 		}
 	}
@@ -106,4 +106,11 @@ func buildLoggerFields(hook *baseHook, respBody []byte, truncated bool) tower.F 
 		"request":  requestFields,
 		"response": responseFields,
 	}
+}
+
+func isJsonLite(b []byte) bool {
+	if len(b) < 2 {
+		return false
+	}
+	return (b[0] == '{' || b[0] == '[') && (b[len(b)-1] == '}' || b[len(b)-1] == ']')
 }

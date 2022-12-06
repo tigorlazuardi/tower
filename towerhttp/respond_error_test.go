@@ -81,6 +81,10 @@ func TestResponder_RespondError(t *testing.T) {
 			args: args{},
 			server: func(responder *Responder) *httptest.Server {
 				handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+					_, err := io.ReadAll(request.Body)
+					if err != nil {
+						t.Fatalf("failed to read request body: %v", err)
+					}
 					responder.RespondError(writer, request, errors.New("test error"))
 				}))
 				return httptest.NewServer(handler)
@@ -126,7 +130,8 @@ func TestResponder_RespondError(t *testing.T) {
 								]
 							},
 							"method": "POST",
-							"url": "%s/"
+							"url": "%s/",
+							"body": {"foo":"bar"}
 						},
 						"response": {
 							"body": {

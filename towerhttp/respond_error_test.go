@@ -158,6 +158,108 @@ func TestResponder_RespondError(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "tower error pattern",
+			fields: fields{
+				encoder:          NewJSONEncoder(),
+				transformer:      NoopBodyTransform{},
+				errorTransformer: SimpleErrorTransformer{},
+				compressor:       NoCompression{},
+				callerDepth:      2,
+			},
+			args: args{},
+			server: func(responder *Responder) *httptest.Server {
+				handler := responder.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+					_, err := io.ReadAll(request.Body)
+					if err != nil {
+						t.Fatalf("failed to read request body: %v", err)
+					}
+					err = responder.tower.Bail("test bail error").Code(http.StatusTeapot).Freeze()
+					responder.RespondError(writer, request, err)
+				}))
+				return httptest.NewServer(handler)
+			},
+			request: postRequest(mustJsonBody(map[string]any{"foo": "bar"})),
+			test: func(t *testing.T, resp *http.Response, logger *tower.TestingJSONLogger) {
+				if resp.StatusCode != http.StatusTeapot {
+					t.Errorf("expected status code %d, got %d", http.StatusTeapot, resp.StatusCode)
+				}
+				if resp.Header.Get("Content-Type") != "application/json" {
+					t.Errorf("expected content type %s, got %s", "application/json", resp.Header.Get("Content-Type"))
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Fatalf("failed to read response body: %v", err)
+				}
+				if len(body) == 0 {
+					t.Error("expected response body, got empty")
+				}
+				wantBody := `{"error":"test bail error"}`
+				j := jsonassert.New(t)
+				j.Assertf(string(body), wantBody)
+				wantLog := `
+				{
+					"time": "<<PRESENCE>>",
+					"code": 418,
+					"message": "test bail error",
+					"caller": "<<PRESENCE>>",
+					"level": "error",
+					"service": {
+						"name": "responder-test",
+						"environment": "testing",
+						"type": "unit-test"
+					},
+					"context": {
+						"request": {
+							"headers": {
+								"Accept-Encoding": [
+									"gzip"
+								],
+								"User-Agent": [
+									"Go-http-client/1.1"
+								]
+							},
+							"method": "POST",
+							"url": "%s/",
+							"body": {"foo":"bar"}
+						},
+						"response": {
+							"body": {
+								"error": "test bail error"
+							},
+							"headers": {
+								"Content-Length": [
+									"28"
+								],
+								"Content-Type": [
+									"application/json"
+								]
+							},
+							"status": 418
+						}
+					},
+					"error": {
+						"code": 418,
+						"level": "error",
+						"message": "test bail error",
+						"error": {
+							"summary": "test bail error"
+						},
+						"caller": "<<PRESENCE>>",
+						"time": "<<PRESENCE>>",
+						"service": {
+							"name": "responder-test",
+							"environment": "testing",
+							"type": "unit-test"
+						}
+					}
+				}`
+				j.Assertf(logger.String(), wantLog, resp.Request.Host)
+				if !strings.Contains(logger.String(), "towerhttp/respond_error_test.go") {
+					t.Error("expected caller to be in towerhttp/respond_error_test.go")
+				}
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

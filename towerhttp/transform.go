@@ -47,10 +47,10 @@ func (n SimpleErrorTransformer) ErrorBodyTransform(_ context.Context, err error)
 		err = errors.New("[nil]")
 	}
 	switch err := err.(type) {
-	case json.Marshaler:
-		msg = err
 	case tower.MessageHint:
 		msg = err.Message()
+	case json.Marshaler:
+		msg = err
 	default:
 		msg = err.Error()
 	}

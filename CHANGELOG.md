@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **caller:** fix wrong caller location for Drone ci
 - **error-node-test:** changed test requirement to point to current file only
 - **tower-discord:** better summary output
 - **towererror-WriteError:** fix duplicate output

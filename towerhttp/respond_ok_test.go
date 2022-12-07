@@ -142,8 +142,8 @@ func TestResponder_Respond(t *testing.T) {
 						}
 					}
 				}`, resp.Request.Host, lenWant, want)
-				substr := "tower/towerhttp/respond_ok_test.go"
-				if !strings.Contains(jsonStr, "tower/towerhttp/respond_ok_test.go") {
+				substr := "towerhttp/respond_ok_test.go"
+				if !strings.Contains(jsonStr, substr) {
 					t.Errorf("Expected caller to be present to contains '%s'", substr)
 				}
 			},
@@ -1014,8 +1014,9 @@ func TestResponder_Respond(t *testing.T) {
 				j := jsonassert.New(t)
 				log := logger.String()
 				j.Assertf(log, logRespond, resp.Request.Host, len(body))
-				if !strings.Contains(log, "tower/towerhttp/respond_ok_test.go") {
-					t.Errorf("Expected correct caller location target")
+				substr := "towerhttp/respond_ok_test.go"
+				if !strings.Contains(log, substr) {
+					t.Errorf("Expected correct caller location target at %s", substr)
 				}
 			},
 		},

@@ -1,0 +1,44 @@
+kind: pipeline
+type: docker
+name: test-code
+
+steps:
+  - name: restore-cache
+    image: plugins/s3-cache
+    settings:
+      pull: true
+      restore: true
+      endpoint:
+        from_secret: S3_DRONE_ENDPOINT
+      access_key:
+        from_secret: S3_DRONE_ACCESS_KEY
+      secret_key:
+        from_secret: S3_DRONE_SECRET_KEY
+      mount:
+        - build/
+
+  - name: test
+    image: golang:latest
+    environment:
+      GOPATH: /build
+      GOBIN: /build/bin
+      GOCACHE: /build/cache
+    commands:
+      - mv build / || true
+      - make test-ci
+      - mv /build . || true
+
+  - name: save-cache
+    image: plugins/s3-cache
+    settings:
+      pull: true
+      rebuild: true
+      flush: true
+      endpoint:
+        from_secret: S3_DRONE_ENDPOINT
+      access_key:
+        from_secret: S3_DRONE
+      secret_key:
+        from_secret: S3_DRONE_SECRET_KEY
+      mount:
+        - build/

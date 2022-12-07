@@ -40,7 +40,7 @@ steps:
       endpoint:
         from_secret: S3_DRONE_ENDPOINT
       access_key:
-        from_secret: S3_DRONE
+        from_secret: S3_DRONE_ACCESS_KEY
       secret_key:
         from_secret: S3_DRONE_SECRET_KEY
       mount:
@@ -56,7 +56,7 @@ steps:
       endpoint:
         from_secret: S3_DRONE_ENDPOINT
       access_key:
-        from_secret: S3_DRONE
+        from_secret: S3_DRONE_ACCESS_KEY
       secret_key:
         from_secret: S3_DRONE_SECRET_KEY
       mount:

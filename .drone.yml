@@ -8,7 +8,8 @@ steps:
     settings:
       pull: true
       restore: true
-      root: "tower"
+      root:
+        from_secret: S3_DRONE_BUCKET_NAME
       endpoint:
         from_secret: S3_DRONE_ENDPOINT
       access_key:
@@ -35,7 +36,8 @@ steps:
       pull: true
       rebuild: true
       flush: true
-      root: "tower"
+      root:
+        from_secret: S3_DRONE_BUCKET_NAME
       endpoint:
         from_secret: S3_DRONE_ENDPOINT
       access_key:

@@ -51,6 +51,7 @@ steps:
     settings:
       pull: true
       flush: true
+      flush_age: 7
       root:
         from_secret: S3_DRONE_BUCKET_NAME
       endpoint:

@@ -35,6 +35,21 @@ steps:
     settings:
       pull: true
       rebuild: true
+      root:
+        from_secret: S3_DRONE_BUCKET_NAME
+      endpoint:
+        from_secret: S3_DRONE_ENDPOINT
+      access_key:
+        from_secret: S3_DRONE
+      secret_key:
+        from_secret: S3_DRONE_SECRET_KEY
+      mount:
+        - build/
+
+  - name: flush-old-cache
+    image: plugins/s3-cache
+    settings:
+      pull: true
       flush: true
       root:
         from_secret: S3_DRONE_BUCKET_NAME

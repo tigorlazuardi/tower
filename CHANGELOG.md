@@ -14,8 +14,9 @@
 ### Features
 - **caller:** added missing methods
 - **client-logger:** update client logger
-- **discord:** added multipart uploads
 - **discord:** better embed structures
+- **discord:** added multipart uploads
+- **drone:** update config
 - **drone:** added drone ci
 - **entry:** added json marshaler support
 - **error:** added deduped json marshaler support

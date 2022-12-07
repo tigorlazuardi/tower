@@ -27,11 +27,15 @@ steps:
       GOCACHE: /build/cache
     commands:
       - mv build / || true
-      - make test-ci
+      - (make test-ci)
+      - export TEST_EXIT_CODE=$?
       - mv /build . || true
+      - exit $TEST_EXIT_CODE
 
   - name: save-cache
     image: plugins/s3-cache
+    when:
+      status: [ success, failure ]
     settings:
       pull: true
       rebuild: true
@@ -48,6 +52,8 @@ steps:
 
   - name: flush-old-cache
     image: plugins/s3-cache
+    when:
+      status: [ success, failure ]
     settings:
       pull: true
       flush: true

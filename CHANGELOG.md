@@ -22,8 +22,9 @@
 - **client-logger:** update client logger
 - **discord:** better embed structures
 - **discord:** added multipart uploads
-- **drone:** update config
 - **drone:** added drone ci
+- **drone:** update config
+- **drone:** config now ensures build is always cached
 - **drone:** update config
 - **entry:** added json marshaler support
 - **error:** added deduped json marshaler support
@@ -36,7 +37,7 @@
 - **tower:** added code block marshaler pattern
 - **tower-discord:** implemented file upload native discord
 - **tower-discord:** added thread id in metadata
-- **tower-http:** update
+- **tower-http:** unit tested major refactor
 - **tower-http:** unit tested respond ok with http no body
 - **tower-http:** added unit test
 - **tower-http:** added logging middleware to respond error
@@ -50,7 +51,7 @@
 - **tower-http:** update error body
 - **tower-http:** more unit test to Respond Ok
 - **tower-http:** unit tested global respond
-- **tower-http:** unit tested major refactor
+- **tower-http:** update
 - **tower-http-exported:** added env to skip test global instances
 - **tower-http-gzip:** skip compression on data too small
 - **tower-http-gzip:** skip compression on data too small

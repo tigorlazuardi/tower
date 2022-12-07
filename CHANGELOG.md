@@ -62,6 +62,7 @@
 ### Test
 - **respond-error:** added tower error pattern test
 - **tower-discord:** tested hooks
+- **tower-http:** added more test for RespondError
 - **tower-http-respond-ok:** added mock compress error test
 
 ### Wip

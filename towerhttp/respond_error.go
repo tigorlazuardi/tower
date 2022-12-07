@@ -76,9 +76,10 @@ func (r Responder) RespondError(rw http.ResponseWriter, request *http.Request, e
 	encodedBody, err = opt.Encoder.Encode(body)
 	if err != nil {
 		const errMsg = "ENCODING ERROR"
+		rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		rw.WriteHeader(http.StatusInternalServerError)
-		rw.Header().Set("Content-Type", "text/plain")
 		_, err = io.WriteString(rw, errMsg)
+		encodedBody = []byte(errMsg)
 		return
 	}
 	contentType := opt.Encoder.ContentType()

@@ -72,11 +72,11 @@ func TestErrorNode_CodeBlockJSON(t *testing.T) {
 			if t.Failed() {
 				fmt.Println(string(got))
 			}
-			if !strings.Contains(string(got), "tower/error_node_test.go") {
-				t.Error("expected to see caller in tower/error_node_test.go")
+			if !strings.Contains(string(got), "error_node_test.go") {
+				t.Error("expected to see caller in error_node_test.go")
 			}
-			if strings.Count(string(got), "tower/error_node_test.go") != 4 {
-				t.Error("expected to see four callers field in tower/error_node_test.go")
+			if strings.Count(string(got), "error_node_test.go") != 4 {
+				t.Error("expected to see four callers field in error_node_test.go")
 			}
 		})
 	}

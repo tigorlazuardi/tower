@@ -67,11 +67,23 @@ steps:
       mount:
         - build/
 
-  - name: Discord Notification
+  - name: Discord Notification - Success
     image: appleboy/drone-discord
     when:
-      status: [ success, failure ]
+      status: [ success ]
     settings:
+      message: "Test passed"
+      webhook_id:
+        from_secret: DISCORD_WEBHOOK_ID
+      webhook_token:
+        from_secret: DISCORD_WEBHOOK_TOKEN
+
+  - name: Discord Notification - Failure
+    image: appleboy/drone-discord
+    when:
+      status: [ failure ]
+    settings:
+      message: "Test failed!"
       webhook_id:
         from_secret: DISCORD_WEBHOOK_ID
       webhook_token:

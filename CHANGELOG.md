@@ -24,11 +24,12 @@
 - **discord:** better embed structures
 - **discord:** added multipart uploads
 - **drone:** added discord notifications
-- **drone:** added drone ci
-- **drone:** update config
-- **drone:** update config
-- **drone:** config now ensures build is always cached
 - **drone:** removed pull directive from save-cache and flush
+- **drone:** config now ensures build is always cached
+- **drone:** update config
+- **drone:** update config
+- **drone:** added drone ci
+- **drone-discord:** added message
 - **entry:** added json marshaler support
 - **error:** added deduped json marshaler support
 - **error_node:** indent now set to 3 spaces
@@ -38,23 +39,23 @@
 - **query:** added bottom error query
 - **respond-error:** tested common pattern
 - **tower:** added code block marshaler pattern
-- **tower-discord:** implemented file upload native discord
 - **tower-discord:** added thread id in metadata
+- **tower-discord:** implemented file upload native discord
+- **tower-http:** unit tested major refactor
+- **tower-http:** added response capturer
 - **tower-http:** unit tested global respond
-- **tower-http:** unit tested respond ok with http no body
-- **tower-http:** added unit test
 - **tower-http:** added logging middleware to respond error
 - **tower-http:** added logging middleware
 - **tower-http:** added respond body logger
 - **tower-http:** added client logger
-- **tower-http:** added response capturer
-- **tower-http:** unit tested respond ok
 - **tower-http:** added unit test
-- **tower-http:** major bug fixes with compressions
 - **tower-http:** update error body
-- **tower-http:** more unit test to Respond Ok
-- **tower-http:** unit tested major refactor
+- **tower-http:** added unit test
 - **tower-http:** update
+- **tower-http:** unit tested respond ok
+- **tower-http:** unit tested respond ok with http no body
+- **tower-http:** major bug fixes with compressions
+- **tower-http:** more unit test to Respond Ok
 - **tower-http-exported:** added env to skip test global instances
 - **tower-http-gzip:** skip compression on data too small
 - **tower-http-gzip:** skip compression on data too small

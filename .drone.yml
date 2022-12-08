@@ -3,7 +3,7 @@ type: docker
 name: test-code
 
 steps:
-  - name: restore-cache
+  - name: Restore Cache
     image: plugins/s3-cache
     settings:
       pull: true
@@ -19,7 +19,7 @@ steps:
       mount:
         - build/
 
-  - name: test
+  - name: Test
     image: golang:latest
     environment:
       GOPATH: /build
@@ -32,7 +32,7 @@ steps:
       - mv /build . || true
       - exit $TEST_EXIT_CODE
 
-  - name: save-cache
+  - name: Save Cache
     image: plugins/s3-cache
     when:
       status: [ success, failure ]
@@ -49,7 +49,7 @@ steps:
       mount:
         - build/
 
-  - name: flush-old-cache
+  - name: Flush Cache
     image: plugins/s3-cache
     when:
       status: [ success, failure ]
@@ -67,8 +67,8 @@ steps:
       mount:
         - build/
 
-  - name: report-discord
-    image: plugins/discord
+  - name: Discord Notification
+    image: appleboy/drone-discord
     when:
       status: [ success, failure ]
     settings:

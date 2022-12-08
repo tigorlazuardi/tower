@@ -72,7 +72,7 @@ steps:
     when:
       status: [ success ]
     settings:
-      message: "Test passed"
+      username: Tower Drone - Test Passed
       webhook_id:
         from_secret: DISCORD_WEBHOOK_ID
       webhook_token:
@@ -83,7 +83,7 @@ steps:
     when:
       status: [ failure ]
     settings:
-      message: "Test failed!"
+      username: Tower Drone - Test Failed
       webhook_id:
         from_secret: DISCORD_WEBHOOK_ID
       webhook_token:

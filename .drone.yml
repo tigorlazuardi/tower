@@ -66,3 +66,13 @@ steps:
         from_secret: S3_DRONE_SECRET_KEY
       mount:
         - build/
+
+  - name: report-discord
+    image: plugins/discord
+    when:
+      status: [ success, failure ]
+    settings:
+      webhook_id:
+        from_secret: DISCORD_WEBHOOK_ID
+      webhook_token:
+        from_secret: DISCORD_WEBHOOK_TOKEN

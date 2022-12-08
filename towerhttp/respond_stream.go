@@ -23,7 +23,6 @@ import (
 // Body of nil will be treated as http.NoBody.
 func (r Responder) RespondStream(rw http.ResponseWriter, request *http.Request, contentType string, body io.Reader, opts ...RespondOption) {
 	var (
-		ctx        = request.Context()
 		statusCode = http.StatusOK
 		err        error
 	)
@@ -34,22 +33,58 @@ func (r Responder) RespondStream(rw http.ResponseWriter, request *http.Request, 
 		statusCode = ch.HTTPCode()
 	}
 	opt := r.buildOption(statusCode, request, opts...)
+	if len(r.hooks) > 0 {
+		var clone ClonedBody = NoopCloneBody{}
+		count := r.hooks.CountMaximumRespondBodyRead(contentType, request)
+		if count != 0 {
+			s := wrapBodyCloner(body, count)
+			if body != http.NoBody {
+				body = s
+			}
+			clone = s
+		}
+		defer func() {
+			var requestBody ClonedBody = NoopCloneBody{}
+			if b, ok := request.Body.(ClonedBody); ok {
+				requestBody = b
+			} else if c := clonedBodyFromContext(request.Context()); c != nil {
+				requestBody = c
+			}
+			hookContext := &RespondStreamHookContext{
+				baseHook: &baseHook{
+					Context:        opt,
+					Request:        request,
+					RequestBody:    requestBody,
+					ResponseStatus: opt.StatusCode,
+					ResponseHeader: rw.Header(),
+					Tower:          r.tower,
+					Error:          err,
+				},
+				ResponseBody: RespondStreamBody{
+					Value:       clone,
+					ContentType: contentType,
+				},
+			}
+			for _, hook := range r.hooks {
+				hook.RespondStreamHookContext(hookContext)
+			}
+		}()
+	}
 	if body == http.NoBody {
 		rw.WriteHeader(opt.StatusCode)
 		return
 	}
 
 	if sc, ok := opt.Compressor.(StreamCompression); ok {
-		body = sc.StreamCompress(body)
-		contentEncoding := sc.ContentEncoding()
-		if contentEncoding != "" {
-			rw.Header().Set("Content-Encoding", contentEncoding)
+		compressed, ok := sc.StreamCompress(contentType, body)
+		if ok {
+			rw.Header().Set("Content-Encoding", sc.ContentEncoding())
+			body = compressed
 		}
 	}
-	rw.Header().Set("Content-Type", contentType)
+	if len(contentType) > 0 {
+		rw.Header().Set("Content-Type", contentType)
+	}
 	rw.WriteHeader(opt.StatusCode)
 	_, err = io.Copy(rw, body)
-	if err != nil {
-		_ = r.tower.Wrap(err).Caller(tower.GetCaller(r.callerDepth)).Log(ctx)
-	}
 }

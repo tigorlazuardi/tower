@@ -13,7 +13,7 @@ func NewLoggerHook(opts ...RespondHookOption) RespondHook {
 }
 
 func defaultLoggerOptions() []RespondHookOption {
-	opts := make([]RespondHookOption, 0, 10)
+	opts := make([]RespondHookOption, 0, 8)
 	opts = append(opts, Option.RespondHook().FilterRequest(func(r *http.Request) bool {
 		return isHumanReadable(r.Header.Get("Content-Type"))
 	}))

@@ -68,6 +68,7 @@
 ### Test
 - **respond-error:** added tower error pattern test
 - **tower-discord:** tested hooks
+- **tower-http:** start testing respond stream
 - **tower-http:** added more test cases
 - **tower-http:** added more test cases
 - **tower-http:** added more test for RespondError

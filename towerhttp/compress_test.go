@@ -1,8 +1,6 @@
 package towerhttp
 
 import (
-	"bytes"
-	"io"
 	"reflect"
 	"testing"
 )
@@ -80,33 +78,6 @@ func TestNoCompression_ContentEncoding(t *testing.T) {
 			n := NoCompression{}
 			if got := n.ContentEncoding(); got != tt.want {
 				t.Errorf("ContentEncoding() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNoCompression_StreamCompress(t *testing.T) {
-	type args struct {
-		origin io.Reader
-	}
-	tests := []struct {
-		name string
-		args args
-		want io.Reader
-	}{
-		{
-			name: "no compression returns the same reader",
-			args: args{
-				origin: &bytes.Buffer{},
-			},
-			want: &bytes.Buffer{},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			n := NoCompression{}
-			if got := n.StreamCompress(tt.args.origin); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("StreamCompress() = %v, want %v", got, tt.want)
 			}
 		})
 	}

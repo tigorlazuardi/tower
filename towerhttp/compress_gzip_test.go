@@ -128,13 +128,15 @@ func TestGzipCompression_StreamCompress(t *testing.T) {
 		level int
 	}
 	type args struct {
-		origin io.Reader
+		origin      io.Reader
+		contentType string
 	}
 	tests := []struct {
 		name   string
 		fields fields
 		args   args
 		want   []byte
+		wantOk bool
 	}{
 		{
 			name: "compress",
@@ -143,13 +145,43 @@ func TestGzipCompression_StreamCompress(t *testing.T) {
 				level: gzip.BestCompression,
 			},
 			args: args{
-				origin: bytes.NewReader(bytes.Repeat([]byte("hello world "), 200)),
+				origin:      bytes.NewReader(bytes.Repeat([]byte("hello world "), 200)),
+				contentType: "text/plain; charset=utf-8",
 			},
 			want: []byte{
 				31, 139, 8, 0, 0, 0, 0, 0, 2, 255, 202, 72, 205, 201, 201, 87, 40, 207, 47, 202, 73, 81, 24, 101, 143,
 				178, 71, 217, 163, 236, 81, 246, 40, 123, 148, 61, 202, 30, 101, 83, 206, 6, 4, 0, 0, 255, 255, 215, 43,
 				80, 10, 96, 9, 0, 0,
 			}, // compressed bytes of repeated "hello world " 200 times
+			wantOk: true,
+		},
+		{
+			name: "no compress on small data",
+			fields: fields{
+				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
+				level: gzip.BestCompression,
+			},
+			args: args{
+				origin:      bytes.NewReader(bytes.Repeat([]byte("hello world "), 1)),
+				contentType: "text/plain; charset=utf-8",
+			},
+			want: []byte{
+				104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100, 32,
+			},
+			wantOk: false,
+		},
+		{
+			name: "no compress on non human readable content type",
+			fields: fields{
+				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
+				level: gzip.BestCompression,
+			},
+			args: args{
+				origin:      bytes.NewReader(bytes.Repeat([]byte("this is an image"), 200)),
+				contentType: "image/png",
+			},
+			want:   bytes.Repeat([]byte("this is an image"), 200),
+			wantOk: false,
 		},
 	}
 	for _, tt := range tests {
@@ -158,7 +190,10 @@ func TestGzipCompression_StreamCompress(t *testing.T) {
 				pool:  tt.fields.pool,
 				level: tt.fields.level,
 			}
-			out := g.StreamCompress(tt.args.origin)
+			out, ok := g.StreamCompress(tt.args.contentType, tt.args.origin)
+			if ok != tt.wantOk {
+				t.Errorf("StreamCompress() ok = %v, want %v", ok, tt.wantOk)
+			}
 			got, err := io.ReadAll(out)
 			if err != nil {
 				t.Errorf("StreamCompress() error = %v", err)

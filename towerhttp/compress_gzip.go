@@ -67,8 +67,25 @@ func (g GzipCompression) Compress(b []byte) ([]byte, bool, error) {
 	return c, true, err
 }
 
+// lengthHint is an interface that is used commonly by *bytes.Buffer and *strings.Reader.
+type lengthHint interface {
+	Len() int
+}
+
 // StreamCompress implements towerhttp.StreamCompression.
-func (g GzipCompression) StreamCompress(origin io.Reader) io.Reader {
+func (g GzipCompression) StreamCompress(contentType string, origin io.Reader) (io.Reader, bool) {
+	// Gzip benefits heavily from text content. So we only compress text content.
+	//
+	// Images and other binary content often is already compressed, and compressing them again may actually increase the
+	// size of the content.
+	if !isHumanReadable(contentType) {
+		return origin, false
+	}
+	const minimumLength = 1500 - 60
+	if lh, ok := origin.(lengthHint); ok && lh.Len() < minimumLength {
+		// Like the normal compression above, we don't compress if the size is less than MTU.
+		return origin, false
+	}
 	pr, pw := io.Pipe()
 	w, _ := gzip.NewWriterLevel(pw, gzip.BestCompression)
 	go func() {
@@ -76,5 +93,5 @@ func (g GzipCompression) StreamCompress(origin io.Reader) io.Reader {
 		w.Close()
 		_ = pw.CloseWithError(err)
 	}()
-	return pr
+	return pr, true
 }

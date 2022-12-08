@@ -39,14 +39,46 @@ type RespondErrorHookContext struct {
 }
 
 type RespondStreamBody struct {
-	Value          ClonedBody
-	IsCompressed   bool
-	PostCompressed ClonedBody
+	Value       ClonedBody
+	ContentType string
 }
 
 type RespondStreamHookContext struct {
 	*baseHook
 	ResponseBody RespondStreamBody
+}
+
+type RespondHookList []RespondHook
+
+func (r RespondHookList) CountMaximumRequestBodyRead(request *http.Request) int {
+	var count int
+	for _, hook := range r {
+		accept := hook.AcceptRequestBodySize(request)
+		// A hook requests all body to be read. We will read all body and stop looking at other hooks.
+		if accept < 0 {
+			count = accept
+			break
+		}
+		if accept > count {
+			count = accept
+		}
+	}
+	return count
+}
+
+func (r RespondHookList) CountMaximumRespondBodyRead(contentType string, request *http.Request) int {
+	var count int
+	for _, hook := range r {
+		accept := hook.AcceptResponseBodyStreamSize(contentType, request)
+		if accept < 0 {
+			count = accept
+			break
+		}
+		if accept > count {
+			count = accept
+		}
+	}
+	return count
 }
 
 type RespondHook interface {

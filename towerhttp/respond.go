@@ -14,7 +14,7 @@ type Responder struct {
 	tower            *tower.Tower
 	compressor       Compressor
 	callerDepth      int
-	hooks            []RespondHook
+	hooks            RespondHookList
 }
 
 // NewResponder creates a new Responder instance.

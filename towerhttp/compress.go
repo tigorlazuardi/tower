@@ -28,7 +28,7 @@ type StreamCompression interface {
 	//
 	// If ok is true, the compressed bytes will be used and the Content-Encoding header will be set with the
 	// value returned from ContentEncoding method. Otherwise, the original stream will be used.
-	StreamCompress(origin io.Reader) io.Reader
+	StreamCompress(contentType string, origin io.Reader) (io.Reader, bool)
 }
 
 var _ Compressor = (*NoCompression)(nil)
@@ -41,6 +41,5 @@ func NewNoCompression() *NoCompression {
 	return &NoCompression{}
 }
 
-func (n NoCompression) StreamCompress(origin io.Reader) io.Reader { return origin }
-func (n NoCompression) ContentEncoding() string                   { return "" }
-func (n NoCompression) Compress(b []byte) ([]byte, bool, error)   { return b, false, nil }
+func (n NoCompression) ContentEncoding() string                 { return "" }
+func (n NoCompression) Compress(b []byte) ([]byte, bool, error) { return b, false, nil }

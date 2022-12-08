@@ -26,9 +26,9 @@ func (exported) SetResponder(r *Responder) {
 //
 // body is expected to be a serializable type. For streams, use RespondStream.
 //
-// HTTP status by default is http.StatusOK. If body implements tower.HTTPCodeHint, the status code will be set to the
-// value returned by the tower.HTTPCodeHint method. If the towerhttp.Option.StatusCode RespondOption is set, it will override
-// the status regardless of the tower.HTTPCodeHint.
+// HTTP status code by default is http.StatusOK. If body implements tower.HTTPCodeHint, the status code will be set to the
+// value returned by the tower.HTTPCodeHint method. If the towerhttp.Option.Responder().StatusCode() RespondOption is set,
+// it will override the status regardless of the tower.HTTPCodeHint.
 //
 // There's a special case if you pass http.NoBody as body, there will be no respond body related operations executed.
 // StatusCode default value is STILL http.StatusOK. If you wish to set the status code to http.StatusNoContent, you

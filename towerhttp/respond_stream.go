@@ -11,9 +11,6 @@ import (
 //
 // If the stream implements tower.HTTPCodeHint, the status code will be set to the value returned by the tower.HTTPCodeHint.
 //
-// If the Compressor supports StreamCompression, the stream will be compressed by said StreamCompression and
-// written to the http.ResponseWriter.
-//
 // There's a special case if you pass http.NoBody as body, there will be no respond body related operations executed.
 // StatusCode default value is set to http.StatusNoContent. You can still override this output by setting the
 // related RespondOption.
@@ -75,12 +72,10 @@ func (r Responder) RespondStream(rw http.ResponseWriter, request *http.Request, 
 		return
 	}
 
-	if sc, ok := opt.Compressor.(StreamCompression); ok {
-		compressed, ok := sc.StreamCompress(contentType, body)
-		if ok {
-			rw.Header().Set("Content-Encoding", sc.ContentEncoding())
-			body = compressed
-		}
+	compressed, ok := opt.StreamCompressor.StreamCompress(contentType, body)
+	if ok {
+		rw.Header().Set("Content-Encoding", opt.StreamCompressor.ContentEncoding())
+		body = compressed
 	}
 	if len(contentType) > 0 {
 		rw.Header().Set("Content-Type", contentType)

@@ -11,7 +11,6 @@ import (
 
 func TestGzipCompression_Compress(t *testing.T) {
 	type fields struct {
-		pool  *pool.Pool[*bytes.Buffer]
 		level int
 	}
 	type args struct {
@@ -28,7 +27,6 @@ func TestGzipCompression_Compress(t *testing.T) {
 		{
 			name: "compress",
 			fields: fields{
-				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
 				level: gzip.BestCompression,
 			},
 			args: args{
@@ -45,7 +43,6 @@ func TestGzipCompression_Compress(t *testing.T) {
 		{
 			name: "no compression on small data",
 			fields: fields{
-				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
 				level: gzip.BestCompression,
 			},
 			args: args{
@@ -58,7 +55,6 @@ func TestGzipCompression_Compress(t *testing.T) {
 		{
 			name: "error on invalid compression level",
 			fields: fields{
-				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
 				level: -3,
 			},
 			args: args{
@@ -72,7 +68,6 @@ func TestGzipCompression_Compress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := GzipCompression{
-				pool:  tt.fields.pool,
 				level: tt.fields.level,
 			}
 			got, got1, err := g.Compress(tt.args.b)
@@ -112,7 +107,6 @@ func TestGzipCompression_ContentEncoding(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := GzipCompression{
-				pool:  tt.fields.pool,
 				level: tt.fields.level,
 			}
 			if got := g.ContentEncoding(); got != tt.want {
@@ -124,7 +118,6 @@ func TestGzipCompression_ContentEncoding(t *testing.T) {
 
 func TestGzipCompression_StreamCompress(t *testing.T) {
 	type fields struct {
-		pool  *pool.Pool[*bytes.Buffer]
 		level int
 	}
 	type args struct {
@@ -141,7 +134,6 @@ func TestGzipCompression_StreamCompress(t *testing.T) {
 		{
 			name: "compress",
 			fields: fields{
-				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
 				level: gzip.BestCompression,
 			},
 			args: args{
@@ -156,24 +148,8 @@ func TestGzipCompression_StreamCompress(t *testing.T) {
 			wantOk: true,
 		},
 		{
-			name: "no compress on small data",
-			fields: fields{
-				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
-				level: gzip.BestCompression,
-			},
-			args: args{
-				origin:      bytes.NewReader(bytes.Repeat([]byte("hello world "), 1)),
-				contentType: "text/plain; charset=utf-8",
-			},
-			want: []byte{
-				104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100, 32,
-			},
-			wantOk: false,
-		},
-		{
 			name: "no compress on non human readable content type",
 			fields: fields{
-				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
 				level: gzip.BestCompression,
 			},
 			args: args{
@@ -187,7 +163,6 @@ func TestGzipCompression_StreamCompress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := GzipCompression{
-				pool:  tt.fields.pool,
 				level: tt.fields.level,
 			}
 			out, ok := g.StreamCompress(tt.args.contentType, tt.args.origin)
@@ -214,7 +189,6 @@ func TestNewGzipCompression(t *testing.T) {
 		{
 			name: "default compression level is gzip.DefaultCompression",
 			want: &GzipCompression{
-				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
 				level: gzip.DefaultCompression,
 			},
 		},
@@ -243,7 +217,6 @@ func TestNewGzipCompressionWithLevel(t *testing.T) {
 				lvl: gzip.BestCompression,
 			},
 			want: &GzipCompression{
-				pool:  pool.New(func() *bytes.Buffer { return new(bytes.Buffer) }),
 				level: gzip.BestCompression,
 			},
 		},

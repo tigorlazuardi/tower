@@ -18,6 +18,7 @@ type RespondContext struct {
 	Encoder              Encoder
 	BodyTransformer      BodyTransformer
 	Compressor           Compressor
+	StreamCompressor     StreamCompressor
 	StatusCode           int
 	ErrorBodyTransformer ErrorBodyTransformer
 	CallerDepth          int
@@ -48,6 +49,13 @@ func (OptionRespondGroup) ErrorTransformer(transformer ErrorBodyTransformer) Res
 func (OptionRespondGroup) Compressor(compressor Compressor) RespondOption {
 	return RespondOptionFunc(func(o *RespondContext) {
 		o.Compressor = compressor
+	})
+}
+
+// StreamCompressor overrides the StreamCompressor to be used for compressing the response body.
+func (OptionRespondGroup) StreamCompressor(compressor StreamCompressor) RespondOption {
+	return RespondOptionFunc(func(o *RespondContext) {
+		o.StreamCompressor = compressor
 	})
 }
 

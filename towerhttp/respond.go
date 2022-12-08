@@ -13,6 +13,7 @@ type Responder struct {
 	errorTransformer ErrorBodyTransformer
 	tower            *tower.Tower
 	compressor       Compressor
+	streamCompressor StreamCompressor
 	callerDepth      int
 	hooks            RespondHookList
 }
@@ -38,6 +39,7 @@ func NewResponder() *Responder {
 		errorTransformer: SimpleErrorTransformer{},
 		tower:            tower.Global.Tower(),
 		compressor:       NoCompression{},
+		streamCompressor: NoCompression{},
 		callerDepth:      2, // default to 3, which is wherever the user calls Responder.Respond() or it's derivatives.
 	}
 }
@@ -72,6 +74,11 @@ func (r *Responder) SetCallerDepth(depth int) {
 	r.callerDepth = depth
 }
 
+// SetStreamCompressor sets the stream compression to be used by the Responder.
+func (r *Responder) SetStreamCompressor(streamCompressor StreamCompressor) {
+	r.streamCompressor = streamCompressor
+}
+
 func (r Responder) buildOption(statusCode int, request *http.Request, opts ...RespondOption) *RespondContext {
 	opt := &RespondContext{
 		Encoder:              r.encoder,
@@ -80,6 +87,7 @@ func (r Responder) buildOption(statusCode int, request *http.Request, opts ...Re
 		StatusCode:           statusCode,
 		ErrorBodyTransformer: r.errorTransformer,
 		CallerDepth:          r.callerDepth,
+		StreamCompressor:     r.streamCompressor,
 	}
 	for _, o := range opts {
 		o.apply(opt)

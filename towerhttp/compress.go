@@ -22,7 +22,7 @@ type Compressor interface {
 	Compress(b []byte) (compressed []byte, ok bool, err error)
 }
 
-type StreamCompression interface {
+type StreamCompressor interface {
 	ContentEncodingHint
 	// StreamCompress compresses the given reader and returns a new reader that will give the compressed data.
 	//
@@ -31,15 +31,16 @@ type StreamCompression interface {
 	StreamCompress(contentType string, origin io.Reader) (io.Reader, bool)
 }
 
-var _ Compressor = (*NoCompression)(nil)
+var (
+	_ Compressor       = (*NoCompression)(nil)
+	_ StreamCompressor = (*NoCompression)(nil)
+)
 
 // NoCompression is a Compressor that does nothing. Basically it's an Uncompressed operation.
 type NoCompression struct{}
 
-// NewNoCompression creates a new NoCompression. A Compressor that does nothing.
-func NewNoCompression() *NoCompression {
-	return &NoCompression{}
+func (n NoCompression) StreamCompress(_ string, origin io.Reader) (io.Reader, bool) {
+	return origin, false
 }
-
 func (n NoCompression) ContentEncoding() string                 { return "" }
 func (n NoCompression) Compress(b []byte) ([]byte, bool, error) { return b, false, nil }

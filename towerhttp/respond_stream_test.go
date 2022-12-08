@@ -1,6 +1,7 @@
 package towerhttp
 
 import (
+	"bytes"
 	"github.com/kinbiko/jsonassert"
 	"github.com/tigorlazuardi/tower"
 	"io"
@@ -27,6 +28,7 @@ func TestResponder_RespondStream(t *testing.T) {
 		errorTransformer ErrorBodyTransformer
 		compressor       Compressor
 		callerDepth      int
+		StreamCompressor StreamCompressor
 	}
 	type respond struct {
 		contentType string
@@ -47,6 +49,7 @@ func TestResponder_RespondStream(t *testing.T) {
 				transformer:      nil,
 				errorTransformer: SimpleErrorTransformer{},
 				compressor:       NoCompression{},
+				StreamCompressor: NoCompression{},
 				callerDepth:      2,
 			},
 			args: respond{
@@ -122,6 +125,7 @@ func TestResponder_RespondStream(t *testing.T) {
 				errorTransformer: SimpleErrorTransformer{},
 				compressor:       NoCompression{},
 				callerDepth:      2,
+				StreamCompressor: NoCompression{},
 			},
 			args: respond{
 				contentType: "",
@@ -189,6 +193,7 @@ func TestResponder_RespondStream(t *testing.T) {
 				transformer:      nil,
 				errorTransformer: SimpleErrorTransformer{},
 				compressor:       NoCompression{},
+				StreamCompressor: NoCompression{},
 				callerDepth:      2,
 			},
 			args: respond{
@@ -258,6 +263,81 @@ func TestResponder_RespondStream(t *testing.T) {
 				j.Assertf(logs, wantLog, resp.Request.Host)
 			},
 		},
+		{
+			name: "uses gzip compression",
+			fields: fields{
+				encoder:          nil,
+				transformer:      nil,
+				errorTransformer: SimpleErrorTransformer{},
+				compressor:       NoCompression{},
+				StreamCompressor: NoCompression{},
+				callerDepth:      2,
+			},
+			args: respond{
+				contentType: "text/plain; charset=utf-8",
+				body:        bytes.NewReader(bytes.Repeat([]byte("a"), 2000)),
+				opts:        []RespondOption{Option.Respond().StreamCompressor(NewGzipCompression())},
+			},
+			request: func(server *httptest.Server) *http.Request {
+				req, _ := http.NewRequest(http.MethodGet, server.URL, nil)
+				return req
+			},
+			test: func(t *testing.T, logger *tower.TestingJSONLogger, resp *http.Response) {
+				contentType := resp.Header.Get("Content-Type")
+				if contentType != "text/plain; charset=utf-8" {
+					t.Errorf("expected content type to be %s, got %s", "text/plain; charset=utf-8", contentType)
+				}
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				wantBody := bytes.Repeat([]byte("a"), 2000)
+				if !bytes.Equal(body, wantBody) {
+					t.Errorf("expected body to be %s, got %s", wantBody, body)
+				}
+				logs := logger.String()
+				if !strings.Contains(logs, "respond_stream_test.go") {
+					t.Errorf("expected log caller to contain %s, got %s", "respond_stream_test.go", logs)
+				}
+				j := jsonassert.New(t)
+				wantLog := `
+				{
+					"time": "<<PRESENCE>>",
+					"code": 200,
+					"message": "GET / HTTP/1.1",
+					"caller": "<<PRESENCE>>",
+					"level": "info",
+					"service": {
+						"name": "test",
+						"environment": "test",
+						"type": "test"
+					},
+					"context": {
+						"request": {
+							"headers": {
+								"Accept-Encoding": [
+									"gzip"
+								],
+								"User-Agent": [
+									"Go-http-client/1.1"
+								]
+							},
+							"method": "GET",
+							"url": "%s/"
+						},
+						"response": {
+							"status": 200,
+							"body": "<<PRESENCE>>",
+							"headers": {
+								"Content-Encoding": [ "gzip" ],
+								"Content-Type": [ "text/plain; charset=utf-8" ]
+							}
+						}
+					}
+				}`
+				j.Assertf(logs, wantLog, resp.Request.Host)
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -274,6 +354,7 @@ func TestResponder_RespondStream(t *testing.T) {
 				tower:            tow,
 				compressor:       tt.fields.compressor,
 				callerDepth:      tt.fields.callerDepth,
+				streamCompressor: tt.fields.StreamCompressor,
 				hooks:            []RespondHook{NewLoggerHook()},
 			}
 			handler := func(writer http.ResponseWriter, request *http.Request) {

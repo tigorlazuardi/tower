@@ -30,10 +30,37 @@ func TestGlobalRespond(t *testing.T) {
 		test   func(t *testing.T, logger *tower.TestingJSONLogger)
 	}{
 		{
-			name: "expected caller location",
+			name: "expected caller location for respond",
+			server: func() *httptest.Server {
+				handler := towerhttp.RequestBodyCloner()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+					towerhttp.Respond(writer, request, nil)
+				}))
+				return httptest.NewServer(handler)
+			},
+			test: func(t *testing.T, logger *tower.TestingJSONLogger) {
+				if !strings.Contains(logger.String(), "towerhttp/respond_exported_test.go") {
+					t.Error("expected caller location is correct")
+				}
+			},
+		},
+		{
+			name: "expected caller location for respond error",
 			server: func() *httptest.Server {
 				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					towerhttp.Respond(w, r, nil)
+					towerhttp.RespondError(w, r, nil)
+				}))
+			},
+			test: func(t *testing.T, logger *tower.TestingJSONLogger) {
+				if !strings.Contains(logger.String(), "towerhttp/respond_exported_test.go") {
+					t.Error("expected caller location is correct")
+				}
+			},
+		},
+		{
+			name: "expected caller location for respond stream",
+			server: func() *httptest.Server {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					towerhttp.RespondStream(w, r, "", nil)
 				}))
 			},
 			test: func(t *testing.T, logger *tower.TestingJSONLogger) {
@@ -47,8 +74,13 @@ func TestGlobalRespond(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			logger := tower.NewTestingJSONLogger()
 			tow := towerGen(logger)
+			r := towerhttp.NewResponder()
+			r.SetTower(tow)
+			r.RegisterHook(towerhttp.NewLoggerHook())
+			r.SetCallerDepth(3)
 			towerhttp.Exported.Responder().SetTower(tow)
 			towerhttp.Exported.Responder().RegisterHook(towerhttp.NewLoggerHook())
+			towerhttp.Exported.SetResponder(r)
 			server := tt.server()
 			defer server.Close()
 			req, err := http.NewRequest(http.MethodGet, server.URL, nil)

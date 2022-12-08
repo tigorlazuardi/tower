@@ -5,25 +5,6 @@ import (
 	"testing"
 )
 
-func TestNewNoCompression(t *testing.T) {
-	tests := []struct {
-		name string
-		want *NoCompression
-	}{
-		{
-			name: "test new",
-			want: &NoCompression{},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewNoCompression(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewNoCompression() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestNoCompression_Compress(t *testing.T) {
 	type args struct {
 		b []byte

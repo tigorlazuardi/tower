@@ -9,10 +9,6 @@ func (option) Respond() OptionRespondGroup {
 	return OptionRespondGroup{}
 }
 
-func (option) ServerLogger() ServerLoggerOptionGroup {
-	return ServerLoggerOptionGroup{}
-}
-
 func (option) RespondHook() RespondHookOptionGroup {
 	return RespondHookOptionGroup{}
 }

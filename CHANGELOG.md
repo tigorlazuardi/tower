@@ -16,6 +16,7 @@
 
 ### Docs
 - update readme
+- **drone:** added steps to build badges dynamically
 - **tower-hints:** comments to satisfy lints
 
 ### Features

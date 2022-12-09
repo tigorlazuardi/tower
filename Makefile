@@ -50,4 +50,12 @@ git-hook:
 	@test -f "./bin/go/lefthook" || GOBIN="$$(pwd)/bin/go" go install github.com/evilmartians/lefthook@v1.1.3
 	@./bin/go/lefthook install
 
+build-badges-success: mc-binary gotestsum-binary
+	@OUT=$$(./bin/go/gotestsum --hide-summary=all ./towerhttp | tail --lines=1 | awk 'NF-=2' | cut -d\  -f2- | sed 's/\s/%20/g'); curl -sSL "https://img.shields.io/badge/TowerHTTP%20Test-$$OUT-success" --create-dirs -o ./dist/towerhttp-tests.svg
+	@OUT=$$(./bin/go/gotestsum --hide-summary=all . | tail --lines=1 | awk 'NF-=2' | cut -d\  -f2- | sed 's/\s/%20/g'); curl -sSL "https://img.shields.io/badge/Tower%20Test-$$OUT-success" --create-dirs -o ./dist/tower-tests.svg
 
+mc-binary:
+	@test -f "./bin/mc" || (curl -L "https://dl.min.io/client/mc/release/linux-amd64/mc" --create-dirs -o ./bin/mc && chmod +x ./bin/mc)
+
+gotestsum-binary:
+	@test -f "./bin/go/gotestsum" || GOBIN="$$(pwd)/bin/go" go install -v gotest.tools/gotestsum@latest

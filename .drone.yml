@@ -18,6 +18,8 @@ steps:
         from_secret: S3_DRONE_SECRET_KEY
       mount:
         - build/
+        - bin/
+        - dist/
 
   - name: Test
     image: golang:latest
@@ -31,6 +33,26 @@ steps:
       - export TEST_EXIT_CODE=$?
       - mv /build . || true
       - exit $TEST_EXIT_CODE
+
+  - name: Build Badges
+    image: golang:latest
+    failure: ignore
+    when:
+      status: [ success ]
+    environment:
+      BUCKET_name:
+        from_secret: S3_DRONE_BUCKET_BADGE
+      ENDPOINT:
+        from_secret: S3_DRONE_ENDPOINT
+      ACCESS_KEY:
+        from_secret: S3_DRONE_ACCESS_KEY
+      SECRET_KEY:
+        from_secret: S3_DRONE_SECRET_KEY
+    commands:
+      - make build-badges
+      - ./bin/mc alias set drone-ci $ENDPOINT $ACCESS_KEY $SECRET_KEY
+      - ./bin/mc cp ./dist/* drone-ci/$BUCKET_NAME/tower
+
 
   - name: Save Cache
     image: plugins/s3-cache
@@ -48,6 +70,8 @@ steps:
         from_secret: S3_DRONE_SECRET_KEY
       mount:
         - build/
+        - bin/
+        - dist/
 
   - name: Flush Cache
     image: plugins/s3-cache
@@ -66,6 +90,8 @@ steps:
         from_secret: S3_DRONE_SECRET_KEY
       mount:
         - build/
+        - bin/
+        - dist/
 
   - name: Discord Notification - Success
     image: appleboy/drone-discord

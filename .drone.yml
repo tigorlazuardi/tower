@@ -51,7 +51,7 @@ steps:
     commands:
       - make build-badges-success
       - ./bin/mc alias set drone-ci $ENDPOINT $ACCESS_KEY $SECRET_KEY
-      - ./bin/mc cp ./dist/* drone-ci/$BUCKET_NAME/tower
+      - ./bin/mc cp ./dist drone-ci/$BUCKET_NAME/tower
 
 
   - name: Save Cache

@@ -4,6 +4,7 @@
 ### Bug Fixes
 - **caller:** fix wrong caller location for Drone ci
 - **drone:** fix wrong makefile command
+- **drone:** fix wrong makefile command
 - **drone:** fix wrong discord image
 - **drone:** fix wrong cache config
 - **drone:** fix wrong cache config

@@ -3,14 +3,15 @@
 
 ### Bug Fixes
 - **caller:** fix wrong caller location for Drone ci
-- **drone:** fix escapes
-- **drone:** fix escapes
 - **drone:** fix wrong makefile command
+- **drone:** fix escapes
+- **drone:** fix badge config
 - **drone:** fix wrong makefile command
 - **drone:** fix wrong discord image
 - **drone:** fix wrong cache config
 - **drone:** fix wrong cache config
 - **drone:** fix wrong cache config
+- **drone:** fix escapes
 - **error-node-test:** changed test requirement to point to current file only
 - **tower-discord:** better summary output
 - **towererror-WriteError:** fix duplicate output

@@ -43,8 +43,6 @@ steps:
       GOPATH: /build
       GOBIN: /build/bin
       GOCACHE: /build/cache
-      BUCKET_name:
-        from_secret: S3_DRONE_BUCKET_BADGE
       ENDPOINT:
         from_secret: S3_DRONE_ENDPOINT
       ACCESS_KEY:
@@ -55,7 +53,7 @@ steps:
       - mv build / || true
       - make build-badges-success
       - ./bin/mc alias set drone-ci $ENDPOINT $ACCESS_KEY $SECRET_KEY
-      - ./bin/mc cp --recursive ./dist drone-ci/$BUCKET_NAME/tower
+      - ./bin/mc cp --recursive ./dist drone-ci/build-badges/tower
       - mv /build . || true
 
 

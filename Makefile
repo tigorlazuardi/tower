@@ -4,12 +4,12 @@ GO_PACKAGES ?= $(shell go list ./... | grep -v 'mock')
 
 doc: doc-binaries
 	@./bin/go/git-chglog -o CHANGELOG.md
-	@PYTHONPATH="$$(pwd)/bin/python:$$PYTHONPATH" ./bin/python/bin/markdown-pp README.mdpp -o README.md
+	@PYTHONPATH="$$(pwd)/bin/python:$$PYTHONPATH" ./bin/python/bin/markdown-pp README_pp.md -o README.md
 
 doc-amend: doc
 	@git add ./CHANGELOG.md || true
 	@git add ./README.md || true
-	@git add ./README.mdpp || true
+	@git add ./README_pp.md|| true
 	@git commit --amend --no-edit
 
 test-binaries:

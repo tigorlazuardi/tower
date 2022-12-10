@@ -20,6 +20,8 @@
 - **caller:** caller is now an interface
 
 ### Docs
+- update readme for tower
+- update tower markdown
 - update readme
 - **drone:** added steps to build badges dynamically
 - **tower-hints:** comments to satisfy lints

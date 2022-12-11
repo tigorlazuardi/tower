@@ -20,6 +20,7 @@
 - **caller:** caller is now an interface
 
 ### Docs
+- fix typo
 - update readme for tower
 - update tower markdown
 - update readme

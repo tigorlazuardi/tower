@@ -1,4 +1,4 @@
-# Tosyncwer-Go
+# Tower-Go
 
 [![Build Status](https://drone.tigor.web.id/api/badges/tigorlazuardi/tower/status.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
 [![Tower Test Status](https://minio.tigor.web.id/build-badges/tower/dist/tower-tests.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)

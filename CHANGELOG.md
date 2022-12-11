@@ -24,6 +24,7 @@
 - update tower markdown
 - update readme
 - **drone:** added steps to build badges dynamically
+- **tower:** update docs
 - **tower:** updated tower
 - **tower-hints:** comments to satisfy lints
 

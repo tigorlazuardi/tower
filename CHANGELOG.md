@@ -34,43 +34,44 @@
 - **client-logger:** update client logger
 - **discord:** better embed structures
 - **discord:** added multipart uploads
+- **drone:** config now ensures build is always cached
+- **drone:** added discord notifications
 - **drone:** update config
 - **drone:** update config
 - **drone:** added drone ci
-- **drone:** config now ensures build is always cached
 - **drone:** removed pull directive from save-cache and flush
-- **drone:** added discord notifications
-- **drone-discord:** removed message
 - **drone-discord:** added message
+- **drone-discord:** removed message
 - **entry:** added json marshaler support
 - **error:** added deduped json marshaler support
 - **error_node:** indent now set to 3 spaces
 - **http-client:** wip update
 - **implError:** exported implError as ErrorNode
-- **query:** added bottom error query
 - **query:** added CollectErrors query
+- **query:** added bottom error query
 - **respond-error:** tested common pattern
 - **tower:** added code block marshaler pattern
 - **tower-discord:** implemented file upload native discord
 - **tower-discord:** added thread id in metadata
-- **tower-http:** unit tested respond ok
-- **tower-http:** major bug fixes with compressions
+- **tower-http:** unit tested respond ok with http no body
+- **tower-http:** added client logger
 - **tower-http:** added unit test
+- **tower-http:** added response capturer
 - **tower-http:** added logging middleware to respond error
 - **tower-http:** added logging middleware
 - **tower-http:** added respond body logger
-- **tower-http:** added client logger
-- **tower-http:** added response capturer
-- **tower-http:** unit tested respond ok with http no body
-- **tower-http:** added unit test
-- **tower-http:** update error body
-- **tower-http:** more unit test to Respond Ok
 - **tower-http:** unit tested global respond
-- **tower-http:** update
+- **tower-http:** unit tested respond ok
+- **tower-http:** update error body
+- **tower-http:** major bug fixes with compressions
 - **tower-http:** unit tested major refactor
+- **tower-http:** more unit test to Respond Ok
+- **tower-http:** added unit test
+- **tower-http:** update
 - **tower-http-exported:** added env to skip test global instances
 - **tower-http-gzip:** skip compression on data too small
 - **tower-http-gzip:** skip compression on data too small
+- **towerzap:** added zapcore ObjectMarshaler implementation over tower.Error
 - **travis-ci:** added travis ci to run tests
 
 ### Miscellaneous

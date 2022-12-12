@@ -39,13 +39,11 @@ func (l *Logger) SetTraceCapturer(capturer TraceCapturer) {
 func (l Logger) Log(ctx context.Context, entry tower.Entry) {
 	elements := make([]zap.Field, 0, 7)
 	elements = append(elements, l.tracer.CaptureTrace(ctx)...)
-	elements = append(elements, zap.Int("code", entry.Code()))
-	elements = append(elements, zap.Object("caller", zapcore.ObjectMarshalerFunc(func(oe zapcore.ObjectEncoder) error {
-		caller := entry.Caller()
-		oe.AddString("origin", caller.ShortOrigin())
-		oe.AddString("location", caller.String())
-		return nil
-	})))
+	code := entry.Code()
+	if code != 0 {
+		elements = append(elements, zap.Int("code", code))
+	}
+	elements = append(elements, zap.Stringer("caller", entry.Caller()))
 
 	data := entry.Context()
 	if len(data) == 1 {

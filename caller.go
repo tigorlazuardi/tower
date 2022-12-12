@@ -14,7 +14,7 @@ const sep = string(os.PathSeparator)
 type Caller interface {
 	// Function returns the function information.
 	Function() *runtime.Func
-	// Name returns the full package/function path of the caller.
+	// Name returns the function name of the caller.
 	Name() string
 	// ShortName returns only function name of the caller.
 	ShortName() string

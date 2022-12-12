@@ -8,49 +8,43 @@ type Service struct {
 	Repository  string `json:"repository,omitempty"`
 	Branch      string `json:"branch,omitempty"`
 	Type        string `json:"type,omitempty"`
+	Version     string `json:"version,omitempty"`
 }
 
 func (s Service) IsNil() bool {
 	return s.Name == ""
 }
 
-type serviceWriteFlag uint8
-
-const (
-	noWrite     serviceWriteFlag = 0
-	nameWritten serviceWriteFlag = 1 << iota
-	typeWritten
-)
-
-func (s *serviceWriteFlag) Set(f serviceWriteFlag) {
-	*s |= f
-}
-
-func (s serviceWriteFlag) Has(f serviceWriteFlag) bool {
-	return s&f != 0
-}
-
 func (s Service) String() string {
-	flag := noWrite
+	written := false
 	builder := strings.Builder{}
 	builder.Grow(len(s.Name) + len(s.Environment) + len(s.Type) + 2)
 	if s.Name != "" {
 		builder.WriteString(s.Name)
-		flag.Set(nameWritten)
+		written = true
+	}
+
+	if s.Version != "" {
+		if written {
+			builder.WriteRune('-')
+		}
+		written = true
+		builder.WriteString(s.Environment)
 	}
 
 	if s.Type != "" {
-		if flag != noWrite {
+		if written {
 			builder.WriteRune('-')
 		}
+		written = true
 		builder.WriteString(s.Type)
-		flag.Set(typeWritten)
 	}
 
 	if s.Environment != "" {
-		if flag != noWrite {
+		if written {
 			builder.WriteRune('-')
 		}
+		written = true
 		builder.WriteString(s.Environment)
 	}
 	return builder.String()

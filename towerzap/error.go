@@ -34,7 +34,19 @@ func (err Error) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	_ = enc.AddObject("service", service(err.Service()))
 	data := err.Context()
 	if len(data) == 1 {
-		err := enc.AddReflected("context", data[0])
+		err := func(enc zapcore.ObjectEncoder, data any) error {
+			switch value := data.(type) {
+			case tower.Fields:
+				return enc.AddObject("context", fields(value))
+			case zapcore.ObjectMarshaler:
+				return enc.AddObject("context", value)
+			case zapcore.ArrayMarshaler:
+				return enc.AddArray("context", value)
+			default:
+				return enc.AddReflected("context", value)
+			}
+			return nil
+		}(enc, data[0])
 		if err != nil {
 			enc.AddString("context", "failed to marshal context")
 		}

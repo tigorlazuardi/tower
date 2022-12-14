@@ -3,18 +3,19 @@
 
 ### Bug Fixes
 - **caller:** fix wrong caller location for Drone ci
-- **drone:** fix wrong cache config
-- **drone:** removed bin from cache saves
 - **drone:** fix escapes
+- **drone:** fix wrong makefile command
+- **drone:** removed bin from cache saves
+- **drone:** uses trigger instead of when
 - **drone:** added cache for minio binaries
 - **drone:** fix error on dist not exist
-- **drone:** fix wrong makefile command
-- **drone:** fix badge config
 - **drone:** fix escapes
-- **drone:** uses trigger instead of when
+- **drone:** fix wrong cache config
+- **drone:** fix mv directory not empty
 - **drone:** fix mv not moving file
-- **drone:** fix wrong discord image
+- **drone:** fix badge config
 - **drone:** fix wrong makefile command
+- **drone:** fix wrong discord image
 - **drone:** fix wrong cache config
 - **drone:** fix wrong cache config
 - **drone-ci:** ignore failure from discord notification

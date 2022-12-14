@@ -116,6 +116,7 @@ steps:
 
     - name: Discord Notification - Success
       image: appleboy/drone-discord
+      failure: ignore
       when:
           status: [success]
       settings:
@@ -129,6 +130,7 @@ steps:
 
     - name: Discord Notification - Failure
       image: appleboy/drone-discord
+      failure: ignore
       when:
           status: [failure]
       settings:

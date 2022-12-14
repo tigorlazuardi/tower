@@ -95,7 +95,6 @@ steps:
               from_secret: S3_DRONE_SECRET_KEY
           mount:
               - build/
-              - bin/
               - dist/
 
     - name: Test
@@ -128,7 +127,6 @@ steps:
               from_secret: S3_DRONE_SECRET_KEY
           mount:
               - build/
-              - bin/
               - dist/
       depends_on:
           - Test

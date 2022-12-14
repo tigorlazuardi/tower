@@ -98,7 +98,7 @@ steps:
               - bin/
               - dist/
 
-    - name: test
+    - name: Test
       image: golang:latest
       environment:
           GOPATH: /build

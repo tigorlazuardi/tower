@@ -3,15 +3,16 @@
 
 ### Bug Fixes
 - **caller:** fix wrong caller location for Drone ci
+- **drone:** fix wrong makefile command
+- **drone:** fix wrong cache config
+- **drone:** fix escapes
+- **drone:** fix escapes
+- **drone:** fix wrong makefile command
+- **drone:** fix wrong cache config
 - **drone:** fix wrong discord image
-- **drone:** fix escapes
-- **drone:** fix escapes
-- **drone:** fix wrong makefile command
-- **drone:** fix wrong makefile command
-- **drone:** fix wrong cache config
-- **drone:** fix wrong cache config
-- **drone:** fix wrong cache config
 - **drone:** fix badge config
+- **drone:** fix wrong cache config
+- **drone-ci:** ignore failure from discord notification
 - **error-node-test:** changed test requirement to point to current file only
 - **tower-discord:** better summary output
 - **towererror-WriteError:** fix duplicate output
@@ -31,6 +32,7 @@
 - **tower-hints:** comments to satisfy lints
 
 ### Features
+- protected pipelines
 - **caller:** added missing methods
 - **client-logger:** update client logger
 - **discord:** better embed structures
@@ -54,20 +56,20 @@
 - **tower:** added code block marshaler pattern
 - **tower-discord:** implemented file upload native discord
 - **tower-discord:** added thread id in metadata
+- **tower-http:** update error body
 - **tower-http:** unit tested respond ok with http no body
-- **tower-http:** added client logger
 - **tower-http:** added unit test
 - **tower-http:** added response capturer
 - **tower-http:** added logging middleware to respond error
 - **tower-http:** added logging middleware
 - **tower-http:** added respond body logger
-- **tower-http:** unit tested global respond
+- **tower-http:** added client logger
 - **tower-http:** unit tested respond ok
-- **tower-http:** update error body
-- **tower-http:** major bug fixes with compressions
-- **tower-http:** unit tested major refactor
-- **tower-http:** more unit test to Respond Ok
 - **tower-http:** added unit test
+- **tower-http:** major bug fixes with compressions
+- **tower-http:** unit tested global respond
+- **tower-http:** more unit test to Respond Ok
+- **tower-http:** unit tested major refactor
 - **tower-http:** update
 - **tower-http-exported:** added env to skip test global instances
 - **tower-http-gzip:** skip compression on data too small

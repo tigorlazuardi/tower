@@ -2,13 +2,24 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **autotag:** fix wrong tag to use
 - **drone:** fix tags not followed
+
+
+<a name="v0.1.10"></a>
+## [v0.1.10] - 2022-12-15
+### Bug Fixes
 - **drone:** used alpine image as base
 - **drone:** fix git permissions
 - **drone:** badge trigger now set on push to main branch
 
 ### Features
 - **autotag:** added auto tag pipeline
+
+### Pull Requests
+- Merge pull request [#7](https://github.com/tigorlazuardi/tower/issues/7) from tigorlazuardi/feature/autotag
+- Merge pull request [#6](https://github.com/tigorlazuardi/tower/issues/6) from tigorlazuardi/feature/autotag
+- Merge pull request [#5](https://github.com/tigorlazuardi/tower/issues/5) from tigorlazuardi/feature/autotag
 
 
 <a name="0.1.10"></a>
@@ -298,7 +309,8 @@
 - added docs support
 
 
-[Unreleased]: https://github.com/tigorlazuardi/tower/compare/0.1.10...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.10...HEAD
+[v0.1.10]: https://github.com/tigorlazuardi/tower/compare/0.1.10...v0.1.10
 [0.1.10]: https://github.com/tigorlazuardi/tower/compare/v0.1.9...0.1.10
 [v0.1.9]: https://github.com/tigorlazuardi/tower/compare/v0.1.8...v0.1.9
 [v0.1.8]: https://github.com/tigorlazuardi/tower/compare/v0.1.7...v0.1.8

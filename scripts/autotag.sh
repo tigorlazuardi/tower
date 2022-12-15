@@ -29,7 +29,7 @@ esac
 
 NEWTAG="$MAJ.$MIN.$PATCH"
 echo "Adding Tag: $NEWTAG"
-git tag $NEWTAG
+git tag v$NEWTAG
 
 FILES=$(find . -name go.mod | grep -v '^\./go.mod$')
 

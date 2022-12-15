@@ -209,7 +209,8 @@ steps:
           webhook_token:
               from_secret: DISCORD_WEBHOOK_TOKEN
       depends_on:
-          - Test
+          - Save Cache
+          - Flush Cache
 
     - name: Discord Notification - Failure
       image: appleboy/drone-discord
@@ -223,4 +224,5 @@ steps:
           webhook_token:
               from_secret: DISCORD_WEBHOOK_TOKEN
       depends_on:
-          - Test
+          - Save Cache
+          - Flush Cache

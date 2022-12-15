@@ -3,6 +3,7 @@
 
 ### Bug Fixes
 - **autotag:** fix wrong tag to use
+- **drone:** attempt to fix discord config
 - **drone:** fix tags not followed
 
 

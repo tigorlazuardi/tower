@@ -29,11 +29,13 @@ esac
 
 NEWTAG="$MAJ.$MIN.$PATCH"
 echo "Adding Tag: $NEWTAG"
-git tag $NEWTAG
+git tag v$NEWTAG
 
 FILES=$(find . -name go.mod | grep -v '^\./go.mod$')
 
 for f in $FILES; do
 	sed -i "s#\(\s\+github\.com/tigorlazuardi/tower\sv\).\+#\1$NEWTAG#" $f
 	git add $f
+	PACKAGE=$(echo $f | cut -d/ -f2)
+	git tag "$PACKAGE/v$NEWTAG"
 done

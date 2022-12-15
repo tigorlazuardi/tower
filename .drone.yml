@@ -25,7 +25,7 @@ steps:
           - git checkout main
           - git pull origin main
 
-    - name: Autotag
+    - name: Sync Workspace
       image: alpine
       environment:
           GITHUB_TOKEN:
@@ -37,7 +37,8 @@ steps:
           - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
           - bash ./scripts/autotag.sh
           - git commit -m "bump tags [CI SKIP]"
-          - git push --force --follow-tags origin main
+          - git push --force origin main
+          - git push --tags
 
 ---
 kind: pipeline
@@ -80,6 +81,7 @@ steps:
           GOPATH: /build
           GOBIN: /build/bin
           GOCACHE: /build/cache
+          GOSUMDB: off
           ENDPOINT:
               from_secret: S3_DRONE_ENDPOINT
           ACCESS_KEY:
@@ -149,12 +151,15 @@ steps:
           GOPATH: /build
           GOBIN: /build/bin
           GOCACHE: /build/cache
+          GOSUMDB: off
       commands:
           - mv -f build / || true
           - (make test-ci)
           - export TEST_EXIT_CODE=$?
           - mv -f /build . || true
           - exit $TEST_EXIT_CODE
+      depends_on:
+          - Restore Cache
 
     - name: Save Cache
       image: plugins/s3-cache
@@ -208,7 +213,8 @@ steps:
           webhook_token:
               from_secret: DISCORD_WEBHOOK_TOKEN
       depends_on:
-          - Test
+          - Save Cache
+          - Flush Cache
 
     - name: Discord Notification - Failure
       image: appleboy/drone-discord
@@ -222,4 +228,5 @@ steps:
           webhook_token:
               from_secret: DISCORD_WEBHOOK_TOKEN
       depends_on:
-          - Test
+          - Save Cache
+          - Flush Cache

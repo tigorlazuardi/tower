@@ -8,3 +8,5 @@ require (
 	github.com/tigorlazuardi/tower/bucket v0.0.0-20221126160015-97c3ffa6a28a
 	github.com/tigorlazuardi/tower/queue v0.0.0-20221126154825-5bcd999b97e9
 )
+
+require github.com/kinbiko/jsonassert v1.1.1 // indirect

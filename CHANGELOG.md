@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **drone:** used alpine image as base
 - **drone:** fix git permissions
 - **drone:** badge trigger now set on push to main branch
 

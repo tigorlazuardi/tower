@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **drone:** fix git permissions
 - **drone:** badge trigger now set on push to main branch
 
 ### Features

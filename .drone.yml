@@ -2,6 +2,9 @@ kind: pipeline
 type: docker
 name: autotag
 
+clone:
+    disable: true
+
 trigger:
     branch:
         - main
@@ -9,6 +12,19 @@ trigger:
         - push
 
 steps:
+    - name: clone
+      image: alpine/git
+      environment:
+          GITHUB_TOKEN:
+              from_secret: github_token
+          GITHUB_USER:
+              from_secret: github_user
+      commands:
+          - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
+          - git clone $DRONE_GIT_HTTP_URL .
+          - git checkout main
+          - git pull origin main
+
     - name: Autotag
       image: ellerbrock/alpine-bash-git
       environment:
@@ -18,7 +34,6 @@ steps:
               from_secret: github_user
       commands:
           - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
-          - git pull origin main
           - bash ./scripts/autotag.sh
           - git commit -m "bump tags [CI SKIP]"
           - git push --force --follow-tags origin main

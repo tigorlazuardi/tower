@@ -31,6 +31,12 @@ name: badge
 depends_on:
     - autotag
 
+trigger:
+    branch:
+        - main
+    event:
+        - push
+
 steps:
     - name: Restore Cache
       image: plugins/s3-cache
@@ -53,6 +59,7 @@ steps:
 
     - name: Build Badges
       image: golang:latest
+      failure: ignore
       environment:
           GOPATH: /build
           GOBIN: /build/bin

@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+- **drone:** badge trigger now set on push to main branch
+
 ### Features
 - **autotag:** added auto tag pipeline
 

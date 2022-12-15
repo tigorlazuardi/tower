@@ -1,6 +1,12 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Features
+- **autotag:** added auto tag pipeline
+
+
+<a name="0.1.10"></a>
+## [0.1.10] - 2022-12-14
 ### Bug Fixes
 - **caller:** fix wrong caller location for Drone ci
 - **drone:** fix escapes
@@ -98,6 +104,12 @@
 
 ### Wip
 - **tower-http:** refactor signature
+
+### Pull Requests
+- Merge pull request [#4](https://github.com/tigorlazuardi/tower/issues/4) from tigorlazuardi/fix/drone
+- Merge pull request [#3](https://github.com/tigorlazuardi/tower/issues/3) from tigorlazuardi/fix/drone
+- Merge pull request [#2](https://github.com/tigorlazuardi/tower/issues/2) from tigorlazuardi/fix/drone
+- Merge pull request [#1](https://github.com/tigorlazuardi/tower/issues/1) from tigorlazuardi/feature/protected-pipelines
 
 
 <a name="v0.1.9"></a>
@@ -280,7 +292,8 @@
 - added docs support
 
 
-[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.9...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/tower/compare/0.1.10...HEAD
+[0.1.10]: https://github.com/tigorlazuardi/tower/compare/v0.1.9...0.1.10
 [v0.1.9]: https://github.com/tigorlazuardi/tower/compare/v0.1.8...v0.1.9
 [v0.1.8]: https://github.com/tigorlazuardi/tower/compare/v0.1.7...v0.1.8
 [v0.1.7]: https://github.com/tigorlazuardi/tower/compare/v0.1.5...v0.1.7

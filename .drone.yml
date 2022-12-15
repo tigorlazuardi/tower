@@ -158,6 +158,8 @@ steps:
           - export TEST_EXIT_CODE=$?
           - mv -f /build . || true
           - exit $TEST_EXIT_CODE
+      depends_on:
+          - Restore Cache
 
     - name: Save Cache
       image: plugins/s3-cache

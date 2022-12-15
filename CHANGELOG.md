@@ -6,6 +6,9 @@
 - **drone:** attempt to fix discord config
 - **drone:** fix tags not followed
 
+### Features
+- **drone:** autotag turned into sync workspace
+
 
 <a name="v0.1.10"></a>
 ## [v0.1.10] - 2022-12-15

@@ -38,9 +38,12 @@ func (l *Logger) SetTraceCapturer(capturer TraceCapturer) {
 }
 
 func (l Logger) Log(ctx context.Context, entry tower.Entry) {
-	elements := make([]zap.Field, 0, 7)
+	elements := make([]zap.Field, 0, 16)
 	elements = append(elements, zap.Time("time", entry.Time()))
 	elements = append(elements, l.tracer.CaptureTrace(ctx)...)
+	if key := entry.Key(); key != "" {
+		elements = append(elements, zap.String("key", key))
+	}
 	code := entry.Code()
 	if code != 0 {
 		elements = append(elements, zap.Int("code", code))
@@ -51,29 +54,7 @@ func (l Logger) Log(ctx context.Context, entry tower.Entry) {
 	if len(data) == 1 {
 		elements = append(elements, toField("context", data[0]))
 	} else if len(data) > 1 {
-		fmt.Println("data", data)
-		field := zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-			for _, value := range data {
-				var err error
-				switch value := value.(type) {
-				case tower.Fields:
-					err = ae.AppendObject(fields(value))
-				case zapcore.ObjectMarshaler:
-					err = ae.AppendObject(value)
-				case zapcore.ArrayMarshaler:
-					err = ae.AppendArray(value)
-				case map[string]any:
-					err = ae.AppendObject(fields(value))
-				default:
-					err = ae.AppendReflected(value)
-				}
-				if err != nil {
-					ae.AppendString(fmt.Sprintf("failed marshal log: %v", err))
-				}
-			}
-			return nil
-		})
-		elements = append(elements, zap.Array("context", field))
+		elements = append(elements, zap.Array("context", encodeContext(entry.Context())))
 	}
 
 	l.Logger.Log(translateLevel(entry.Level()), entry.Message(), elements...)
@@ -90,24 +71,7 @@ func (l Logger) LogError(ctx context.Context, err tower.Error) {
 	if len(data) == 1 {
 		elements = append(elements, toField("context", data[0]))
 	} else if len(data) > 1 {
-		field := zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-			for _, value := range data {
-				switch value := value.(type) {
-				case tower.Fields:
-					return ae.AppendObject(fields(value))
-				case zapcore.ObjectMarshaler:
-					return ae.AppendObject(value)
-				case zapcore.ArrayMarshaler:
-					return ae.AppendArray(value)
-				case map[string]any:
-					return ae.AppendObject(fields(value))
-				default:
-					return ae.AppendReflected(value)
-				}
-			}
-			return nil
-		})
-		elements = append(elements, zap.Array("context", field))
+		elements = append(elements, zap.Array("context", encodeContext(err.Context())))
 	}
 	elements = append(elements, zap.Error(err))
 	l.Logger.Log(translateLevel(err.Level()), err.Message(), elements...)
@@ -145,4 +109,28 @@ func translateLevel(lvl tower.Level) zapcore.Level {
 	default:
 		return zapcore.InvalidLevel
 	}
+}
+
+func encodeContext(ctx []any) zapcore.ArrayMarshaler {
+	return zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+		for _, value := range ctx {
+			var err error
+			switch value := value.(type) {
+			case tower.Fields:
+				err = ae.AppendObject(fields(value))
+			case zapcore.ObjectMarshaler:
+				err = ae.AppendObject(value)
+			case zapcore.ArrayMarshaler:
+				err = ae.AppendArray(value)
+			case map[string]any:
+				err = ae.AppendObject(fields(value))
+			default:
+				err = ae.AppendReflected(value)
+			}
+			if err != nil {
+				ae.AppendString(fmt.Sprintf("failed marshal log: %v", err))
+			}
+		}
+		return nil
+	})
 }

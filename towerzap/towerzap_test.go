@@ -53,6 +53,29 @@ func TestLogger_Log(t *testing.T) {
 		test          func(t *testing.T, buf *bytes.Buffer)
 	}{
 		{
+			name: "expected - minimal",
+			args: args{
+				ctx:   context.Background(),
+				entry: tower.NewEntry("foo").Freeze(),
+			},
+			traceCapturer: nil,
+			test: func(t *testing.T, buf *bytes.Buffer) {
+				j := jsonassert.New(t)
+				got := buf.String()
+				want := `
+				{
+					"level": "info",
+					"message": "foo",
+					"time": "<<PRESENCE>>",
+					"caller": "<<PRESENCE>>"
+				}`
+				j.Assertf(got, want)
+				if !strings.Contains(got, "towerzap_test.go:") {
+					t.Errorf("want caller to be on this file, got %s", got)
+				}
+			},
+		},
+		{
 			name: "expected - single context",
 			args: args{
 				ctx:   context.Background(),
@@ -80,9 +103,18 @@ func TestLogger_Log(t *testing.T) {
 			name: "expected - multiple context",
 			args: args{
 				ctx: context.Background(),
-				entry: tower.NewEntry("foo").Context(
+				entry: tower.NewEntry("foo").Key("cramp").Context(
 					tower.F{"buzz": "light-year"},
-					tower.F{"fizz": "buzz"},
+					tower.F{"fizz": "buzz", "will": tower.F{"buzz": "fizz"}},
+					12345,
+					zapcore.ObjectMarshalerFunc(func(oe zapcore.ObjectEncoder) error {
+						oe.AddString("zap", "core")
+						return nil
+					}),
+					zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
+						ae.AppendBool(true)
+						return nil
+					}),
 				).Freeze(),
 			},
 			traceCapturer: nil,
@@ -95,7 +127,14 @@ func TestLogger_Log(t *testing.T) {
 					"message": "foo",
 					"time": "<<PRESENCE>>",
 					"caller": "<<PRESENCE>>",
-					"context": [{"buzz": "light-year"}, {"fizz": "buzz"}]
+					"key": "cramp",
+					"context": [
+						{"buzz": "light-year"},
+						{"fizz": "buzz", "will": {"buzz":"fizz"}},
+						12345, 
+						{"zap": "core"},
+						[true]
+					]
 				}`
 				j.Assertf(got, want)
 				if !strings.Contains(got, "towerzap_test.go:") {

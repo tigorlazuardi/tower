@@ -1,6 +1,8 @@
 package towerzap
 
 import (
+	"fmt"
+
 	"github.com/tigorlazuardi/tower"
 	"go.uber.org/zap/zapcore"
 )
@@ -19,7 +21,7 @@ func (r richJsonError) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("summary", r.error.Error())
 	err := enc.AddReflected("details", r.error)
 	if err != nil {
-		enc.AddString("details", "failed to marshal error details")
+		enc.AddString("details", fmt.Sprintf("failed to marshal error details: %v", err))
 	}
 	return nil
 }
@@ -48,7 +50,7 @@ func (err Error) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 			return nil
 		}(enc, data[0])
 		if err != nil {
-			enc.AddString("context", "failed to marshal context")
+			enc.AddString("context", fmt.Sprintf("failed to marshal context: %v", err))
 		}
 	} else if len(data) > 1 {
 		err := enc.AddArray("context", zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
@@ -67,7 +69,7 @@ func (err Error) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 			return nil
 		}))
 		if err != nil {
-			enc.AddString("context", "failed to marshal context")
+			enc.AddString("context", fmt.Sprintf("failed to marshal context: %v", err))
 		}
 	}
 
@@ -79,17 +81,17 @@ func (err Error) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 
 	var errMarshal error
 	switch err := origin.(type) {
-	case tower.Error:
-		errMarshal = enc.AddObject("error", Error{err})
 	case zapcore.ObjectMarshaler:
 		errMarshal = enc.AddObject("error", err)
 	case zapcore.ArrayMarshaler:
 		errMarshal = enc.AddArray("error", err)
+	case tower.Error:
+		errMarshal = enc.AddObject("error", Error{err})
 	default:
 		errMarshal = enc.AddObject("error", richJsonError{err})
 	}
 	if errMarshal != nil {
-		enc.AddString("error", "failed to marshal error")
+		enc.AddString("error", fmt.Sprintf("failed to marshal error: %v", errMarshal))
 	}
 	return nil
 }

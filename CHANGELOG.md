@@ -1,6 +1,30 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Test
+- **towerzap:** added some test to towerzap
+
+
+<a name="towerslack/v0.1.11"></a>
+## [towerslack/v0.1.11] - 2022-12-15
+
+<a name="towerhttp/v0.1.11"></a>
+## [towerhttp/v0.1.11] - 2022-12-15
+
+<a name="towerdiscord/v0.1.11"></a>
+## [towerdiscord/v0.1.11] - 2022-12-15
+
+<a name="queue/v0.1.11"></a>
+## [queue/v0.1.11] - 2022-12-15
+
+<a name="bucket/v0.1.11"></a>
+## [bucket/v0.1.11] - 2022-12-15
+
+<a name="v0.1.11"></a>
+## [v0.1.11] - 2022-12-15
+
+<a name="towerzap/v0.1.11"></a>
+## [towerzap/v0.1.11] - 2022-12-15
 ### Bug Fixes
 - wrong go mod versions
 - **autotag:** fix wrong tag to use
@@ -9,6 +33,9 @@
 
 ### Features
 - **drone:** autotag turned into sync workspace
+
+### Pull Requests
+- Merge pull request [#8](https://github.com/tigorlazuardi/tower/issues/8) from tigorlazuardi/feature/autotag
 
 
 <a name="v0.1.10"></a>
@@ -314,7 +341,14 @@
 - added docs support
 
 
-[Unreleased]: https://github.com/tigorlazuardi/tower/compare/v0.1.10...HEAD
+[Unreleased]: https://github.com/tigorlazuardi/tower/compare/towerslack/v0.1.11...HEAD
+[towerslack/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerhttp/v0.1.11...towerslack/v0.1.11
+[towerhttp/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerdiscord/v0.1.11...towerhttp/v0.1.11
+[towerdiscord/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/queue/v0.1.11...towerdiscord/v0.1.11
+[queue/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/bucket/v0.1.11...queue/v0.1.11
+[bucket/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/v0.1.11...bucket/v0.1.11
+[v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerzap/v0.1.11...v0.1.11
+[towerzap/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/v0.1.10...towerzap/v0.1.11
 [v0.1.10]: https://github.com/tigorlazuardi/tower/compare/0.1.10...v0.1.10
 [0.1.10]: https://github.com/tigorlazuardi/tower/compare/v0.1.9...0.1.10
 [v0.1.9]: https://github.com/tigorlazuardi/tower/compare/v0.1.8...v0.1.9

@@ -2,6 +2,7 @@ package towerzap
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/tigorlazuardi/tower"
 	"go.uber.org/zap"
@@ -38,6 +39,7 @@ func (l *Logger) SetTraceCapturer(capturer TraceCapturer) {
 
 func (l Logger) Log(ctx context.Context, entry tower.Entry) {
 	elements := make([]zap.Field, 0, 7)
+	elements = append(elements, zap.Time("time", entry.Time()))
 	elements = append(elements, l.tracer.CaptureTrace(ctx)...)
 	code := entry.Code()
 	if code != 0 {
@@ -49,19 +51,24 @@ func (l Logger) Log(ctx context.Context, entry tower.Entry) {
 	if len(data) == 1 {
 		elements = append(elements, toField("context", data[0]))
 	} else if len(data) > 1 {
+		fmt.Println("data", data)
 		field := zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
 			for _, value := range data {
+				var err error
 				switch value := value.(type) {
 				case tower.Fields:
-					return ae.AppendObject(fields(value))
+					err = ae.AppendObject(fields(value))
 				case zapcore.ObjectMarshaler:
-					return ae.AppendObject(value)
+					err = ae.AppendObject(value)
 				case zapcore.ArrayMarshaler:
-					return ae.AppendArray(value)
+					err = ae.AppendArray(value)
 				case map[string]any:
-					return ae.AppendObject(fields(value))
+					err = ae.AppendObject(fields(value))
 				default:
-					return ae.AppendReflected(value)
+					err = ae.AppendReflected(value)
+				}
+				if err != nil {
+					ae.AppendString(fmt.Sprintf("failed marshal log: %v", err))
 				}
 			}
 			return nil
@@ -74,15 +81,10 @@ func (l Logger) Log(ctx context.Context, entry tower.Entry) {
 
 func (l Logger) LogError(ctx context.Context, err tower.Error) {
 	elements := make([]zap.Field, 0, 7)
-	elements = append(elements, zap.Error(err))
+	elements = append(elements, zap.Time("time", err.Time()))
 	elements = append(elements, l.tracer.CaptureTrace(ctx)...)
 	elements = append(elements, zap.Int("code", err.Code()))
-	elements = append(elements, zap.Object("caller", zapcore.ObjectMarshalerFunc(func(oe zapcore.ObjectEncoder) error {
-		caller := err.Caller()
-		oe.AddString("origin", caller.ShortOrigin())
-		oe.AddString("location", caller.String())
-		return nil
-	})))
+	elements = append(elements, zap.Stringer("caller", err.Caller()))
 
 	data := err.Context()
 	if len(data) == 1 {
@@ -107,6 +109,7 @@ func (l Logger) LogError(ctx context.Context, err tower.Error) {
 		})
 		elements = append(elements, zap.Array("context", field))
 	}
+	elements = append(elements, zap.Error(err))
 	l.Logger.Log(translateLevel(err.Level()), err.Message(), elements...)
 }
 

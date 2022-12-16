@@ -1,5 +1,6 @@
 #!/bin/bash
-CURTAG=$(git describe --abbrev=0 --tags)
+RAWTAG=$(git describe --abbrev=0 --tags)
+CURTAG=${RAWTAG##*/}
 CURTAG="${CURTAG/v/}"
 
 IFS='.' read -a vers <<<"$CURTAG"

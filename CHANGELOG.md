@@ -2,6 +2,51 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- bad tags [CI SKIP]
+
+
+<a name="towerhttp/v0.2.1"></a>
+## [towerhttp/v0.2.1] - 2022-12-16
+
+<a name="towerdiscord/v0.2.1"></a>
+## [towerdiscord/v0.2.1] - 2022-12-16
+
+<a name="towerzap/v0.2.1"></a>
+## [towerzap/v0.2.1] - 2022-12-16
+
+<a name="towerslack/v0.2.1"></a>
+## [towerslack/v0.2.1] - 2022-12-16
+
+<a name="queue/v0.2.1"></a>
+## [queue/v0.2.1] - 2022-12-16
+
+<a name="bucket/v0.2.1"></a>
+## [bucket/v0.2.1] - 2022-12-16
+
+<a name="v0.2.1"></a>
+## [v0.2.1] - 2022-12-16
+
+<a name="vbucket/0.2.0"></a>
+## [vbucket/0.2.0] - 2022-12-16
+
+<a name="towerdiscord/vbucket/0.2.0"></a>
+## [towerdiscord/vbucket/0.2.0] - 2022-12-16
+
+<a name="towerzap/vbucket/0.2.0"></a>
+## [towerzap/vbucket/0.2.0] - 2022-12-16
+
+<a name="bucket/vbucket/0.2.0"></a>
+## [bucket/vbucket/0.2.0] - 2022-12-16
+
+<a name="towerhttp/vbucket/0.2.0"></a>
+## [towerhttp/vbucket/0.2.0] - 2022-12-16
+
+<a name="queue/vbucket/0.2.0"></a>
+## [queue/vbucket/0.2.0] - 2022-12-16
+
+<a name="towerslack/vbucket/0.2.0"></a>
+## [towerslack/vbucket/0.2.0] - 2022-12-16
+### Bug Fixes
 - **towerzap:** fix missing service
 
 ### Test
@@ -10,24 +55,27 @@
 - **towerzap:** added more test cases
 - **towerzap:** added some test to towerzap
 
+### Pull Requests
+- Merge pull request [#9](https://github.com/tigorlazuardi/tower/issues/9) from tigorlazuardi/feature/towerzap #minor
 
-<a name="towerslack/v0.1.11"></a>
-## [towerslack/v0.1.11] - 2022-12-15
-
-<a name="towerhttp/v0.1.11"></a>
-## [towerhttp/v0.1.11] - 2022-12-15
-
-<a name="towerdiscord/v0.1.11"></a>
-## [towerdiscord/v0.1.11] - 2022-12-15
-
-<a name="queue/v0.1.11"></a>
-## [queue/v0.1.11] - 2022-12-15
 
 <a name="bucket/v0.1.11"></a>
 ## [bucket/v0.1.11] - 2022-12-15
 
+<a name="queue/v0.1.11"></a>
+## [queue/v0.1.11] - 2022-12-15
+
+<a name="towerdiscord/v0.1.11"></a>
+## [towerdiscord/v0.1.11] - 2022-12-15
+
+<a name="towerhttp/v0.1.11"></a>
+## [towerhttp/v0.1.11] - 2022-12-15
+
 <a name="v0.1.11"></a>
 ## [v0.1.11] - 2022-12-15
+
+<a name="towerslack/v0.1.11"></a>
+## [towerslack/v0.1.11] - 2022-12-15
 
 <a name="towerzap/v0.1.11"></a>
 ## [towerzap/v0.1.11] - 2022-12-15
@@ -347,13 +395,27 @@
 - added docs support
 
 
-[Unreleased]: https://github.com/tigorlazuardi/tower/compare/towerslack/v0.1.11...HEAD
-[towerslack/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerhttp/v0.1.11...towerslack/v0.1.11
-[towerhttp/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerdiscord/v0.1.11...towerhttp/v0.1.11
-[towerdiscord/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/queue/v0.1.11...towerdiscord/v0.1.11
-[queue/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/bucket/v0.1.11...queue/v0.1.11
-[bucket/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/v0.1.11...bucket/v0.1.11
-[v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerzap/v0.1.11...v0.1.11
+[Unreleased]: https://github.com/tigorlazuardi/tower/compare/towerhttp/v0.2.1...HEAD
+[towerhttp/v0.2.1]: https://github.com/tigorlazuardi/tower/compare/towerdiscord/v0.2.1...towerhttp/v0.2.1
+[towerdiscord/v0.2.1]: https://github.com/tigorlazuardi/tower/compare/towerzap/v0.2.1...towerdiscord/v0.2.1
+[towerzap/v0.2.1]: https://github.com/tigorlazuardi/tower/compare/towerslack/v0.2.1...towerzap/v0.2.1
+[towerslack/v0.2.1]: https://github.com/tigorlazuardi/tower/compare/queue/v0.2.1...towerslack/v0.2.1
+[queue/v0.2.1]: https://github.com/tigorlazuardi/tower/compare/bucket/v0.2.1...queue/v0.2.1
+[bucket/v0.2.1]: https://github.com/tigorlazuardi/tower/compare/v0.2.1...bucket/v0.2.1
+[v0.2.1]: https://github.com/tigorlazuardi/tower/compare/vbucket/0.2.0...v0.2.1
+[vbucket/0.2.0]: https://github.com/tigorlazuardi/tower/compare/towerdiscord/vbucket/0.2.0...vbucket/0.2.0
+[towerdiscord/vbucket/0.2.0]: https://github.com/tigorlazuardi/tower/compare/towerzap/vbucket/0.2.0...towerdiscord/vbucket/0.2.0
+[towerzap/vbucket/0.2.0]: https://github.com/tigorlazuardi/tower/compare/bucket/vbucket/0.2.0...towerzap/vbucket/0.2.0
+[bucket/vbucket/0.2.0]: https://github.com/tigorlazuardi/tower/compare/towerhttp/vbucket/0.2.0...bucket/vbucket/0.2.0
+[towerhttp/vbucket/0.2.0]: https://github.com/tigorlazuardi/tower/compare/queue/vbucket/0.2.0...towerhttp/vbucket/0.2.0
+[queue/vbucket/0.2.0]: https://github.com/tigorlazuardi/tower/compare/towerslack/vbucket/0.2.0...queue/vbucket/0.2.0
+[towerslack/vbucket/0.2.0]: https://github.com/tigorlazuardi/tower/compare/bucket/v0.1.11...towerslack/vbucket/0.2.0
+[bucket/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/queue/v0.1.11...bucket/v0.1.11
+[queue/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerdiscord/v0.1.11...queue/v0.1.11
+[towerdiscord/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerhttp/v0.1.11...towerdiscord/v0.1.11
+[towerhttp/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/v0.1.11...towerhttp/v0.1.11
+[v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerslack/v0.1.11...v0.1.11
+[towerslack/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/towerzap/v0.1.11...towerslack/v0.1.11
 [towerzap/v0.1.11]: https://github.com/tigorlazuardi/tower/compare/v0.1.10...towerzap/v0.1.11
 [v0.1.10]: https://github.com/tigorlazuardi/tower/compare/0.1.10...v0.1.10
 [0.1.10]: https://github.com/tigorlazuardi/tower/compare/v0.1.9...0.1.10

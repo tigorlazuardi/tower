@@ -6,3 +6,7 @@ github.com/tigorlazuardi/tower v0.1.7 h1:sAhnBNgHOWwuLgctsbvdHR3e984NmWmz4d114TY
 github.com/tigorlazuardi/tower v0.1.7/go.mod h1:6Vaj+6OCY4MklmqBn5+5+NBjsYYmeXf1ZahsjCRUcJw=
 github.com/tigorlazuardi/tower v0.1.9 h1:35Ck+doMFeNzLZD2lcb4XvGVFl59uu+Si3YzeWAuaKM=
 github.com/tigorlazuardi/tower v0.1.9/go.mod h1:6Vaj+6OCY4MklmqBn5+5+NBjsYYmeXf1ZahsjCRUcJw=
+github.com/tigorlazuardi/tower v0.2.1 h1:OlK1rKxtQZjO9tMW2/zOLPp1y7SYGpZzJtCMRSjJmns=
+github.com/tigorlazuardi/tower v0.2.1/go.mod h1:UcUlah/CdoNBA7ZTbkXVY1LtJydwVsk1Hnttg7Qcq/M=
+github.com/tigorlazuardi/tower/pool v0.0.0-20221216134150-106e6359a082 h1:B8AQfJFjTJJ+ij8eXu8nMQEmv5q1Ljsgq2sokZC0Hnc=
+github.com/tigorlazuardi/tower/pool v0.0.0-20221216134150-106e6359a082/go.mod h1:UcixaGIjnGHZWCKbW/GRBN78lp1xcmyqIzmHEAAAER8=

@@ -2,11 +2,9 @@ package towerzap
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/tigorlazuardi/tower"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 var _ tower.Logger = (*Logger)(nil)
@@ -55,7 +53,7 @@ func (l Logger) Log(ctx context.Context, entry tower.Entry) {
 	if len(data) == 1 {
 		elements = append(elements, toField("context", data[0]))
 	} else if len(data) > 1 {
-		elements = append(elements, zap.Array("context", encodeContext(entry.Context())))
+		elements = append(elements, zap.Array("context", encodeContextArray(entry.Context())))
 	}
 
 	l.Logger.Log(translateLevel(entry.Level()), entry.Message(), elements...)
@@ -68,71 +66,16 @@ func (l Logger) LogError(ctx context.Context, err tower.Error) {
 	elements = append(elements, zap.Object("service", service(err.Service())))
 	elements = append(elements, zap.Int("code", err.Code()))
 	elements = append(elements, zap.Stringer("caller", err.Caller()))
-
+	if key := err.Key(); key != "" {
+		elements = append(elements, zap.String("key", key))
+	}
 	data := err.Context()
 	if len(data) == 1 {
 		elements = append(elements, toField("context", data[0]))
 	} else if len(data) > 1 {
-		elements = append(elements, zap.Array("context", encodeContext(err.Context())))
+		elements = append(elements, zap.Array("context", encodeContextArray(err.Context())))
 	}
-	elements = append(elements, zap.Error(err))
+	origin := err.Unwrap()
+	elements = append(elements, toField("error", origin))
 	l.Logger.Log(translateLevel(err.Level()), err.Message(), elements...)
-}
-
-func toField(key string, value any) zap.Field {
-	switch value := value.(type) {
-	case tower.Fields:
-		return zap.Object(key, fields(value))
-	case zapcore.ObjectMarshaler:
-		return zap.Object(key, value)
-	case zapcore.ArrayMarshaler:
-		return zap.Array(key, value)
-	case map[string]any:
-		return zap.Object(key, fields(value))
-	default:
-		return zap.Any(key, value)
-	}
-}
-
-func translateLevel(lvl tower.Level) zapcore.Level {
-	switch lvl {
-	case tower.DebugLevel:
-		return zapcore.DebugLevel
-	case tower.InfoLevel:
-		return zapcore.InfoLevel
-	case tower.WarnLevel:
-		return zapcore.WarnLevel
-	case tower.ErrorLevel:
-		return zapcore.ErrorLevel
-	case tower.FatalLevel:
-		return zapcore.FatalLevel
-	case tower.PanicLevel:
-		return zapcore.FatalLevel
-	default:
-		return zapcore.InvalidLevel
-	}
-}
-
-func encodeContext(ctx []any) zapcore.ArrayMarshaler {
-	return zapcore.ArrayMarshalerFunc(func(ae zapcore.ArrayEncoder) error {
-		for _, value := range ctx {
-			var err error
-			switch value := value.(type) {
-			case tower.Fields:
-				err = ae.AppendObject(fields(value))
-			case zapcore.ObjectMarshaler:
-				err = ae.AppendObject(value)
-			case zapcore.ArrayMarshaler:
-				err = ae.AppendArray(value)
-			case map[string]any:
-				err = ae.AppendObject(fields(value))
-			default:
-				err = ae.AppendReflected(value)
-			}
-			if err != nil {
-				ae.AppendString(fmt.Sprintf("failed marshal log: %v", err))
-			}
-		}
-		return nil
-	})
 }

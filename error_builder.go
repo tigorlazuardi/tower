@@ -59,7 +59,7 @@ type ErrorBuilder interface {
 
 			tower.Wrap(err).Code(400).Context(tower.F{"foo": "bar"}).Freeze()
 	*/
-	Context(ctx interface{}) ErrorBuilder
+	Context(ctx ...any) ErrorBuilder
 
 	/*
 		Sets the key for this error. This is how Messenger will use to identify if an error is the same as previous or not.
@@ -151,8 +151,8 @@ func (e *errorBuilder) Message(s string, args ...any) ErrorBuilder {
 	return e
 }
 
-func (e *errorBuilder) Context(ctx interface{}) ErrorBuilder {
-	e.context = append(e.context, ctx)
+func (e *errorBuilder) Context(ctx ...any) ErrorBuilder {
+	e.context = append(e.context, ctx...)
 	return e
 }
 

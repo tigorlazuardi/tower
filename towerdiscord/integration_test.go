@@ -2,14 +2,15 @@ package towerdiscord_test
 
 import (
 	"context"
-	"github.com/tigorlazuardi/tower"
-	"github.com/tigorlazuardi/tower/bucket"
-	"github.com/tigorlazuardi/tower/internal/loader"
-	"github.com/tigorlazuardi/tower/towerdiscord"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/tigorlazuardi/tower"
+	"github.com/tigorlazuardi/tower/bucket"
+	"github.com/tigorlazuardi/tower/loader"
+	"github.com/tigorlazuardi/tower/towerdiscord"
 )
 
 var _ towerdiscord.Hook = (*testHook)(nil)
@@ -116,7 +117,7 @@ func TestIntegration(t *testing.T) {
 	bot.SetName("tower-discord-integration-test")
 	bot.SetHook(testHook{t: t, wg: wg})
 	tow.RegisterMessenger(bot)
-	//tow.NewEntry("test %d", 123).Context(tower.F{"foo": "bar", "struct": foo{}}).Notify(ctx)
+	// tow.NewEntry("test %d", 123).Context(tower.F{"foo": "bar", "struct": foo{}}).Notify(ctx)
 	origin := tow.Wrap(foo{FooMessage: "something > something < something & Bad Request"}).Code(400).Message("this is bad request error").Context(tower.F{
 		"light": map[string]any{"year": 2021, "month": "january"},
 		"bar":   "baz",

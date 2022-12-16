@@ -12,7 +12,7 @@ import (
 
 	"github.com/tigorlazuardi/tower"
 	"github.com/tigorlazuardi/tower/bucket"
-	"github.com/tigorlazuardi/tower/internal/pool"
+	"github.com/tigorlazuardi/tower/pool"
 )
 
 var descBufPool = pool.New(func() *bytes.Buffer {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/tigorlazuardi/tower/internal/pool"
+	"github.com/tigorlazuardi/tower/pool"
 )
 
 type ClonedBody interface {

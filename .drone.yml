@@ -36,9 +36,6 @@ steps:
           - apk add bash git
           - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
           - bash ./scripts/autotag.sh
-          - git commit -m "bump tags [CI SKIP]"
-          - git push --force origin main
-          - git push --tags
 
 ---
 kind: pipeline

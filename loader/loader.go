@@ -1,3 +1,6 @@
+// loader is a simplified env loader.
+//
+// It does not support fancy stuffs other library gives. It's only meant for testing purposes.
 package loader
 
 import (
@@ -7,6 +10,7 @@ import (
 	"strings"
 )
 
+// Search current directory and it's children and search for `.env` files then loads the environment variables inside.
 func LoadEnv() {
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -38,13 +42,18 @@ func setEnv(path string) {
 		if text == "" {
 			continue
 		}
+		// Ignore comments.
 		if text[0] == '#' {
 			continue
 		}
+
+		// Discard comments post text and clean up whitspaces.
 		if index := strings.Index(text, "#"); index != -1 {
 			text = text[:index]
+			text = strings.TrimSpace(text)
 		}
 		parts := strings.SplitN(text, "=", 2)
+		// Ignore invalid lines.
 		if len(parts) != 2 {
 			continue
 		}

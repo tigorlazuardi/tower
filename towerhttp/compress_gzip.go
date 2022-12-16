@@ -3,8 +3,9 @@ package towerhttp
 import (
 	"bytes"
 	"compress/gzip"
-	"github.com/tigorlazuardi/tower/internal/pool"
 	"io"
+
+	"github.com/tigorlazuardi/tower/pool"
 )
 
 var (

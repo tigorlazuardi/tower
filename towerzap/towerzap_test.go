@@ -31,6 +31,17 @@ func newTestLogger() (*zap.Logger, *bytes.Buffer) {
 	return logger, buf
 }
 
+func newTower() *tower.Tower {
+	return tower.NewTower(tower.Service{
+		Name:        "test-towerzap",
+		Environment: "testing",
+		Repository:  "",
+		Branch:      "",
+		Type:        "test",
+		Version:     "",
+	})
+}
+
 func prettyPrintJson(buf *bytes.Buffer) {
 	out := &bytes.Buffer{}
 	b := buf.Bytes()
@@ -56,7 +67,7 @@ func TestLogger_Log(t *testing.T) {
 			name: "expected - minimal",
 			args: args{
 				ctx:   context.Background(),
-				entry: tower.NewEntry("foo").Freeze(),
+				entry: newTower().NewEntry("foo").Freeze(),
 			},
 			traceCapturer: nil,
 			test: func(t *testing.T, buf *bytes.Buffer) {
@@ -67,11 +78,16 @@ func TestLogger_Log(t *testing.T) {
 					"level": "info",
 					"message": "foo",
 					"time": "<<PRESENCE>>",
+					"service": {
+						"name": "test-towerzap",
+						"type": "test",
+						"environment": "testing"
+					},
 					"caller": "<<PRESENCE>>"
 				}`
 				j.Assertf(got, want)
 				if !strings.Contains(got, "towerzap_test.go:") {
-					t.Errorf("want caller to be on this file, got %s", got)
+					t.Error("want caller to be on this file")
 				}
 			},
 		},
@@ -79,7 +95,7 @@ func TestLogger_Log(t *testing.T) {
 			name: "expected - single context",
 			args: args{
 				ctx:   context.Background(),
-				entry: tower.NewEntry("foo").Context(tower.F{"buzz": "light-year"}).Freeze(),
+				entry: newTower().NewEntry("foo").Context(tower.F{"buzz": "light-year"}).Freeze(),
 			},
 			traceCapturer: nil,
 			test: func(t *testing.T, buf *bytes.Buffer) {
@@ -90,12 +106,19 @@ func TestLogger_Log(t *testing.T) {
 					"level": "info",
 					"message": "foo",
 					"time": "<<PRESENCE>>",
+					"service": {
+						"name": "test-towerzap",
+						"type": "test",
+						"environment": "testing"
+					},
 					"caller": "<<PRESENCE>>",
-					"context": {"buzz": "light-year"}
+					"context": {
+						"buzz": "light-year"
+					}
 				}`
 				j.Assertf(got, want)
 				if !strings.Contains(got, "towerzap_test.go:") {
-					t.Errorf("want caller to be on this file, got %s", got)
+					t.Error("want caller to be on this file")
 				}
 			},
 		},
@@ -103,7 +126,7 @@ func TestLogger_Log(t *testing.T) {
 			name: "expected - multiple context",
 			args: args{
 				ctx: context.Background(),
-				entry: tower.NewEntry("foo").Key("cramp").Context(
+				entry: newTower().NewEntry("foo").Key("cramp").Context(
 					tower.F{"buzz": "light-year"},
 					tower.F{"fizz": "buzz", "will": tower.F{"buzz": "fizz"}},
 					12345,
@@ -126,19 +149,35 @@ func TestLogger_Log(t *testing.T) {
 					"level": "info",
 					"message": "foo",
 					"time": "<<PRESENCE>>",
-					"caller": "<<PRESENCE>>",
+					"service": {
+						"name": "test-towerzap",
+						"type": "test",
+						"environment": "testing"
+					},
 					"key": "cramp",
+					"caller": "<<PRESENCE>>",
 					"context": [
-						{"buzz": "light-year"},
-						{"fizz": "buzz", "will": {"buzz":"fizz"}},
-						12345, 
-						{"zap": "core"},
-						[true]
+						{
+							"buzz": "light-year"
+						},
+						{
+							"fizz": "buzz",
+							"will": {
+								"buzz": "fizz"
+							}
+						},
+						12345,
+						{
+							"zap": "core"
+						},
+						[
+							true
+						]
 					]
 				}`
 				j.Assertf(got, want)
 				if !strings.Contains(got, "towerzap_test.go:") {
-					t.Errorf("want caller to be on this file, got %s", got)
+					t.Error("want caller to be on this file")
 				}
 			},
 		},

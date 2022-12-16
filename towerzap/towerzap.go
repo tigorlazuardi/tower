@@ -41,6 +41,7 @@ func (l Logger) Log(ctx context.Context, entry tower.Entry) {
 	elements := make([]zap.Field, 0, 16)
 	elements = append(elements, zap.Time("time", entry.Time()))
 	elements = append(elements, l.tracer.CaptureTrace(ctx)...)
+	elements = append(elements, zap.Object("service", service(entry.Service())))
 	if key := entry.Key(); key != "" {
 		elements = append(elements, zap.String("key", key))
 	}
@@ -64,6 +65,7 @@ func (l Logger) LogError(ctx context.Context, err tower.Error) {
 	elements := make([]zap.Field, 0, 7)
 	elements = append(elements, zap.Time("time", err.Time()))
 	elements = append(elements, l.tracer.CaptureTrace(ctx)...)
+	elements = append(elements, zap.Object("service", service(err.Service())))
 	elements = append(elements, zap.Int("code", err.Code()))
 	elements = append(elements, zap.Stringer("caller", err.Caller()))
 

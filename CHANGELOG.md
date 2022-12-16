@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+- **towerzap:** fix missing service
+
 ### Test
 - **towerzap:** added more test cases
 - **towerzap:** added some test to towerzap

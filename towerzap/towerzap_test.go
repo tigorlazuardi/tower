@@ -286,6 +286,39 @@ func TestLogger_LogError(t *testing.T) {
 		test          func(t *testing.T, buf *bytes.Buffer)
 	}{
 		{
+			name: "origin error is nil",
+			args: args{
+				ctx: context.Background(),
+				err: newTower().Wrap(nil).Message("wack").Freeze(),
+			},
+			traceCapturer: nil,
+			test: func(t *testing.T, buf *bytes.Buffer) {
+				j := jsonassert.New(t)
+				got := buf.String()
+				want := `
+				{
+					"level": "error",
+					"message": "wack",
+					"time": "<<PRESENCE>>",
+					"service": {
+						"name": "test-towerzap",
+						"type": "test",
+						"environment": "testing",
+						"version": "v0.1.0"
+					},
+					"code": 500,
+					"caller": "<<PRESENCE>>",
+					"error": {
+						"summary": "<nil>"
+					}
+				}`
+				j.Assertf(got, want)
+				if !strings.Contains(got, "towerzap_test.go:") {
+					t.Error("want caller to be on this file")
+				}
+			},
+		},
+		{
 			name: "expected - minimal",
 			args: args{
 				ctx: context.Background(),

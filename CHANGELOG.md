@@ -5,6 +5,7 @@
 - **towerzap:** fix missing service
 
 ### Test
+- **towerzap:** added test case for nil error origin
 - **towerzap:** more test cases and bug fixes
 - **towerzap:** added more test cases
 - **towerzap:** added some test to towerzap

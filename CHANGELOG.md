@@ -5,6 +5,7 @@
 - bad tags [CI SKIP]
 
 ### Code Refactoring
+- fix go mod and go sums
 - removed internal libraries and use external libraries instead [CI SKIP]
 
 

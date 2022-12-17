@@ -29,8 +29,6 @@ case "$DRONE_COMMIT_MESSAGE" in
 esac
 
 NEWTAG="$MAJ.$MIN.$PATCH"
-echo "Adding Tag: $NEWTAG"
-git tag v$NEWTAG
 
 FILES=$(find . -name go.mod | grep -v '^\./go.mod$')
 
@@ -43,8 +41,13 @@ git commit -m "Bump Version to v$NEWTAG [CI SKIP]"
 
 for f in $FILES; do
 	PACKAGE=$(echo $f | cut -d/ -f2)
-	git tag "$PACKAGE/v$NEWTAG"
+	PACKAGE_TAG="$PACKAGE/v$NEWTAG"
+	echo "Adding Tag: $PACKAGE_TAG"
+	git tag $PACKAGE_TAG
 done
+
+echo "Adding Tag: $NEWTAG"
+git tag v$NEWTAG
 
 git push --force origin main
 git push --tags

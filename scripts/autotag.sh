@@ -37,10 +37,14 @@ FILES=$(find . -name go.mod | grep -v '^\./go.mod$')
 for f in $FILES; do
 	sed -i -r "s#(\s+github\.com/tigorlazuardi/tower.*\sv).*#\1$NEWTAG#" $f
 	git add $f
+done
+
+git commit -m "Bump Version to v$NEWTAG [CI SKIP]"
+
+for f in $FILES; do
 	PACKAGE=$(echo $f | cut -d/ -f2)
 	git tag "$PACKAGE/v$NEWTAG"
 done
 
-git commit -m "Bump Version to v$NEWTAG [CI SKIP]"
 git push --force origin main
 git push --tags

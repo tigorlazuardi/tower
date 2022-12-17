@@ -6,6 +6,7 @@
 
 ### Miscellaneous
 - cleanup commented codes
+- **makefile:** make test nhow also tests loader and queue
 
 ### Test
 - **queue:** added more test cases

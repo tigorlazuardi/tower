@@ -4,6 +4,9 @@
 ### Bug Fixes
 - **drone-discord:** fix secret for webhook
 
+### Docs
+- update docs
+
 ### Test
 - **loader:** added unit test for loader function
 

@@ -93,6 +93,8 @@ steps:
           - ./bin/mc alias set drone-ci $ENDPOINT $ACCESS_KEY $SECRET_KEY
           - ./bin/mc cp --recursive ./dist drone-ci/build-badges/tower
           - mv -f /build . || true
+      depends_on:
+          - Restore Cache
 
     - name: Save Cache
       image: plugins/s3-cache

@@ -1,8 +1,11 @@
 # Tower-Go
 
 [![Build Status](https://drone.tigor.web.id/api/badges/tigorlazuardi/tower/status.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
-[![Tower Test Status](https://minio.tigor.web.id/build-badges/tower/dist/tower-tests.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
-[![TowerHTTP Test Status](https://minio.tigor.web.id/build-badges/tower/dist/towerhttp-tests.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
+[![Tower Test Status](https://minio.tigor.web.id/build-badges/tower/dist/tower.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
+[![TowerHTTP Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/towerhttp.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
+[![Towerzap Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/towerzap.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
+[![Pool Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/pool.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
+[![Queue Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/queue.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
 
 Note: this readme is still on WIP.
 

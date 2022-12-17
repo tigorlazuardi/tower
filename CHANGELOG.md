@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- typo on echo
 - **drone:** fix missing bc package
 
 

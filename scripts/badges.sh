@@ -10,7 +10,7 @@ elif (($(echo "$COVERAGE > 80" | bc -l))); then
 fi
 BADGE_URI=$(echo "tower-$COVERAGE%25-$COLOR" | sed -r 's/\s+/%20/g')
 URL="https://img.shields.io/badge/$BADGE_URI.svg"
-echo "Creating Badge for Tower: $URL"
+echo "Creating Badge for tower: $URL"
 curl -sSL $URL --create-dirs -o "./dist/tower.svg"
 
 PACKAGES=$(find . -name go.mod | grep -v '^\./go.mod$' | cut -d/ -f2- | xargs dirname)

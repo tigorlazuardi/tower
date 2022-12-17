@@ -7,6 +7,9 @@
 ### Miscellaneous
 - cleanup commented codes
 
+### Test
+- **queue:** added more test cases
+
 
 <a name="pool/v0.4.4"></a>
 ## [pool/v0.4.4] - 2022-12-17

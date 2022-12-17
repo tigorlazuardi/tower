@@ -86,6 +86,7 @@ steps:
           SECRET_KEY:
               from_secret: S3_DRONE_SECRET_KEY
       commands:
+          - apt install bc -y
           - mv -f build / || true
           - make mc-binary
           - bash ./scripts/badges.sh

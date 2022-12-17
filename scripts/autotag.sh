@@ -40,13 +40,13 @@ done
 git commit -m "Bump Version to v$NEWTAG [CI SKIP]"
 
 for f in $FILES; do
-	PACKAGE=$(echo $f | cut -d/ -f2)
+	PACKAGE=$(echo $f | cut -d/ -f2- | xargs dirname)
 	PACKAGE_TAG="$PACKAGE/v$NEWTAG"
 	echo "Adding Tag: $PACKAGE_TAG"
 	git tag $PACKAGE_TAG
 done
 
-echo "Adding Tag: $NEWTAG"
+echo "Adding Tag: v$NEWTAG"
 git tag v$NEWTAG
 
 git push --force origin main

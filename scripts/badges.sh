@@ -31,7 +31,6 @@ PACKAGES=$(find . -name go.mod | grep -v '^\./go.mod$' | cut -d/ -f2- | xargs di
 for pkg in $PACKAGES; do
 	echo "Checking ./$pkg"
 	go test -coverprofile=coverage.out ./$pkg >/dev/null
-	# go tool cover -func=coverage.out
 	COV=$(go tool cover -func=coverage.out | grep total: | grep -Eo '[0-9]+\.[0-9]+')
 	if (($(echo "$COV < 1" | bc -l))); then
 		continue

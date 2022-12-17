@@ -42,5 +42,4 @@ for f in $FILES; do
 done
 
 git commit -m "Bump Version to v$NEWTAG [CI SKIP]"
-git push --force origin main
-git push --tags
+git push --follow-tags origin main

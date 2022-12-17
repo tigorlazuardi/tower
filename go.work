@@ -8,4 +8,6 @@ use (
 	./towerhttp
 	./towerslack
 	./towerzap
+	./pool
+	./loader
 )

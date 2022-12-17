@@ -83,3 +83,12 @@ func BenchmarkQueue(b *testing.B) {
 	}
 	wg.Wait()
 }
+
+func TestNewPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic, but got nil")
+		}
+	}()
+	queue.New[int](0)
+}

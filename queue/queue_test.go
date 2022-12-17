@@ -40,6 +40,33 @@ func TestQueue(t *testing.T) {
 	}
 }
 
+func TestQueue2(t *testing.T) {
+	const queueInsert = 5
+	const wantCount = 2
+	q := queue.New[int](wantCount)
+	if q.Cap() != wantCount {
+		t.Errorf("expected queue to have %d capacity, but got %d capacity", wantCount, q.Cap())
+	}
+	for i := 1; i <= queueInsert; i++ {
+		q.Enqueue(i)
+	}
+	if q.Len() != wantCount {
+		t.Errorf("expected queue to have %d length, but got %d length", wantCount, q.Len())
+	}
+	start := 1
+	for q.HasNext() {
+		got := q.Dequeue()
+		if got != start {
+			t.Errorf("expected %d, but got %d", start, got)
+		}
+		start++
+	}
+	shouldEmpty := q.Dequeue()
+	if shouldEmpty != 0 {
+		t.Errorf("expected 0, but got %d", shouldEmpty)
+	}
+}
+
 func BenchmarkQueue(b *testing.B) {
 	q := queue.New[int](b.N)
 	wg := sync.WaitGroup{}

@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Bug Fixes
+- **autotag:** added echo on all tag adds
 - **autotag:** fix tower's tag on wrong commit
 
 

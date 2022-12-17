@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	github.com/francoispqt/gojay v1.2.13
-	github.com/tigorlazuardi/tower v0.4.3
-	github.com/tigorlazuardi/tower/bucket v0.4.3
-	github.com/tigorlazuardi/tower/queue v0.4.3
+	github.com/tigorlazuardi/tower v0.4.4
+	github.com/tigorlazuardi/tower/bucket v0.4.4
+	github.com/tigorlazuardi/tower/queue v0.4.4
 )
 
 require (

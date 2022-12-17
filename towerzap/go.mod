@@ -3,7 +3,7 @@ module github.com/tigorlazuardi/tower/towerzap
 go 1.18
 
 require (
-	github.com/tigorlazuardi/tower v0.3.5
+	github.com/tigorlazuardi/tower v0.4.0
 	go.uber.org/zap v1.24.0
 )
 

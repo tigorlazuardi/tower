@@ -3,39 +3,39 @@ type: docker
 name: autotag
 
 clone:
-    disable: true
+  disable: true
 
 trigger:
-    branch:
-        - main
-    event:
-        - push
+  branch:
+    - main
+  event:
+    - push
 
 steps:
-    - name: clone
-      image: alpine/git
-      environment:
-          GITHUB_TOKEN:
-              from_secret: github_token
-          GITHUB_USER:
-              from_secret: github_user
-      commands:
-          - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
-          - git clone $DRONE_GIT_HTTP_URL .
-          - git checkout main
-          - git pull origin main
+  - name: clone
+    image: alpine/git
+    environment:
+      GITHUB_TOKEN:
+        from_secret: github_token
+      GITHUB_USER:
+        from_secret: github_user
+    commands:
+      - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
+      - git clone $DRONE_GIT_HTTP_URL .
+      - git checkout main
+      - git pull origin main
 
-    - name: Sync Workspace
-      image: alpine
-      environment:
-          GITHUB_TOKEN:
-              from_secret: github_token
-          GITHUB_USER:
-              from_secret: github_user
-      commands:
-          - apk add bash git
-          - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
-          - bash ./scripts/autotag.sh
+  - name: Sync Workspace
+    image: alpine
+    environment:
+      GITHUB_TOKEN:
+        from_secret: github_token
+      GITHUB_USER:
+        from_secret: github_user
+    commands:
+      - apk add bash git
+      - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
+      - bash ./scripts/autotag.sh
 
 ---
 kind: pipeline
@@ -43,80 +43,80 @@ type: docker
 name: badge
 
 depends_on:
-    - autotag
+  - autotag
 
 trigger:
-    branch:
-        - main
-    event:
-        - push
+  branch:
+    - main
+  event:
+    - push
 
 steps:
-    - name: Restore Cache
-      image: plugins/s3-cache
-      failure: ignore
-      settings:
-          pull: true
-          restore: true
-          root:
-              from_secret: S3_DRONE_BUCKET_NAME
-          endpoint:
-              from_secret: S3_DRONE_ENDPOINT
-          access_key:
-              from_secret: S3_DRONE_ACCESS_KEY
-          secret_key:
-              from_secret: S3_DRONE_SECRET_KEY
-          mount:
-              - build/
-              - bin/
-              - dist/
+  - name: Restore Cache
+    image: plugins/s3-cache
+    failure: ignore
+    settings:
+      pull: true
+      restore: true
+      root:
+        from_secret: S3_DRONE_BUCKET_NAME
+      endpoint:
+        from_secret: S3_DRONE_ENDPOINT
+      access_key:
+        from_secret: S3_DRONE_ACCESS_KEY
+      secret_key:
+        from_secret: S3_DRONE_SECRET_KEY
+      mount:
+        - build/
+        - bin/
+        - dist/
 
-    - name: Build Badges
-      image: golang:latest
-      failure: ignore
-      environment:
-          GOPATH: /build
-          GOBIN: /build/bin
-          GOCACHE: /build/cache
-          GOSUMDB: off
-          ENDPOINT:
-              from_secret: S3_DRONE_ENDPOINT
-          ACCESS_KEY:
-              from_secret: S3_DRONE_ACCESS_KEY
-          SECRET_KEY:
-              from_secret: S3_DRONE_SECRET_KEY
-      commands:
-          - apt update && apt install bc -y
-          - mv -f build / || true
-          - make mc-binary
-          - bash ./scripts/badges.sh
-          - ./bin/mc alias set drone-ci $ENDPOINT $ACCESS_KEY $SECRET_KEY
-          - ./bin/mc cp --recursive ./dist drone-ci/build-badges/tower
-          - mv -f /build . || true
-      depends_on:
-          - Restore Cache
+  - name: Build Badges
+    image: golang:latest
+    failure: ignore
+    environment:
+      GOPATH: /build
+      GOBIN: /build/bin
+      GOCACHE: /build/cache
+      GOSUMDB: off
+      ENDPOINT:
+        from_secret: S3_DRONE_ENDPOINT
+      ACCESS_KEY:
+        from_secret: S3_DRONE_ACCESS_KEY
+      SECRET_KEY:
+        from_secret: S3_DRONE_SECRET_KEY
+    commands:
+      - apt update && apt install bc -y
+      - mv -f build / || true
+      - make mc-binary
+      - bash ./scripts/badges.sh
+      - ./bin/mc alias set drone-ci $ENDPOINT $ACCESS_KEY $SECRET_KEY
+      - ./bin/mc cp --recursive ./dist drone-ci/build-badges/tower
+      - mv -f /build . || true
+    depends_on:
+      - Restore Cache
 
-    - name: Save Cache
-      image: plugins/s3-cache
-      failure: ignore
-      when:
-          status: [success, failure]
-      settings:
-          rebuild: true
-          root:
-              from_secret: S3_DRONE_BUCKET_NAME
-          endpoint:
-              from_secret: S3_DRONE_ENDPOINT
-          access_key:
-              from_secret: S3_DRONE_ACCESS_KEY
-          secret_key:
-              from_secret: S3_DRONE_SECRET_KEY
-          mount:
-              - build/
-              - bin/
-              - dist/
-      depends_on:
-          - Build Badges
+  - name: Save Cache
+    image: plugins/s3-cache
+    failure: ignore
+    when:
+      status: [ success, failure ]
+    settings:
+      rebuild: true
+      root:
+        from_secret: S3_DRONE_BUCKET_NAME
+      endpoint:
+        from_secret: S3_DRONE_ENDPOINT
+      access_key:
+        from_secret: S3_DRONE_ACCESS_KEY
+      secret_key:
+        from_secret: S3_DRONE_SECRET_KEY
+      mount:
+        - build/
+        - bin/
+        - dist/
+    depends_on:
+      - Build Badges
 
 ---
 kind: pipeline
@@ -124,110 +124,110 @@ type: docker
 name: test
 
 trigger:
-    event:
-        - pull_request
+  event:
+    - pull_request
 
 steps:
-    - name: Restore Cache
-      image: plugins/s3-cache
-      failure: ignore
-      settings:
-          pull: true
-          restore: true
-          root:
-              from_secret: S3_DRONE_BUCKET_NAME
-          endpoint:
-              from_secret: S3_DRONE_ENDPOINT
-          access_key:
-              from_secret: S3_DRONE_ACCESS_KEY
-          secret_key:
-              from_secret: S3_DRONE_SECRET_KEY
-          mount:
-              - build/
-              - dist/
+  - name: Restore Cache
+    image: plugins/s3-cache
+    failure: ignore
+    settings:
+      pull: true
+      restore: true
+      root:
+        from_secret: S3_DRONE_BUCKET_NAME
+      endpoint:
+        from_secret: S3_DRONE_ENDPOINT
+      access_key:
+        from_secret: S3_DRONE_ACCESS_KEY
+      secret_key:
+        from_secret: S3_DRONE_SECRET_KEY
+      mount:
+        - build/
+        - dist/
 
-    - name: Test
-      image: golang:latest
-      environment:
-          GOPATH: /build
-          GOBIN: /build/bin
-          GOCACHE: /build/cache
-          GOSUMDB: off
-      commands:
-          - mv -f build / || true
-          - (make test-ci)
-          - export TEST_EXIT_CODE=$?
-          - mv -f /build . || true
-          - exit $TEST_EXIT_CODE
-      depends_on:
-          - Restore Cache
+  - name: Test
+    image: golang:latest
+    environment:
+      GOPATH: /build
+      GOBIN: /build/bin
+      GOCACHE: /build/cache
+      GOSUMDB: off
+    commands:
+      - mv -f build / || true
+      - (make test-ci)
+      - export TEST_EXIT_CODE=$?
+      - mv -f /build . || true
+      - exit $TEST_EXIT_CODE
+    depends_on:
+      - Restore Cache
 
-    - name: Save Cache
-      image: plugins/s3-cache
-      failure: ignore
-      when:
-          status: [success, failure]
-      settings:
-          rebuild: true
-          root:
-              from_secret: S3_DRONE_BUCKET_NAME
-          endpoint:
-              from_secret: S3_DRONE_ENDPOINT
-          access_key:
-              from_secret: S3_DRONE_ACCESS_KEY
-          secret_key:
-              from_secret: S3_DRONE_SECRET_KEY
-          mount:
-              - build/
-      depends_on:
-          - Test
+  - name: Save Cache
+    image: plugins/s3-cache
+    failure: ignore
+    when:
+      status: [ success, failure ]
+    settings:
+      rebuild: true
+      root:
+        from_secret: S3_DRONE_BUCKET_NAME
+      endpoint:
+        from_secret: S3_DRONE_ENDPOINT
+      access_key:
+        from_secret: S3_DRONE_ACCESS_KEY
+      secret_key:
+        from_secret: S3_DRONE_SECRET_KEY
+      mount:
+        - build/
+    depends_on:
+      - Test
 
-    - name: Flush Cache
-      image: plugins/s3-cache
-      failure: ignore
-      when:
-          status: [success, failure]
-      settings:
-          flush: true
-          root:
-              from_secret: S3_DRONE_BUCKET_NAME
-          endpoint:
-              from_secret: S3_DRONE_ENDPOINT
-          access_key:
-              from_secret: S3_DRONE_ACCESS_KEY
-          secret_key:
-              from_secret: S3_DRONE_SECRET_KEY
-          mount:
-              - build/
-      depends_on:
-          - Test
+  - name: Flush Cache
+    image: plugins/s3-cache
+    failure: ignore
+    when:
+      status: [ success, failure ]
+    settings:
+      flush: true
+      root:
+        from_secret: S3_DRONE_BUCKET_NAME
+      endpoint:
+        from_secret: S3_DRONE_ENDPOINT
+      access_key:
+        from_secret: S3_DRONE_ACCESS_KEY
+      secret_key:
+        from_secret: S3_DRONE_SECRET_KEY
+      mount:
+        - build/
+    depends_on:
+      - Test
 
-    - name: Discord Notification - Success
-      image: appleboy/drone-discord
-      failure: ignore
-      when:
-          status: [success]
-      settings:
-          username: Tower - Test Passed
-          webhook_id:
-              from_secret: DISCORD_WEBHOOK_ID
-          webhook_token:
-              from_secret: DISCORD_WEBHOOK_TOKEN
-      depends_on:
-          - Save Cache
-          - Flush Cache
+  - name: Discord Notification - Success
+    image: appleboy/drone-discord
+    failure: ignore
+    when:
+      status: [ success ]
+    settings:
+      username: Tower - Test Passed
+      webhook_id:
+        from_secret: discord_webhook_id
+      webhook_token:
+        from_secret: discord_webhook_token
+    depends_on:
+      - Save Cache
+      - Flush Cache
 
-    - name: Discord Notification - Failure
-      image: appleboy/drone-discord
-      failure: ignore
-      when:
-          status: [failure]
-      settings:
-          username: Tower - Test Failed
-          webhook_id:
-              from_secret: DISCORD_WEBHOOK_ID
-          webhook_token:
-              from_secret: DISCORD_WEBHOOK_TOKEN
-      depends_on:
-          - Save Cache
-          - Flush Cache
+  - name: Discord Notification - Failure
+    image: appleboy/drone-discord
+    failure: ignore
+    when:
+      status: [ failure ]
+    settings:
+      username: Tower - Test Failed
+      webhook_id:
+        from_secret: discord_webhook_id
+      webhook_token:
+        from_secret: discord_webhook_token
+    depends_on:
+      - Save Cache
+      - Flush Cache

@@ -1,20 +1,26 @@
-// loader is a simplified env loader.
+// Package loader is a simplified env loader.
 //
 // It does not support fancy stuffs other library gives. It's only meant for testing purposes.
+//
+// It also ignores errors from OS related APIs (although printed), like permissions. So do not use for live runtime environment.
 package loader
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-// Search current directory and it's children and search for `.env` files then loads the environment variables inside.
+// LoadEnv Search current directory and it's children and search for `.env` files then loads the environment variables inside.
+//
+// It ignores errors from OS related APIs (although printed), like permissions. So do not use for live runtime environment.
 func LoadEnv() {
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			fmt.Println(err.Error())
+			return nil
 		}
 		if info.IsDir() {
 			return nil
@@ -24,15 +30,13 @@ func LoadEnv() {
 		}
 		return nil
 	})
-	if err != nil {
-		panic(err)
-	}
 }
 
 func setEnv(path string) {
 	f, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		return
 	}
 	defer f.Close()
 	scanner := bufio.NewScanner(f)

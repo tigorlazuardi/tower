@@ -6,6 +6,7 @@
 [![Towerzap Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/towerzap.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
 [![Pool Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/pool.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
 [![Queue Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/queue.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
+[![Loader Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/loader.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
 
 Note: this readme is still on WIP.
 

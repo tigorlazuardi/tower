@@ -1,6 +1,9 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 
+### Bug Fixes
+- **drone-discord:** fix secret for webhook
+
 ### Test
 - **loader:** added unit test for loader function
 

@@ -87,7 +87,8 @@ steps:
               from_secret: S3_DRONE_SECRET_KEY
       commands:
           - mv -f build / || true
-          - make build-badges-success
+          - make mc-binary
+          - bash ./scripts/badges.sh
           - ./bin/mc alias set drone-ci $ENDPOINT $ACCESS_KEY $SECRET_KEY
           - ./bin/mc cp --recursive ./dist drone-ci/build-badges/tower
           - mv -f /build . || true

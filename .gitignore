@@ -8,3 +8,4 @@ dist/
 
 go.work.sum
 .idea
+*.out

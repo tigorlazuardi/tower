@@ -208,8 +208,8 @@ func (t Tower) NotifyError(ctx context.Context, err Error, parameters ...Message
 	t.sendNotif(ctx, msg, opts)
 }
 
-func (t *Tower) createOption(parameters ...MessageOption) *option {
-	opts := &option{tower: t}
+func (t *Tower) createOption(parameters ...MessageOption) *messageOption {
+	opts := &messageOption{tower: t}
 	for _, v := range t.defaultNotifyOption {
 		v.apply(opts)
 	}
@@ -219,7 +219,7 @@ func (t *Tower) createOption(parameters ...MessageOption) *option {
 	return opts
 }
 
-func (t Tower) sendNotif(ctx context.Context, msg MessageContext, opts *option) {
+func (t Tower) sendNotif(ctx context.Context, msg MessageContext, opts *messageOption) {
 	ctx = DetachedContext(ctx)
 	if opts.specificMessenger != nil {
 		go opts.specificMessenger.SendMessage(ctx, msg)

@@ -14,6 +14,7 @@ type EntryNode struct {
 	inner *entryBuilder
 }
 
+// MarshalJSON implements the json.Marshaler interface.
 func (e EntryNode) MarshalJSON() ([]byte, error) {
 	b := &bytes.Buffer{}
 	enc := json.NewEncoder(b)
@@ -87,22 +88,18 @@ func (e EntryNode) Context() []any {
 	return e.inner.context
 }
 
-// Gets the level of this message.
+// Level Gets the level of this message.
 func (e EntryNode) Level() Level {
 	return e.inner.level
 }
 
-/*
-Logs this entry.
-*/
+// Log logs the entry.
 func (e EntryNode) Log(ctx context.Context) Entry {
 	e.inner.tower.Log(ctx, e)
 	return e
 }
 
-/*
-Notifies this entry to Messengers.
-*/
+// Notify sends the entry to the messengers.
 func (e EntryNode) Notify(ctx context.Context, opts ...MessageOption) Entry {
 	e.inner.tower.Notify(ctx, e, opts...)
 	return e

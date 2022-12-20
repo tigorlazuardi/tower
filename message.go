@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// MessageContext is the context of a message.
+//
+// It holds the message and data that can be sent to the Messenger's target.
 type MessageContext interface {
 	HTTPCodeHint
 	CodeHint
@@ -26,7 +29,7 @@ type MessageContext interface {
 }
 
 type MessageOption interface {
-	apply(*option)
+	apply(*messageOption)
 }
 
 type MessageParameter interface {
@@ -35,7 +38,7 @@ type MessageParameter interface {
 	Tower() *Tower
 }
 
-type option struct {
+type messageOption struct {
 	skipVerification  bool
 	specificMessenger Messenger
 	messengers        Messengers
@@ -43,35 +46,35 @@ type option struct {
 	tower             *Tower
 }
 
-func (o option) SkipVerification() bool {
+func (o messageOption) SkipVerification() bool {
 	return o.skipVerification
 }
 
-func (o option) SpecificMessenger() Messenger {
+func (o messageOption) SpecificMessenger() Messenger {
 	return o.specificMessenger
 }
 
-func (o option) Messengers() Messengers {
+func (o messageOption) Messengers() Messengers {
 	return o.messengers
 }
 
-func (o option) Cooldown() time.Duration {
+func (o messageOption) Cooldown() time.Duration {
 	return o.cooldown
 }
 
-func (o option) Tower() *Tower {
+func (o messageOption) Tower() *Tower {
 	return o.tower
 }
 
-type MessageOptionFunc func(*option)
+type MessageOptionFunc func(*messageOption)
 
-func (f MessageOptionFunc) apply(opt *option) {
+func (f MessageOptionFunc) apply(opt *messageOption) {
 	f(opt)
 }
 
 // SkipMessageVerification Asks the Messengers to Skip cooldown verifications and just send the message.
 func SkipMessageVerification(b bool) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.skipVerification = b
 	})
 }
@@ -80,10 +83,10 @@ func SkipMessageVerification(b bool) MessageOption {
 OnlyMessengerWithName Asks Tower to only send only to the Messenger with this name.
 If name is not found, Tower returns to default behaviour.
 
-Note: OnlyMessengerWithName option will conflict with other Messenger setters option, and thus only the latest option will be set.
+Note: OnlyMessengerWithName messageOption will conflict with other Messenger setters messageOption, and thus only the latest messageOption will be set.
 */
 func OnlyMessengerWithName(name string) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.specificMessenger = ob.tower.GetMessengerByName(name)
 		ob.messengers = nil
 	})
@@ -92,17 +95,17 @@ func OnlyMessengerWithName(name string) MessageOption {
 /*
 Asks Tower to only send only to this Messenger.
 
-Note: OnlyThisMessenger option will conflict with other Messenger setters option, and thus only the latest option will be set.
+Note: OnlyThisMessenger messageOption will conflict with other Messenger setters messageOption, and thus only the latest messageOption will be set.
 */
 func OnlyThisMessenger(m Messenger) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.messengers = nil
 		ob.specificMessenger = m
 	})
 }
 
 func OnlyTheseMessengers(m ...Messenger) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.specificMessenger = nil
 		mm := make(Messengers, len(m))
 		for _, v := range m {
@@ -115,10 +118,10 @@ func OnlyTheseMessengers(m ...Messenger) MessageOption {
 /*
 Asks Tower to only send messages to Messengers whose name begins with given s.
 
-Note: MessengerPrefix option will conflict with other Messenger setters option, and thus only the latest option will be set.
+Note: MessengerPrefix messageOption will conflict with other Messenger setters messageOption, and thus only the latest messageOption will be set.
 */
 func MessengerPrefix(s string) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.specificMessenger = nil
 		messengers := ob.tower.GetMessengers()
 		mm := make(Messengers, len(messengers))
@@ -134,10 +137,10 @@ func MessengerPrefix(s string) MessageOption {
 /*
 Asks Tower to only send messages to Messengers whose name ends with given s.
 
-Note: MessengerSuffix option will conflict with other Messenger setters option, and thus only the latest option will be set.
+Note: MessengerSuffix messageOption will conflict with other Messenger setters messageOption, and thus only the latest messageOption will be set.
 */
 func MessengerSuffix(s string) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.specificMessenger = nil
 		messengers := ob.tower.GetMessengers()
 		mm := make(Messengers, len(messengers))
@@ -153,10 +156,10 @@ func MessengerSuffix(s string) MessageOption {
 /*
 Asks Tower to only send messages to Messengers whose name contains given s.
 
-Note: MessengerNameContains option will conflict with other Messenger setters option, and thus only the latest option will be set.
+Note: MessengerNameContains messageOption will conflict with other Messenger setters messageOption, and thus only the latest messageOption will be set.
 */
 func MessengerNameContains(s string) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.specificMessenger = nil
 		messengers := ob.tower.GetMessengers()
 		mm := make(Messengers, len(messengers))
@@ -173,7 +176,7 @@ func MessengerNameContains(s string) MessageOption {
 Sets the Cooldown for this Message.
 */
 func MessageCooldown(dur time.Duration) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.cooldown = dur
 	})
 }
@@ -181,10 +184,10 @@ func MessageCooldown(dur time.Duration) MessageOption {
 /*
 Asks Tower to send messages to currenty registered and also send those messeges to these Messengers.
 
-Note: MessengerNameContains option will conflict with other Messenger setters option, and thus only the latest option will be set.
+Note: MessengerNameContains messageOption will conflict with other Messenger setters messageOption, and thus only the latest messageOption will be set.
 */
 func ExtraMessengers(messengers ...Messenger) MessageOption {
-	return MessageOptionFunc(func(ob *option) {
+	return MessageOptionFunc(func(ob *messageOption) {
 		ob.specificMessenger = nil
 		ob.messengers = ob.tower.GetMessengers()
 		for _, v := range messengers {

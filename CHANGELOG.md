@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Test
+- **main:** added unit tests for entry_node
 - **main:** added unit tests for various instances
 
 

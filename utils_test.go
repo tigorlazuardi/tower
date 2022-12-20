@@ -1,9 +1,54 @@
 package tower
 
 import (
+	"context"
 	"reflect"
+	"sync"
 	"testing"
 )
+
+type mockLogger struct {
+	called bool
+}
+
+func newMockLogger() *mockLogger {
+	return &mockLogger{}
+}
+
+func (m *mockLogger) Log(ctx context.Context, entry Entry) {
+	m.called = true
+}
+
+func (m *mockLogger) LogError(ctx context.Context, err Error) {
+	m.called = true
+}
+
+func newMockMessenger(count int) *mockMessenger {
+	wg := &sync.WaitGroup{}
+	wg.Add(count)
+	return &mockMessenger{
+		wg: wg,
+	}
+}
+
+type mockMessenger struct {
+	called bool
+	wg     *sync.WaitGroup
+}
+
+func (m *mockMessenger) Name() string {
+	return "mock"
+}
+
+func (m *mockMessenger) SendMessage(ctx context.Context, msg MessageContext) {
+	m.called = true
+	m.wg.Done()
+}
+
+func (m *mockMessenger) Wait(ctx context.Context) error {
+	m.wg.Wait()
+	return nil
+}
 
 func TestDbg(t *testing.T) {
 	type args struct {

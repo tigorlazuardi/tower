@@ -6,6 +6,7 @@
 - **main:** added unit tests for various instances
 - **towerdiscord:** fix wrong test
 - **towerdiscord:** added towerdiscord unit test for code block
+- **towerdiscord:** added towerdiscord unit test for code block
 
 
 <a name="v0.4.6"></a>

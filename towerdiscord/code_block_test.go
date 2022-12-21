@@ -123,7 +123,7 @@ func TestJSONCodeBlockBuilder_BuildError(t *testing.T) {
 			args: args{
 				e: errorFunc(func() {}),
 			},
-			wantErr: false,
+			wantErr: true,
 			wantW:   `{"foo":"bar"}`,
 		},
 	}
@@ -132,8 +132,10 @@ func TestJSONCodeBlockBuilder_BuildError(t *testing.T) {
 			J := JSONCodeBlockBuilder{}
 			w := &bytes.Buffer{}
 			err := J.BuildError(w, tt.args.e)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("BuildError() error = %v, wantErr %v", err, tt.wantErr)
+			if err != nil {
+				if !tt.wantErr {
+					t.Errorf("BuildError() unexpected error: %v", err)
+				}
 				return
 			}
 			gotW := strings.Split(w.String(), "\n")

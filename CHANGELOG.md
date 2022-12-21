@@ -4,6 +4,7 @@
 ### Test
 - **main:** added unit tests for entry_node
 - **main:** added unit tests for various instances
+- **towerdiscord:** added towerdiscord unit test for code block
 
 
 <a name="v0.4.6"></a>

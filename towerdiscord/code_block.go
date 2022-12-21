@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/tigorlazuardi/tower"
 	"io"
+	"strconv"
 )
 
 type CodeBlockBuilder interface {
@@ -90,7 +91,41 @@ func (J JSONCodeBlockBuilder) BuildError(w io.Writer, e error) error {
 		return nil
 	}
 	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
+	enc.SetIndent("", "   ")
 	enc.SetEscapeHTML(false)
-	return enc.Encode(e)
+	return enc.Encode(richJSONError{e})
+}
+
+type richJSONError struct {
+	err error
+}
+
+func (r richJSONError) MarshalJSON() ([]byte, error) {
+	if r.err == nil {
+		return []byte(`{"error":null}`), nil
+	}
+	if jm, ok := r.err.(json.Marshaler); ok {
+		return jm.MarshalJSON()
+	}
+	b, err := json.Marshal(r.err)
+	if err != nil {
+		return nil, err
+	}
+	w := new(bytes.Buffer)
+	w.WriteString(`{"error":`)
+	switch {
+	case len(b) < 2,
+		b[0] == '{' && b[1] == '}',
+		b[0] == '[' && b[1] == ']':
+
+		w.WriteString(strconv.Quote(r.err.Error()))
+		w.WriteRune('}')
+		return w.Bytes(), nil
+	}
+	w.WriteString(`{"summary":"`)
+	w.WriteString(r.err.Error())
+	w.WriteString(`","details":`)
+	w.Write(b)
+	w.WriteString("}}")
+	return w.Bytes(), nil
 }

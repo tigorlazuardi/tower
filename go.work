@@ -10,4 +10,5 @@ use (
 	./towerzap
 	./pool
 	./loader
+	./cache/gomemcache
 )

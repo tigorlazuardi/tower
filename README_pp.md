@@ -1,12 +1,24 @@
-# Tower-Go
+# Tower-Go [![build-status-svg]][drone-dashboard]
 
-[![Build Status](https://drone.tigor.web.id/api/badges/tigorlazuardi/tower/status.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
-[![Tower Test Status](https://minio.tigor.web.id/build-badges/tower/dist/tower.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
-[![TowerHTTP Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/towerhttp.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
-[![Towerzap Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/towerzap.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
-[![Pool Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/pool.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
-[![Queue Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/queue.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
-[![Loader Test Coverage](https://minio.tigor.web.id/build-badges/tower/dist/loader.svg)](https://drone.tigor.web.id/tigorlazuardi/tower)
+## Coverages
+
+| Package    | Coverage                                                                                                                    |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Root       | [![tower-svg]][drone-dashboard]                                                                                             |
+| Extensions | [![towerhttp-svg]][drone-dashboard] <br /> [![towerzap-svg]][drone-dashboard] <br /> [![towerdiscord-svg]][drone-dashboard] |
+| Submodules | [![memcache-svg]][drone-dashboard]                                                                                          |
+| Utilities  | [![pool-svg]][drone-dashboard] <br /> [![queue-svg]][drone-dashboard] <br /> [![loader-svg]][drone-dashboard]               |
+
+[build-status-svg]: https://drone.tigor.web.id/api/badges/tigorlazuardi/tower/status.svg 'Build Status'
+[tower-svg]: https://minio.tigor.web.id/badges/tower/tower.svg 'Tower Test Coverage'
+[towerhttp-svg]: https://minio.tigor.web.id/badges/tower/towerhttp.svg 'TowerHTTP Test Coverage'
+[towerzap-svg]: https://minio.tigor.web.id/badges/tower/towerzap.svg 'Towerzap Test Coverage'
+[towerdiscord-svg]: https://minio.tigor.web.id/badges/tower/towerdiscord.svg 'Towerdiscord Test Coverage'
+[memcache-svg]: https://minio.tigor.web.id/badges/tower/cache/gomemcache.svg 'Go-Memcached Test Coverage'
+[pool-svg]: https://minio.tigor.web.id/badges/tower/pool.svg 'Pool Test Coverage'
+[queue-svg]: https://minio.tigor.web.id/badges/tower/queue.svg 'Queue Test Coverage'
+[loader-svg]: https://minio.tigor.web.id/badges/tower/loader.svg 'Loader Test Coverage'
+[drone-dashboard]: https://drone.tigor.web.id/tigorlazuardi/tower 'Drone Dashboard'
 
 Note: this readme is still on WIP.
 

@@ -1008,7 +1008,7 @@ func TestResponder_Respond(t *testing.T) {
 					},
 					"error": {
 						"summary": "json: unsupported type: func()",
-						"value": "<<PRESENCE>>"
+						"details": "<<PRESENCE>>"
 					}
 				}`
 				j := jsonassert.New(t)

@@ -95,14 +95,14 @@ func (f foo) Error() string {
 }
 
 func TestIntegration(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 	if os.Getenv("DISCORD_TEST_INTEGRATION") == "" {
 		t.Skip("DISCORD_TEST_INTEGRATION is not set")
 	}
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	loader.LoadEnv()
 	webhook := os.Getenv("DISCORD_WEBHOOK")
 	if os.Getenv("DISCORD_WEBHOOK") == "" {

@@ -434,7 +434,7 @@ func TestResponder_RespondError(t *testing.T) {
 					},
 					"error": {
 						"summary": "Internal Server Error",
-						"value": "Internal Server Error"
+						"details": "Internal Server Error"
 					}
 				}`
 				j.Assertf(logger.String(), wantLog, resp.Request.Host, wantBody)
@@ -522,7 +522,7 @@ func TestResponder_RespondError(t *testing.T) {
 					},
 					"error": {
 						"summary": "Internal Server Error",
-						"value": "Internal Server Error"
+						"details": "Internal Server Error"
 					}
 				}`
 				j.Assertf(logger.String(), wantLog, resp.Request.Host, wantBody)
@@ -795,7 +795,7 @@ func TestResponder_RespondError(t *testing.T) {
 					},
 					"error": {
 						"summary": "Internal Server Error",
-						"value": "Internal Server Error"
+						"details": "Internal Server Error"
 					}
 				}`
 				j.Assertf(logs[1], wantLog, resp.Request.Host, wantBody)

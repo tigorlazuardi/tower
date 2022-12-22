@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Test
+- **main:** more unit test cases for Error
 - **main:** added more test cases
 - **main:** added unit tests for entry_node
 - **main:** added unit tests for various instances

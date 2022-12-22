@@ -3,12 +3,12 @@ go 1.19
 use (
 	.
 	./bucket
+	./cache/gomemcache
+	./loader
+	./pool
 	./queue
 	./towerdiscord
 	./towerhttp
 	./towerslack
 	./towerzap
-	./pool
-	./loader
-	./cache/gomemcache
 )

@@ -26,14 +26,13 @@ steps:
           - git pull origin main
 
     - name: Sync Workspace
-      image: alpine
+      image: golang:1.19
       environment:
           GITHUB_TOKEN:
               from_secret: github_token
           GITHUB_USER:
               from_secret: github_user
       commands:
-          - apk add bash git
           - echo machine github.com login $GITHUB_USER password $GITHUB_TOKEN > ~/.netrc
           - bash ./scripts/autotag.sh
 
@@ -72,7 +71,7 @@ steps:
               - dist/
 
     - name: Build Badges
-      image: golang:latest
+      image: golang:1.19
       failure: ignore
       environment:
           GOPATH: /build
@@ -148,7 +147,7 @@ steps:
               - dist/
 
     - name: Test
-      image: golang:latest
+      image: golang:1.19
       volumes:
           - name: docker_sock
             path: '/var/run/docker.sock'

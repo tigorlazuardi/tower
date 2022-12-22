@@ -2,6 +2,7 @@ package tower
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/kinbiko/jsonassert"
@@ -82,6 +83,44 @@ func TestEntryNode(t *testing.T) {
 			"context": 1
 		}`,
 	)
+	builder.Context(2)
+	node = builder.Freeze()
+	if len(node.Context()) != 2 {
+		t.Fatalf("Expected entry node context to be 2, got %d", len(node.Context()))
+	}
+	b, err = json.Marshal(node)
+	if err != nil {
+		t.Fatalf("Expected entry node to marshal to JSON without error, got %v", err)
+	}
+	j.Assertf(string(b), `
+		{
+			"time": "<<PRESENCE>>",
+			"code": 1301,
+			"message": "foo",
+			"caller": "<<PRESENCE>>",
+			"key": "foo",
+			"level": "error",
+			"service": {"name": "test"},
+			"context": [1, 2]
+		}`)
+
+	l := newMockLogger()
+	tow.SetLogger(l)
+	m := newMockMessenger(1)
+	tow.RegisterMessenger(m)
+	node.Notify(context.Background())
+	err = tow.Wait(context.Background())
+	if err != nil {
+		t.Fatalf("Expected tower to wait without error, got %v", err)
+	}
+	if !m.called {
+		t.Error("Expected messenger to be called")
+	}
+	node.Log(context.Background())
+	if !l.called {
+		t.Error("Expected logger to be called")
+	}
+
 	if t.Failed() {
 		out := new(bytes.Buffer)
 		_ = json.Indent(out, b, "", "    ")

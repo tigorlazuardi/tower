@@ -2,6 +2,7 @@
 ## [Unreleased]
 
 ### Test
+- **main:** added more test cases
 - **main:** added unit tests for entry_node
 - **main:** added unit tests for various instances
 - **towerdiscord:** fix wrong test

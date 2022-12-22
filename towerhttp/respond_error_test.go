@@ -294,62 +294,56 @@ func TestResponder_RespondError(t *testing.T) {
 				j := jsonassert.New(t)
 				j.Assertf(string(body), wantBody)
 				wantLog := `
-				{
-					"time": "<<PRESENCE>>",
-					"code": 418,
-					"message": "test bail error",
-					"caller": "<<PRESENCE>>",
-					"level": "error",
-					"service": {
-						"name": "responder-test",
-						"environment": "testing",
-						"type": "unit-test"
-					},
-					"context": {
-						"request": {
-							"headers": {
-								"Accept-Encoding": [
-									"gzip"
-								],
-								"User-Agent": [
-									"Go-http-client/1.1"
-								]
-							},
-							"method": "POST",
-							"url": "%s/",
-							"body": {"foo":"bar"}
-						},
-						"response": {
-							"body": {
-								"error": "test bail error"
-							},
-							"headers": {
-								"Content-Length": [
-									"28"
-								],
-								"Content-Type": [
-									"application/json"
-								]
-							},
-							"status": 418
-						}
-					},
-					"error": {
-						"code": 418,
-						"level": "error",
-						"message": "test bail error",
-						"error": {
-							"summary": "test bail error"
-						},
-						"caller": "<<PRESENCE>>",
+					{
 						"time": "<<PRESENCE>>",
+						"code": 418,
+						"message": "test bail error",
+						"caller": "<<PRESENCE>>",
+						"level": "error",
 						"service": {
 							"name": "responder-test",
 							"environment": "testing",
 							"type": "unit-test"
+						},
+						"context": {
+							"request": {
+								"body": {
+									"foo": "bar"
+								},
+								"headers": {
+									"Accept-Encoding": [
+										"gzip"
+									],
+									"User-Agent": [
+										"Go-http-client/1.1"
+									]
+								},
+								"method": "POST",
+								"url": "%s/"
+							},
+							"response": {
+								"body": {
+									"error": "test bail error"
+								},
+								"headers": {
+									"Content-Length": [
+										"28"
+									],
+									"Content-Type": [
+										"application/json"
+									]
+								},
+								"status": 418
+							}
+						},
+						"error": {
+							"message": "test bail error",
+							"caller": "<<PRESENCE>>",
+							"error": {
+								"summary": "test bail error"
+							}
 						}
-					}
-				}`
+					}`
 				j.Assertf(logger.String(), wantLog, resp.Request.Host)
 				if !strings.Contains(logger.String(), "towerhttp/respond_error_test.go") {
 					t.Error("expected caller to be in towerhttp/respond_error_test.go")
@@ -434,7 +428,7 @@ func TestResponder_RespondError(t *testing.T) {
 					},
 					"error": {
 						"summary": "Internal Server Error",
-						"value": "Internal Server Error"
+						"details": "Internal Server Error"
 					}
 				}`
 				j.Assertf(logger.String(), wantLog, resp.Request.Host, wantBody)
@@ -522,7 +516,7 @@ func TestResponder_RespondError(t *testing.T) {
 					},
 					"error": {
 						"summary": "Internal Server Error",
-						"value": "Internal Server Error"
+						"details": "Internal Server Error"
 					}
 				}`
 				j.Assertf(logger.String(), wantLog, resp.Request.Host, wantBody)
@@ -795,7 +789,7 @@ func TestResponder_RespondError(t *testing.T) {
 					},
 					"error": {
 						"summary": "Internal Server Error",
-						"value": "Internal Server Error"
+						"details": "Internal Server Error"
 					}
 				}`
 				j.Assertf(logs[1], wantLog, resp.Request.Host, wantBody)

@@ -344,7 +344,7 @@ func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContex
 	_, _ = display.WriteString("\n```\n")
 	_, _ = display.WriteString(`**Caller Function**`)
 	_, _ = display.WriteString("\n```\n")
-	_, _ = display.WriteString(msg.Caller().ShortOrigin())
+	_, _ = display.WriteString(msg.Caller().ShortName())
 	_, _ = display.WriteString("\n```\n")
 	_, _ = display.WriteString(`**Cache Key**`)
 	_, _ = display.WriteString("\n```\n")

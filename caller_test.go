@@ -1,24 +1,49 @@
 package tower
 
-import "testing"
+import (
+	"bytes"
+	"strings"
+	"testing"
+)
 
-func TestCaller_ShortOrigin(t *testing.T) {
-	tests := []struct {
-		name string
-		c    Caller
-		want string
-	}{
-		{
-			name: "test",
-			c:    func() Caller { c := GetCaller(1); return c }(),
-			want: "github.com/tigorlazuardi/tower.TestCaller_ShortOrigin.func1",
-		},
+func TestCaller(t *testing.T) {
+	c := GetCaller(1)
+	if c == nil {
+		t.Fatal("Expected caller to be non-nil")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.c.ShortOrigin(); got != tt.want {
-				t.Errorf("Caller.ShortOrigin() = %v, want %v", got, tt.want)
-			}
-		})
+	if c.Name() != "github.com/tigorlazuardi/tower.TestCaller" {
+		t.Errorf("Expected caller name to be github.com/tigorlazuardi/tower.TestCaller, got %s", c.Name())
+	}
+	if c.ShortName() != "tower.TestCaller" {
+		t.Errorf("Expected caller short name to be tower.TestCaller, got %s", c.ShortName())
+	}
+	if !strings.Contains(c.File(), "caller_test.go") {
+		t.Errorf("Expected caller file to be caller_test.go, got %s", c.File())
+	}
+	if c.PC() == 0 {
+		t.Errorf("Expected caller pc to be non-zero")
+	}
+	if !strings.Contains(c.FormatAsKey(), "caller_test.go_") {
+		t.Errorf("Expected caller format as key to be caller_test.go_, got %s", c.FormatAsKey())
+	}
+	if c.Line() <= 2 {
+		t.Errorf("expected caller line to be greater than 2, got %d", c.Line())
+	}
+	if c.Function() == nil {
+		t.Errorf("Expected caller function to be non-nil")
+	}
+	if !strings.Contains(c.String(), "caller_test.go:") {
+		t.Errorf("Expected caller string to be caller_test.go:, got %s", c.String())
+	}
+	if !strings.Contains(c.ShortSource(), "caller_test.go") {
+		t.Errorf("Expected caller short source to be caller_test.go, got %s", c.ShortSource())
+	}
+	cal := c.(*caller)
+	b, err := cal.MarshalJSON()
+	if err != nil {
+		t.Errorf("Expected caller marshal json to be nil, got %s", err)
+	}
+	if !bytes.Contains(b, []byte("caller_test.go:")) {
+		t.Errorf("Expected caller marshal json to be caller_test.go:, got %s", b)
 	}
 }

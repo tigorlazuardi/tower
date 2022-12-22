@@ -18,8 +18,6 @@ type Caller interface {
 	Name() string
 	// ShortName returns only function name of the caller.
 	ShortName() string
-	// ShortOrigin returns only the latest four items maximum in the package path.
-	ShortOrigin() string
 	// ShortSource returns only the latest three items path in the File Path where the Caller comes from.
 	ShortSource() string
 	// String Sets this caller as `file_path:line` format.
@@ -69,26 +67,6 @@ func (c caller) MarshalJSON() ([]byte, error) {
 func (c caller) Function() *runtime.Func {
 	f := runtime.FuncForPC(c.pc)
 	return f
-}
-
-func (c caller) Origin() string {
-	f := runtime.FuncForPC(c.pc)
-	return f.Name()
-}
-
-func (c caller) getOrigin() []string {
-	return strings.Split(c.Origin(), "/")
-}
-
-// ShortOrigin returns only the latest four items maximum in the package path.
-func (c caller) ShortOrigin() string {
-	s := c.getOrigin()
-
-	for len(s) > 3 {
-		s = s[1:]
-	}
-
-	return strings.Join(s, "/")
 }
 
 // ShortSource returns only the latest three items path in the File Path where the Caller comes from.

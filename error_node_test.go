@@ -1,6 +1,8 @@
 package tower
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kinbiko/jsonassert"
@@ -77,6 +79,107 @@ func TestErrorNode_CodeBlockJSON(t *testing.T) {
 			}
 			if strings.Count(string(got), "error_node_test.go") != 4 {
 				t.Error("expected to see four callers field in error_node_test.go")
+			}
+		})
+	}
+}
+
+func TestErrorNode_MarshalJSON(t *testing.T) {
+	tow := NewTower(Service{Name: "test"})
+	tests := []struct {
+		name    string
+		err     *ErrorNode
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "expected output - simple error",
+			err:  tow.Wrap(errors.New("base error")).Message("bar").Freeze().(*ErrorNode),
+			want: `
+				{
+				   "time": "<<PRESENCE>>",
+				   "code": 500,
+				   "message": "bar",
+				   "caller": "<<PRESENCE>>",
+				   "level": "error",
+				   "service": {
+					  "name": "test"
+				   },
+				   "error": {
+					  "summary": "base error"
+				   }
+				}`,
+			wantErr: false,
+		},
+		{
+			name: "expected output - nested error",
+			err: func() *ErrorNode {
+				base := tow.Wrap(errors.New("base error")).Message("bar").Freeze()
+				return tow.WrapFreeze(base, "error 1").(*ErrorNode)
+			}(),
+			want: `
+				{
+				   "time": "<<PRESENCE>>",
+				   "code": 500,
+				   "message": "error 1",
+				   "caller": "<<PRESENCE>>",
+				   "level": "error",
+				   "service": {
+					  "name": "test"
+				   },
+				   "error": {
+					  "message": "bar",
+					  "caller": "<<PRESENCE>>",
+					  "error": {
+						 "summary": "base error"
+					  }
+				   }
+				}`,
+			wantErr: false,
+		},
+		{
+			name: "expected output - nested error with wrap that does nothing",
+			err: func() *ErrorNode {
+				base := tow.Wrap(errors.New("base error")).Message("bar").Freeze()
+				base = tow.Wrap(base).Freeze()
+				base = tow.Wrap(base).Freeze()
+				return tow.WrapFreeze(base, "error 1").(*ErrorNode)
+			}(),
+			want: `
+				{
+				   "time": "<<PRESENCE>>",
+				   "code": 500,
+				   "message": "error 1",
+				   "caller": "<<PRESENCE>>",
+				   "level": "error",
+				   "service": {
+					  "name": "test"
+				   },
+				   "error": {
+					  "message": "bar",
+					  "caller": "<<PRESENCE>>",
+					  "error": {
+						 "summary": "base error"
+					  }
+				   }
+				}`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := tt.err
+			got, err := e.MarshalJSON()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MarshalJSON() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			j := jsonassert.New(t)
+			j.Assertf(string(got), tt.want)
+			if t.Failed() {
+				out := new(bytes.Buffer)
+				_ = json.Indent(out, got, "", "   ")
+				fmt.Println(out.String())
 			}
 		})
 	}

@@ -66,100 +66,6 @@ const (
 		marshalSkipService
 )
 
-type CodeBlockJSONMarshaler interface {
-	CodeBlockJSON() ([]byte, error)
-}
-
-type cbJson struct {
-	inner error
-}
-
-func (c cbJson) Error() string {
-	return c.inner.Error()
-}
-
-func (c cbJson) CodeBlockJSON() ([]byte, error) {
-	return c.MarshalJSON()
-}
-
-func (c cbJson) MarshalJSON() ([]byte, error) {
-	if c.inner == nil {
-		return []byte("null"), nil
-	}
-	if cb, ok := c.inner.(CodeBlockJSONMarshaler); ok && cb != nil {
-		return cb.CodeBlockJSON()
-	}
-	b := &bytes.Buffer{}
-	enc := json.NewEncoder(b)
-	enc.SetEscapeHTML(false)
-	enc.SetIndent("", codeBlockIndent)
-	err := enc.Encode(richJsonError{c.inner})
-	return b.Bytes(), err
-}
-
-// createCodeBlockMarshalFlag creates a flag that skips the fields that have the same value as the parent *ErrorNode.
-func (e *ErrorNode) createCodeBlockMarshalFlag() marshalFlag {
-	var m marshalFlag
-	origin, ok := e.inner.origin.(Error)
-	if !ok {
-		return m
-	}
-	if origin.Code() == e.Code() {
-		m.Set(marshalSkipCode)
-	}
-	if origin.Message() == e.Message() {
-		m.Set(marshalSkipMessage)
-	}
-	if origin.Level() == e.Level() {
-		m.Set(marshalSkipLevel)
-	}
-	if len(origin.Context()) == 0 {
-		m.Set(marshalSkipContext)
-	}
-	if origin.Time().Sub(e.Time()) < time.Second {
-		m.Set(marshalSkipTime)
-	}
-	if m.Has(marshalSkipCode) &&
-		m.Has(marshalSkipMessage) &&
-		m.Has(marshalSkipLevel) &&
-		m.Has(marshalSkipContext) {
-		m.Set(marshalSkipCaller)
-	}
-	if origin.Service() == e.Service() {
-		m.Set(marshalSkipService)
-	}
-	return m
-}
-
-func (e *ErrorNode) deduplicateCodeBlockFields(other Error) marshalFlag {
-	var m marshalFlag
-	if e.Code() == other.Code() {
-		m.Set(marshalSkipCode)
-	}
-	if e.Message() == other.Message() {
-		m.Set(marshalSkipMessage)
-	}
-	if e.Level() == other.Level() {
-		m.Set(marshalSkipLevel)
-	}
-	if len(other.Context()) == 0 {
-		m.Set(marshalSkipContext)
-	}
-	if e.Time().Sub(other.Time()) < time.Second {
-		m.Set(marshalSkipTime)
-	}
-	if m.Has(marshalSkipCode) &&
-		m.Has(marshalSkipMessage) &&
-		m.Has(marshalSkipLevel) &&
-		m.Has(marshalSkipContext) {
-		m.Set(marshalSkipCaller)
-	}
-	if e.inner.tower.service == other.Service() {
-		m.Set(marshalSkipService)
-	}
-	return m
-}
-
 func (e *ErrorNode) createMarshalJSONFlag() marshalFlag {
 	var m marshalFlag
 	// The logic below for condition flow:
@@ -175,32 +81,43 @@ func (e *ErrorNode) createMarshalJSONFlag() marshalFlag {
 	// The outermost error is the most important fields for indexing, and thus we will not skip any fields.
 	//
 	// However, any nested error with duplicate values will be just a waste of space and bandwidth, so we will skip them.
-	other, ok := e.inner.origin.(Error)
-	if e.prev == nil || (e.next == nil && !ok) {
+	if e.prev == nil {
 		return m
 	}
-	originIsNode := e.next != nil
+	other, ok := e.inner.origin.(Error)
+	if e.prev == nil && e.next == nil && !ok {
+		return m
+	} else if ok {
+		return e.deduplicateAgainstOtherError(other)
+	}
 	prev, current := e.prev, e
-	if prev.Code() == current.Code() && originIsNode {
+	if prev.Code() == current.Code() {
 		m.Set(marshalSkipCode)
 	}
-	if prev.Level() == current.Level() && originIsNode {
+	if prev.Level() == current.Level() {
 		m.Set(marshalSkipLevel)
+	}
+	// e.next != nil because we don't want message skipped when it's the last error in the chain.
+	if prev.Message() == current.Message() && e.next != nil {
+		m.Set(marshalSkipMessage)
 	}
 	if len(current.Context()) == 0 {
 		m.Set(marshalSkipContext)
 	}
-	if prev.Time().Sub(current.Time()) < time.Second && originIsNode {
+	if prev.Time().Sub(current.Time()) < time.Second {
 		m.Set(marshalSkipTime)
 	}
 	if prev.inner.tower.service == current.inner.tower.service {
 		m.Set(marshalSkipService)
 	}
-	if e.next == nil && ok {
-		m |= e.deduplicateCodeBlockFields(other)
+	if m.Has(marshalSkipCode) &&
+		m.Has(marshalSkipMessage) &&
+		m.Has(marshalSkipLevel) &&
+		m.Has(marshalSkipContext) &&
+		m.Has(marshalSkipTime) &&
+		m.Has(marshalSkipService) {
+		m.Set(marshalSkipCaller)
 	}
-	m.Unset(marshalSkipCaller)
-	m.Unset(marshalSkipMessage)
 	return m
 }
 
@@ -228,7 +145,7 @@ func (e *ErrorNode) createPayload(m marshalFlag) *implJsonMarshaler {
 		Key:     e.Key(),
 		Level:   e.Level().String(),
 		Context: ctx,
-		Error:   cbJson{next},
+		Error:   richJsonError{next},
 		Service: &e.inner.tower.service,
 	}
 
@@ -251,28 +168,6 @@ func (e *ErrorNode) createPayload(m marshalFlag) *implJsonMarshaler {
 		marshalAble.Service = nil
 	}
 	return &marshalAble
-}
-
-func (e *ErrorNode) CodeBlockJSON() ([]byte, error) {
-	if e == nil {
-		return []byte("null"), nil
-	}
-	m := e.createCodeBlockMarshalFlag()
-	b := &bytes.Buffer{}
-	enc := json.NewEncoder(b)
-	enc.SetEscapeHTML(false)
-	enc.SetIndent("", codeBlockIndent)
-	// Check if current ErrorNode needs to be skipped.
-	if m.Has(marshalSkipAll) {
-		origin := e.inner.origin
-		if cbJson, ok := origin.(CodeBlockJSONMarshaler); ok {
-			return cbJson.CodeBlockJSON()
-		}
-		err := enc.Encode(richJsonError{origin})
-		return b.Bytes(), err
-	}
-	err := enc.Encode(e.createPayload(m))
-	return bytes.TrimSpace(b.Bytes()), err
 }
 
 func (e *ErrorNode) MarshalJSON() ([]byte, error) {
@@ -426,10 +321,6 @@ func (r richJsonError) MarshalJSON() ([]byte, error) {
 	if r.error == nil {
 		return []byte("null"), nil
 	}
-	b := &bytes.Buffer{}
-	enc := json.NewEncoder(b)
-	enc.SetEscapeHTML(false)
-
 	// if the error supports json.Marshaler we use it directly.
 	// this is because we can assume that the error have special marshaling needs for specific output.
 	//
@@ -437,6 +328,9 @@ func (r richJsonError) MarshalJSON() ([]byte, error) {
 	if e, ok := r.error.(json.Marshaler); ok { //nolint
 		return e.MarshalJSON()
 	}
+	b := &bytes.Buffer{}
+	enc := json.NewEncoder(b)
+	enc.SetEscapeHTML(false)
 
 	err := enc.Encode(r.error)
 	if err != nil {

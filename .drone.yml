@@ -150,7 +150,8 @@ steps:
     - name: Test
       image: golang:latest
       volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
+          - name: docker_sock
+            path: '/var/run/docker.sock'
       environment:
           GOPATH: /build
           GOBIN: /build/bin

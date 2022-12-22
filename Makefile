@@ -58,7 +58,7 @@ git-hook:
 	@./bin/go/lefthook install
 
 mc-binary:
-	@test -f "./bin/mc" || (curl -L "https://dl.min.io/client/mc/release/linux-amd64/mc" --create-dirs -o ./bin/mc && chmod +x ./bin/mc)
+	@test -f "./bin/mc" || (curl -L "$$ENDPOINT/binaries/mc" --create-dirs -o ./bin/mc && chmod +x ./bin/mc) || (curl -L "https://dl.min.io/client/mc/release/linux-amd64/mc" --create-dirs -o ./bin/mc && chmod +x ./bin/mc)
 
 gotestsum-binary:
 	@test -f "./bin/go/gotestsum" || GOBIN="$$(pwd)/bin/go" go install -v gotest.tools/gotestsum@latest

@@ -2,12 +2,14 @@ package tower
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/kinbiko/jsonassert"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestErrorNode_CodeBlockJSON(t *testing.T) {
@@ -82,6 +84,76 @@ func TestErrorNode_CodeBlockJSON(t *testing.T) {
 			}
 		})
 	}
+}
+
+type mockImplError struct{}
+
+func (m mockImplError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any{
+		"message": m.Message(),
+		"caller":  m.Caller(),
+		"code":    m.Code(),
+		"error":   m.Error(),
+		"level":   m.Level(),
+		"service": m.Service(),
+		"time":    m.Time(),
+	})
+}
+
+func (m mockImplError) Error() string {
+	return "mock"
+}
+
+func (m mockImplError) Caller() Caller {
+	return GetCaller(1)
+}
+
+func (m mockImplError) Code() int {
+	return 500
+}
+
+func (m mockImplError) Context() []any {
+	return nil
+}
+
+func (m mockImplError) Unwrap() error {
+	return nil
+}
+
+func (m mockImplError) WriteError(w LineWriter) {}
+
+func (m mockImplError) HTTPCode() int {
+	return 500
+}
+
+func (m mockImplError) Key() string {
+	return ""
+}
+
+func (m mockImplError) Level() Level {
+	return ErrorLevel
+}
+
+func (m mockImplError) Message() string {
+	return "mocking time"
+}
+
+func (m mockImplError) Time() time.Time {
+	return time.Now()
+}
+
+func (m mockImplError) Service() Service {
+	return Service{
+		Name: "mock",
+	}
+}
+
+func (m mockImplError) Log(ctx context.Context) Error {
+	return m
+}
+
+func (m mockImplError) Notify(ctx context.Context, opts ...MessageOption) Error {
+	return m
 }
 
 func TestErrorNode_MarshalJSON(t *testing.T) {
@@ -161,6 +233,36 @@ func TestErrorNode_MarshalJSON(t *testing.T) {
 					  "error": {
 						 "summary": "base error"
 					  }
+				   }
+				}`,
+			wantErr: false,
+		},
+		{
+			name: "expected output - wrap other Error implementation",
+			err: func() *ErrorNode {
+				base := tow.Wrap(mockImplError{}).Code(400).Freeze()
+				return tow.WrapFreeze(base, "error 1").(*ErrorNode)
+			}(),
+			want: `
+				{
+				   "time": "<<PRESENCE>>",
+				   "code": 400,
+				   "message": "error 1",
+				   "caller": "<<PRESENCE>>",
+				   "level": "error",
+				   "service": {
+					  "name": "test"
+				   },
+				   "error": {
+					  "caller": "<<PRESENCE>>",
+					  "code": 500,
+					  "error": "mock",
+					  "level": 2,
+					  "message": "mocking time",
+					  "service": {
+						 "name": "mock"
+					  },
+					  "time": "<<PRESENCE>>"
 				   }
 				}`,
 			wantErr: false,

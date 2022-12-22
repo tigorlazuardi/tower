@@ -35,6 +35,20 @@ type implJsonMarshaler struct {
 	Error   error    `json:"error,omitempty"`
 }
 
+func newImplJSONMarshaler(e Error, next error, ctx any, service *Service) implJsonMarshaler {
+	return implJsonMarshaler{
+		Time:    e.Time().Format(time.RFC3339),
+		Code:    e.Code(),
+		Message: e.Message(),
+		Caller:  e.Caller(),
+		Key:     e.Key(),
+		Level:   e.Level().String(),
+		Context: ctx,
+		Error:   richJsonError{next},
+		Service: service,
+	}
+}
+
 type marshalFlag uint8
 
 func (m marshalFlag) Has(f marshalFlag) bool {
@@ -87,8 +101,6 @@ func (e *ErrorNode) createMarshalJSONFlag() marshalFlag {
 	other, ok := e.inner.origin.(Error)
 	if e.prev == nil && e.next == nil && !ok {
 		return m
-	} else if ok {
-		return e.deduplicateAgainstOtherError(other)
 	}
 	prev, current := e.prev, e
 	if prev.Code() == current.Code() {
@@ -109,6 +121,9 @@ func (e *ErrorNode) createMarshalJSONFlag() marshalFlag {
 	}
 	if prev.inner.tower.service == current.inner.tower.service {
 		m.Set(marshalSkipService)
+	}
+	if ok {
+		m |= e.deduplicateAgainstOtherError(other)
 	}
 	if m.Has(marshalSkipCode) &&
 		m.Has(marshalSkipMessage) &&
@@ -137,17 +152,7 @@ func (e *ErrorNode) createPayload(m marshalFlag) *implJsonMarshaler {
 	} else {
 		next = e.inner.origin
 	}
-	marshalAble := implJsonMarshaler{
-		Time:    e.Time().Format(time.RFC3339),
-		Code:    e.Code(),
-		Message: e.Message(),
-		Caller:  e.Caller(),
-		Key:     e.Key(),
-		Level:   e.Level().String(),
-		Context: ctx,
-		Error:   richJsonError{next},
-		Service: &e.inner.tower.service,
-	}
+	marshalAble := newImplJSONMarshaler(e, next, ctx, &e.inner.tower.service)
 
 	if m.Has(marshalSkipCode) {
 		marshalAble.Code = 0

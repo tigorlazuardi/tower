@@ -30,8 +30,8 @@ func createClient() (*memcache.Client, func(), error) {
 		return nil, nil, err
 	}
 	host := "localhost"
-	if os.Getenv("DOCKER_TEST_HOST") != "" {
-		host = os.Getenv("DOCKER_TEST_HOST")
+	if os.Getenv("CI") != "" {
+		host = resource.Container.NetworkSettings.IPAddress
 	}
 	var client *memcache.Client
 	if err := pool.Retry(func() error {

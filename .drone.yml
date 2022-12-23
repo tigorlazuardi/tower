@@ -123,14 +123,6 @@ type: docker
 name: test
 load: '1' # to stfu goland.
 
-services:
-    - name: docker
-      image: docker:20.10.22-dind
-      privileged: true
-      volumes:
-          - name: docker_sock
-            path: /var/run/docker.sock
-
 trigger:
     event:
         - pull_request
@@ -161,13 +153,15 @@ steps:
 
     - name: Test
       image: golang:1.19
+      volumes:
+          - name: docker_sock
+            path: /var/run/docker.sock
       environment:
           GOPATH: /build
           GOBIN: /build/bin
           GOCACHE: /build/cache
           GOSUMDB: off
-          DOCKER_HOST: tcp://docker:2375
-          DOCKER_TEST_HOST: docker
+          DOCKER_HOST: unix:///var/run/docker.sock
       commands:
           - apt update && apt install docker -y
           - mv -f build / || true

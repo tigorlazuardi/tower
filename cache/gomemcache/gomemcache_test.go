@@ -32,6 +32,7 @@ func createClient() (*memcache.Client, func(), error) {
 	host := "localhost"
 	if os.Getenv("CI") != "" {
 		host = resource.Container.Name
+		host = strings.TrimPrefix(host, "/")
 	}
 	target := fmt.Sprintf("%s:%s", host, resource.GetPort("11211/tcp"))
 	var client *memcache.Client

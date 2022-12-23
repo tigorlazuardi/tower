@@ -163,7 +163,7 @@ steps:
           GOSUMDB: off
           DOCKER_HOST: unix:///var/run/docker.sock
       commands:
-          - apt update && apt install docker
+          - apt update && apt install docker -y
           - mv -f build / || true
           - export TEST_EXIT_CODE=$(make test-ci)
           - mv -f /build . || true

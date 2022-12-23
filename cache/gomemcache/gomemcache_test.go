@@ -29,9 +29,9 @@ func createClient() (*memcache.Client, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	host := "localhost"
-	if os.Getenv("CI") != "" {
-		host = "host.docker.internal"
+	host := "172.17.0.1" // docker0 interface
+	if os.Getenv("DOCKER_TEST_HOST") != "" {
+		host = os.Getenv("DOCKER_TEST_HOST")
 	}
 	target := fmt.Sprintf("%s:%s", host, resource.GetPort("11211/tcp"))
 	var client *memcache.Client

@@ -165,15 +165,14 @@ steps:
       commands:
           - apt update && apt install docker -y
           - mv -f build / || true
-          - TEST_EXIT_CODE=$(make test-ci); mv -f /build . || true; exit $TEST_EXIT_CODE
-      depends_on:
-          - Restore Cache
+          - (make test-ci)
+          - mv -f /build . || true
 
     - name: Save Cache
       image: plugins/s3-cache
       failure: ignore
       when:
-          status: [success, failure]
+          status: [success]
       settings:
           rebuild: true
           root:
@@ -186,14 +185,12 @@ steps:
               from_secret: S3_DRONE_SECRET_KEY
           mount:
               - build/
-      depends_on:
-          - Test
 
     - name: Flush Cache
       image: plugins/s3-cache
       failure: ignore
       when:
-          status: [success, failure]
+          status: [success]
       settings:
           flush: true
           root:
@@ -206,8 +203,6 @@ steps:
               from_secret: S3_DRONE_SECRET_KEY
           mount:
               - build/
-      depends_on:
-          - Test
 
     - name: Discord Notification - Success
       image: appleboy/drone-discord
@@ -220,9 +215,6 @@ steps:
               from_secret: discord_webhook_id
           webhook_token:
               from_secret: discord_webhook_token
-      depends_on:
-          - Save Cache
-          - Flush Cache
 
     - name: Discord Notification - Failure
       image: appleboy/drone-discord
@@ -235,6 +227,3 @@ steps:
               from_secret: discord_webhook_id
           webhook_token:
               from_secret: discord_webhook_token
-      depends_on:
-          - Save Cache
-          - Flush Cache

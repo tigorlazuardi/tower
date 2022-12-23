@@ -7,6 +7,7 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"gomemcache"
+	"os"
 	"strings"
 	"testing"
 )
@@ -28,14 +29,17 @@ func createClient() (*memcache.Client, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	host := resource.GetBoundIP("11211/tcp")
+	host := "localhost"
+	if os.Getenv("DOCKER_TEST_HOST") != "" {
+		host = os.Getenv("DOCKER_TEST_HOST")
+	}
 	var client *memcache.Client
 	if err := pool.Retry(func() error {
 		client = memcache.New(fmt.Sprintf("%s:%s", host, resource.GetPort("11211/tcp")))
 		return client.Ping()
 	}); err != nil {
 		_ = pool.Purge(resource)
-		return nil, nil, fmt.Errorf("could not connect to docker host %s: %w", host, err)
+		return nil, nil, fmt.Errorf("could not connect to docker host '%s': %w", host, err)
 	}
 	cleanup := func() {
 		_ = pool.Purge(resource)

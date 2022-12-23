@@ -31,15 +31,16 @@ func createClient() (*memcache.Client, func(), error) {
 	}
 	host := "localhost"
 	if os.Getenv("CI") != "" {
-		host = resource.Container.NetworkSettings.IPAddress
+		host = resource.Container.Name
 	}
+	target := fmt.Sprintf("%s:%s", host, resource.GetPort("11211/tcp"))
 	var client *memcache.Client
 	if err := pool.Retry(func() error {
-		client = memcache.New(fmt.Sprintf("%s:%s", host, resource.GetPort("11211/tcp")))
+		client = memcache.New(target)
 		return client.Ping()
 	}); err != nil {
 		_ = pool.Purge(resource)
-		return nil, nil, fmt.Errorf("could not connect to docker host '%s': %w", host, err)
+		return nil, nil, fmt.Errorf("could not connect to docker target '%s': %w", target, err)
 	}
 	cleanup := func() {
 		_ = pool.Purge(resource)

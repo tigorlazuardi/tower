@@ -127,6 +127,11 @@ trigger:
     event:
         - pull_request
 
+volumes:
+    - name: docker_sock
+      host:
+          path: /var/run/docker.sock
+
 steps:
     - name: Restore Cache
       image: plugins/s3-cache
@@ -150,7 +155,7 @@ steps:
       image: golang:1.19
       volumes:
           - name: docker_sock
-            path: '/var/run/docker.sock'
+            path: /var/run/docker.sock
       environment:
           GOPATH: /build
           GOBIN: /build/bin

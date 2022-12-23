@@ -52,7 +52,7 @@ func (s *SlackBot) SetBucket(bucket bucket.Bucket) {
 // If you create multiple bot instances, make sure to set different name for each instance. Otherwise, Tower will treat
 // them as same and only registers one instance.
 func NewSlackBot(token string, channel string) *SlackBot {
-	cc := cache.NewMemoryCache()
+	cc := cache.NewLocalCache()
 	s := &SlackBot{
 		rootContext:   context.Background(),
 		token:         token,

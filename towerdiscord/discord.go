@@ -120,7 +120,7 @@ func NewDiscordBot(webhook string) *Discord {
 	d := &Discord{
 		name:             "discord",
 		webhook:          webhook,
-		cache:            cache.NewMemoryCache(),
+		cache:            cache.NewLocalCache(),
 		queue:            queue.New[QueueItem](500),
 		sem:              make(chan struct{}, (runtime.NumCPU()/3)+2),
 		trace:            tower.NoopTracer{},

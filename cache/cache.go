@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"errors"
+	"math"
 	"sync"
 	"time"
 )
@@ -27,17 +28,29 @@ type cacheValue struct {
 	time  time.Time
 }
 
-var _ Cacher = (*MemoryCache)(nil)
+var _ Cacher = (*LocalCache)(nil)
 
-type MemoryCache struct {
+type LocalCache struct {
 	mu            *sync.RWMutex
 	state         map[string]*cacheValue
 	length        int
 	lastRebalance time.Time
 }
 
-func NewMemoryCache() *MemoryCache {
-	return &MemoryCache{
+// NewLocalCache creates a RAM based cache.
+//
+// This cache is not persistent and will be lost on application restart.
+//
+// This cache does not support distributed caching mechanism, and is not safe for multiple application
+// that uses the same key for handling rate limits
+//
+// (e.g. Discord enforced 1 second limit between messages with the same token, if the token is shared between services,
+// and you use this local cache for all your machines, your token may be banned by Discord for over limit since the services
+// cannot know the state of current rate limit, and thus just assume everything is safe to be sent).
+//
+// Use this cache for tests or when you know that you will not have multiple application instances.
+func NewLocalCache() *LocalCache {
+	return &LocalCache{
 		mu:            &sync.RWMutex{},
 		state:         make(map[string]*cacheValue),
 		length:        0,
@@ -46,9 +59,9 @@ func NewMemoryCache() *MemoryCache {
 }
 
 // Set Sets the Cache key and value.
-func (m *MemoryCache) Set(_ context.Context, key string, value []byte, ttl time.Duration) error {
-	if ttl < 0 {
-		ttl = 0
+func (m *LocalCache) Set(_ context.Context, key string, value []byte, ttl time.Duration) error {
+	if ttl < 1 {
+		ttl = math.MaxInt64
 	}
 	m.mu.Lock()
 	cache := m.state[key]
@@ -65,7 +78,7 @@ func (m *MemoryCache) Set(_ context.Context, key string, value []byte, ttl time.
 }
 
 // Get the Value by Key. Returns tower.ErrNilCache if not found or ttl has passed.
-func (m *MemoryCache) Get(ctx context.Context, key string) ([]byte, error) {
+func (m *LocalCache) Get(ctx context.Context, key string) ([]byte, error) {
 	m.mu.RLock()
 	cache, ok := m.state[key]
 	if !ok {
@@ -82,7 +95,7 @@ func (m *MemoryCache) Get(ctx context.Context, key string) ([]byte, error) {
 }
 
 // Exist Checks if Key exist in cache.
-func (m *MemoryCache) Exist(_ context.Context, key string) bool {
+func (m *LocalCache) Exist(_ context.Context, key string) bool {
 	m.mu.RLock()
 	_, ok := m.state[key]
 	m.mu.RUnlock()
@@ -90,7 +103,7 @@ func (m *MemoryCache) Exist(_ context.Context, key string) bool {
 }
 
 // Delete key from cache.
-func (m *MemoryCache) Delete(_ context.Context, key string) {
+func (m *LocalCache) Delete(_ context.Context, key string) {
 	m.mu.Lock()
 	delete(m.state, key)
 	if m.length > 0 {
@@ -99,7 +112,7 @@ func (m *MemoryCache) Delete(_ context.Context, key string) {
 	m.mu.Unlock()
 }
 
-func (m *MemoryCache) checkGC() {
+func (m *LocalCache) checkGC() {
 	now := time.Now()
 	if now.After(m.lastRebalance.Add(time.Minute*5)) && m.length > 1000 {
 		go func() {
@@ -116,6 +129,6 @@ func (m *MemoryCache) checkGC() {
 	}
 }
 
-func (m *MemoryCache) Separator() string {
+func (m *LocalCache) Separator() string {
 	return "::"
 }

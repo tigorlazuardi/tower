@@ -49,7 +49,6 @@ github.com/jellevandenhooff/dkim v0.0.0-20150330215556-f50fe3d243e1/go.mod h1:E0
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/kinbiko/jsonassert v1.1.1 h1:DB12divY+YB+cVpHULLuKePSi6+ui4M/shHSzJISkSE=
-github.com/kinbiko/jsonassert v1.1.1/go.mod h1:NO4lzrogohtIdNUNzx8sdzB55M4R4Q1bsrWVdqQ7C+A=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
@@ -104,12 +103,9 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
-github.com/tigorlazuardi/tower v0.1.10 h1:lMuA0vu8N5kn1oCO6kyWDt4HjiVU51Xqlq6apYizX4I=
-github.com/tigorlazuardi/tower v0.1.10/go.mod h1:6Vaj+6OCY4MklmqBn5+5+NBjsYYmeXf1ZahsjCRUcJw=
-github.com/tigorlazuardi/tower/bucket v0.0.0-20221215084506-8dfa3a526848 h1:FTJhVLB5+FH1+OX0kyCJ62URKs2KvPWBlufI5dhXZJo=
-github.com/tigorlazuardi/tower/bucket v0.0.0-20221215084506-8dfa3a526848/go.mod h1:Asy1Uq8SCgfgyssqqTGlTaSQXJ4eF8sJ8iR1i4GCk/Q=
-github.com/tigorlazuardi/tower/queue v0.0.0-20221215084506-8dfa3a526848 h1:evk/bX4ClzkM4HeZIoYgZP2u9r6VfFBRDdPZoA7f6X8=
-github.com/tigorlazuardi/tower/queue v0.0.0-20221215084506-8dfa3a526848/go.mod h1:BXl01VRZacDUG4/5QJQbH0YGWBOx3ZDJn7npMButuU4=
+github.com/tigorlazuardi/tower v0.5.0 h1:wZehcN+hF0vOoWj0H+H8tGiawVGxxJa0LYgSXKxQko4=
+github.com/tigorlazuardi/tower/bucket v0.5.0 h1:ZmQ18C3hLv97mtwKEkKyNIAE6KYcFxMOs97XgXmIxB8=
+github.com/tigorlazuardi/tower/queue v0.5.0 h1:m64UmatH5AywfEVcMj7aIRG/aHamRN4d6Nlp9ZAydYY=
 github.com/viant/assertly v0.4.8/go.mod h1:aGifi++jvCrUaklKEKT0BU95igDNaqkvz+49uaYMPRU=
 github.com/viant/toolbox v0.24.0/go.mod h1:OxMCG57V0PXuIP2HNQrtJf2CjqdmbrOx5EkMILuUhzM=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=

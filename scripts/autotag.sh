@@ -30,6 +30,9 @@ esac
 
 NEWTAG="$MAJ.$MIN.$PATCH"
 
+GOSUMDB=off go work sync
+git add .
+
 FILES=$(find . -name go.mod | grep -v '^\./go.mod$')
 
 for f in $FILES; do

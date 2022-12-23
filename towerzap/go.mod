@@ -3,8 +3,7 @@ module github.com/tigorlazuardi/tower/towerzap
 go 1.18
 
 require (
-	github.com/kinbiko/jsonassert v1.1.1
-	github.com/tigorlazuardi/tower v0.5.0
+	github.com/tigorlazuardi/tower v0.5.1
 	go.uber.org/zap v1.24.0
 )
 

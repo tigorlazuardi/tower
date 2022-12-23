@@ -3,6 +3,7 @@ go 1.19
 use (
 	.
 	./bucket
+	./cache
 	./cache/gomemcache
 	./loader
 	./pool

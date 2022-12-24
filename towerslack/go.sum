@@ -103,9 +103,9 @@ github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07/go.mod h1:kDXzergiv9cbyO7IOYJZWg1U88JhDg3PB6klq9Hg2pA=
-github.com/tigorlazuardi/tower v0.5.1 h1:mbGUTebMVyET6FejFRgo94XQ+MtgkTxRhmi1hcYcH7A=
-github.com/tigorlazuardi/tower/bucket v0.5.1 h1:7xeNrgMJuCWmDZebnUCiZcpx4/tnC8bvhoDEk10s02w=
-github.com/tigorlazuardi/tower/queue v0.5.1 h1:VyrGsSsYR5pj9hU4ejjMuKdEOcep9jDlYbjvHDjN/5s=
+github.com/tigorlazuardi/tower v0.5.2 h1:RuaNnoJcCYBgz7fwyrCXf+JqYbKz04K92g5R8Ohgby0=
+github.com/tigorlazuardi/tower/bucket v0.5.2 h1:jKm7fC/iRQQbJ9KuVtJg2bDjO+9LLYL18N/L171/8z0=
+github.com/tigorlazuardi/tower/queue v0.5.2 h1:YzEImtnHMETlLEj8kin6LvDQzrGRFrCnsYNTXqxZ7pQ=
 github.com/viant/assertly v0.4.8/go.mod h1:aGifi++jvCrUaklKEKT0BU95igDNaqkvz+49uaYMPRU=
 github.com/viant/toolbox v0.24.0/go.mod h1:OxMCG57V0PXuIP2HNQrtJf2CjqdmbrOx5EkMILuUhzM=
 go.opencensus.io v0.18.0/go.mod h1:vKdFvxhtzZ9onBp9VKHK8z/sRpBMnKAsufL7wlDrCOA=

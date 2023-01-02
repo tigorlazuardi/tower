@@ -85,12 +85,11 @@ steps:
           SECRET_KEY:
               from_secret: S3_DRONE_SECRET_KEY
       commands:
-          - apt update && apt install bc -y
           - mv -f build / || true
           - make mc-binary
           - bash ./scripts/badges.sh
           - ./bin/mc alias set drone-ci $ENDPOINT $ACCESS_KEY $SECRET_KEY
-          - ./bin/mc mirror --overwrite --remove ./dist drone-ci/badges/tower
+          - ./bin/mc mirror --overwrite ./dist drone-ci/badges/tower
           - mv -f /build . || true
       depends_on:
           - Restore Cache

@@ -2,19 +2,23 @@
 
 ## Coverages
 
-| Package    | Coverage                                                                                                                    |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Root       | [![tower-svg]][drone-dashboard]                                                                                             |
-| Extensions | [![towerhttp-svg]][drone-dashboard] <br /> [![towerzap-svg]][drone-dashboard] <br /> [![towerdiscord-svg]][drone-dashboard] |
-| Submodules | [![memcache-svg]][drone-dashboard]                                                                                          |
-| Utilities  | [![pool-svg]][drone-dashboard] <br /> [![queue-svg]][drone-dashboard] <br /> [![loader-svg]][drone-dashboard]               |
+| Module Type  | Coverage                                                                                                                    |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Root         | [![tower-svg]][drone-dashboard]                                                                                             |
+| Integrations | [![cache-svg]][drone-dashboard]                                                                                             |
+| Extensions   | [![towerhttp-svg]][drone-dashboard] <br /> [![towerzap-svg]][drone-dashboard] <br /> [![towerdiscord-svg]][drone-dashboard] |
+| Submodules   | [![memcache-svg]][drone-dashboard] <br /> [![goredis-v8-svg]][drone-dashboard] <br /> [![goredis-v9-svg]][drone-dashboard]  |
+| Utilities    | [![pool-svg]][drone-dashboard] <br /> [![queue-svg]][drone-dashboard] <br /> [![loader-svg]][drone-dashboard]               |
 
 [build-status-svg]: https://drone.tigor.web.id/api/badges/tigorlazuardi/tower/status.svg 'Build Status'
 [tower-svg]: https://minio.tigor.web.id/badges/tower/tower.svg? 'Tower Test Coverage'
 [towerhttp-svg]: https://minio.tigor.web.id/badges/tower/towerhttp.svg? 'TowerHTTP Test Coverage'
 [towerzap-svg]: https://minio.tigor.web.id/badges/tower/towerzap.svg? 'Towerzap Test Coverage'
 [towerdiscord-svg]: https://minio.tigor.web.id/badges/tower/towerdiscord.svg? 'Towerdiscord Test Coverage'
+[cache-svg]: https://minio.tigor.web.id/badges/tower/cache.svg? 'Cache Test Coverage'
 [memcache-svg]: https://minio.tigor.web.id/badges/tower/cache/gomemcache.svg? 'Go-Memcached Test Coverage'
+[goredis-v8-svg]: https://minio.tigor.web.id/badges/tower/cache/goredis/v8.svg? 'GoRedis V8 Test Coverage'
+[goredis-v9-svg]: https://minio.tigor.web.id/badges/tower/cache/goredis/v9.svg? 'GoRedis V9 Test Coverage'
 [pool-svg]: https://minio.tigor.web.id/badges/tower/pool.svg? 'Pool Test Coverage'
 [queue-svg]: https://minio.tigor.web.id/badges/tower/queue.svg? 'Queue Test Coverage'
 [loader-svg]: https://minio.tigor.web.id/badges/tower/loader.svg? 'Loader Test Coverage'

@@ -5,6 +5,8 @@ use (
 	./bucket
 	./cache
 	./cache/gomemcache
+	./cache/goredis/v8
+	./cache/goredis/v9
 	./loader
 	./pool
 	./queue

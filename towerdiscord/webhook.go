@@ -111,14 +111,25 @@ type WebhookContext struct {
 	Files   []bucket.File
 	Payload *WebhookPayload
 	Extra   *ExtraInformation
+	// Populated on PostMessageHook, otherwise Nil.
+	//
+	// Body is the response body from Discord.
+	// Nil if the request failed to receive response from Discord.
+	ResponseBody []byte
+	// Populated on PostMessageHook if the request received response from Discord, otherwise nil.
+	// Body is already consumed. Use ResponseBody instead to read the response body.
+	Response *http.Response
 }
 
 func (d Discord) PostWebhookJSON(ctx context.Context, web *WebhookContext) error {
 	ctx = d.hook.PreMessageHook(ctx, web)
-	b, err := json.Marshal(web.Payload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal webhook payload: %w", err)
+	var out bytes.Buffer
+	enc := json.NewEncoder(&out)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(web.Payload); err != nil {
+		return fmt.Errorf("failed to encode webhook payload: %w", err)
 	}
+	b := out.Bytes()
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.webhook, bytes.NewReader(b))
 	if err != nil {
 		return fmt.Errorf("failed to create webhook request: %w", err)
@@ -136,11 +147,13 @@ func (d Discord) PostWebhookJSON(ctx context.Context, web *WebhookContext) error
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(resp.Body)
+	web.Response = resp
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		d.hook.PostMessageHook(ctx, web, err)
 		return fmt.Errorf("failed to read webhook response body: %w", err)
 	}
+	web.ResponseBody = body
 	if resp.StatusCode >= 400 {
 		errResp, err := newDiscordErrorResponse(resp.StatusCode, body)
 		if err != nil {

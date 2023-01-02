@@ -46,76 +46,8 @@ type Discord struct {
 	codeBlockBuilder CodeBlockBuilder
 }
 
-func (d *Discord) SetDataEncoder(dataEncoder DataEncoder) {
-	d.dataEncoder = dataEncoder
-}
-
-func (d *Discord) SetCodeBlockBuilder(codeBlockBuilder CodeBlockBuilder) {
-	d.codeBlockBuilder = codeBlockBuilder
-}
-
-func (d *Discord) SetHook(hook Hook) {
-	d.hook = hook
-}
-
-// SetTraceCapturer sets the trace capturer for the bot.
-//
-// If you have any tracing system, you can set it here.
-func (d *Discord) SetTraceCapturer(trace tower.TraceCapturer) {
-	d.trace = trace
-}
-
-// SetEmbedBuilder sets the embed message builder for the bot.
-func (d *Discord) SetEmbedBuilder(builder EmbedBuilder) {
-	d.builder = builder
-}
-
-// SetBucket sets the bucket where the files are stored.
-func (d *Discord) SetBucket(bucket bucket.Bucket) {
-	d.bucket = bucket
-}
-
-// SetClient sets the http client for the bot.
-func (d *Discord) SetClient(client Client) {
-	d.client = client
-}
-
-// SetGlobalKey sets the global key for the bot. This is used for global lock.
-func (d *Discord) SetGlobalKey(globalKey string) {
-	d.globalKey = globalKey
-}
-
-// SetBaseCooldown sets the base cooldown for the bot.
-func (d *Discord) SetBaseCooldown(cooldown time.Duration) {
-	d.cooldown = cooldown
-}
-
-// SetName sets the name of the bot. This is used for identification of the bot for tower.
-func (d *Discord) SetName(name string) {
-	d.name = name
-}
-
-// Webhook returns the registered webhook for the bot.
-func (d *Discord) Webhook() string {
-	return d.webhook
-}
-
-// SetWebhook sets the webhook for the bot.
-func (d *Discord) SetWebhook(webhook string) {
-	d.webhook = webhook
-}
-
-// SetCache sets the cacher engine.
-func (d *Discord) SetCache(cache cache.Cacher) {
-	d.cache = cache
-}
-
-func (d *Discord) SetSnowflakeGenerator(node *snowflake.Node) {
-	d.snowflake = node
-}
-
 // NewDiscordBot creates a new discord bot.
-func NewDiscordBot(webhook string) *Discord {
+func NewDiscordBot(webhook string, opts ...DiscordOption) *Discord {
 	host, _ := os.Hostname()
 	d := &Discord{
 		name:             "discord",
@@ -133,6 +65,9 @@ func NewDiscordBot(webhook string) *Discord {
 		codeBlockBuilder: JSONCodeBlockBuilder{},
 	}
 	d.builder = EmbedBuilderFunc(d.defaultEmbedBuilder)
+	for _, opt := range opts {
+		opt.apply(d)
+	}
 	return d
 }
 

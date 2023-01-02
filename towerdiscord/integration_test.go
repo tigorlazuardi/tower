@@ -15,8 +15,6 @@ import (
 
 var _ towerdiscord.Hook = (*testHook)(nil)
 
-const codeBlockIndent = "   "
-
 type testHook struct {
 	t                  *testing.T
 	wg                 *sync.WaitGroup
@@ -116,9 +114,10 @@ func TestIntegration(t *testing.T) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	bot := towerdiscord.NewDiscordBot(webhook)
-	bot.SetName("tower-discord-integration-test")
-	bot.SetHook(testHook{t: t, wg: wg})
+	bot := towerdiscord.NewDiscordBot(webhook,
+		towerdiscord.WithName("towerdiscord-integration-test"),
+		towerdiscord.WithHook(testHook{t: t, wg: wg}),
+	)
 	tow.RegisterMessenger(bot)
 	// tow.NewEntry("test %d", 123).Context(tower.F{"foo": "bar", "struct": foo{}}).Notify(ctx)
 	origin := tow.Wrap(foo{FooMessage: "something > something < something & Bad Request"}).Code(400).Message("this is bad request error").Context(tower.F{
@@ -127,13 +126,6 @@ func TestIntegration(t *testing.T) {
 	}).Freeze()
 	wrapped := tow.WrapFreeze(origin, "wrapping error")
 	_ = tow.Wrap(wrapped).Message("wrapping error").Context(tower.F{"wrapping": 123, "nil_value": nil}).Notify(ctx)
-
-	//const loremIpsum = "lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-	//fields := tower.F{}
-	//for i, j := 0, 0; i < 4096; i, j = i+len(loremIpsum), j+1 {
-	//	fields[fmt.Sprintf("field_%d", j)] = loremIpsum
-	//}
-	//tow.NewEntry("test big text").Context(fields).Notify(ctx)
 	err := bot.Wait(ctx)
 	if err != nil {
 		t.Error(err)

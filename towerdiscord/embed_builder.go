@@ -12,12 +12,7 @@ import (
 
 	"github.com/tigorlazuardi/tower"
 	"github.com/tigorlazuardi/tower/bucket"
-	"github.com/tigorlazuardi/tower/pool"
 )
-
-var descBufPool = pool.New(func() *bytes.Buffer {
-	return &bytes.Buffer{}
-})
 
 const discordLimit = 6000
 
@@ -90,9 +85,7 @@ func (d Discord) buildSummary(msg tower.MessageContext, limit int, extra *ExtraI
 		Title: "Summary",
 		Color: 0x188544, // Green Jewel
 	}
-	display, data := descBufPool.Get(), descBufPool.Get()
-	defer descBufPool.Put(display)
-	defer descBufPool.Put(data)
+	display, data := new(bytes.Buffer), new(bytes.Buffer)
 	display.Reset()
 	display.Grow(limit)
 	data.Reset()
@@ -169,9 +162,7 @@ func (d Discord) buildContextEmbed(msg tower.MessageContext, limit int, extra *E
 		Color: 0x063970, // Dark Blue
 	}
 
-	display, data := descBufPool.Get(), descBufPool.Get()
-	defer descBufPool.Put(display)
-	defer descBufPool.Put(data)
+	display, data := new(bytes.Buffer), new(bytes.Buffer)
 	display.Reset()
 	display.Grow(limit)
 	data.Reset()
@@ -221,9 +212,7 @@ func (d Discord) buildErrorEmbed(msg tower.MessageContext, limit int, extra *Ext
 		Title: "Error",
 		Color: 0x71010b, // Venetian Red
 	}
-	display, data := descBufPool.Get(), descBufPool.Get()
-	defer descBufPool.Put(display)
-	defer descBufPool.Put(data)
+	display, data := new(bytes.Buffer), new(bytes.Buffer)
 	display.Reset()
 	display.Grow(limit)
 	data.Reset()
@@ -331,9 +320,7 @@ func (d Discord) buildMetadataEmbed(ctx context.Context, msg tower.MessageContex
 	if len(embed.Fields) > 25 {
 		embed.Fields = embed.Fields[:25]
 	}
-	display, data := descBufPool.Get(), descBufPool.Get()
-	defer descBufPool.Put(display)
-	defer descBufPool.Put(data)
+	display, data := new(bytes.Buffer), new(bytes.Buffer)
 	display.Reset()
 	display.Grow(limit)
 	data.Reset()
@@ -388,9 +375,7 @@ func (d Discord) buildErrorStackEmbed(msg tower.MessageContext, limit int, extra
 	}
 	reverse(s)
 	content := strings.Join(s, "\n---\n")
-	display, data := descBufPool.Get(), descBufPool.Get()
-	defer descBufPool.Put(display)
-	defer descBufPool.Put(data)
+	display, data := new(bytes.Buffer), new(bytes.Buffer)
 	display.Reset()
 	display.Grow(limit)
 	_, _ = display.WriteString("```")

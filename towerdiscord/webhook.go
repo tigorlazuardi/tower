@@ -215,7 +215,9 @@ func (d Discord) PostWebhookMultipart(ctx context.Context, web *WebhookContext) 
 func (d Discord) buildMultipartWebhookBody(ctx context.Context, web *WebhookContext) (body *bytes.Buffer, contentType string, err error) {
 	body = &bytes.Buffer{}
 	multipartWriter := multipart.NewWriter(body)
-	defer multipartWriter.Close()
+	defer func(multipartWriter *multipart.Writer) {
+		_ = multipartWriter.Close()
+	}(multipartWriter)
 	contentType = multipartWriter.FormDataContentType()
 	for i, file := range web.Files {
 		err := func(i int, file bucket.File) error {

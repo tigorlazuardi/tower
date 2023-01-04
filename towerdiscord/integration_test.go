@@ -3,6 +3,7 @@ package towerdiscord_test
 import (
 	"context"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -120,7 +121,9 @@ func TestIntegration(t *testing.T) {
 	)
 	tow.RegisterMessenger(bot)
 	// tow.NewEntry("test %d", 123).Context(tower.F{"foo": "bar", "struct": foo{}}).Notify(ctx)
-	origin := tow.Wrap(foo{FooMessage: "something > something < something & Bad Request"}).Code(400).Message("this is bad request error").Context(tower.F{
+	origin := tow.Wrap(foo{FooMessage: strings.Repeat("something > something < something & Bad Request", 300)}).
+		Code(400).
+		Message("this is bad request error").Context(tower.F{
 		"light": map[string]any{"year": 2021, "month": "january"},
 		"bar":   "baz",
 	}).Freeze()

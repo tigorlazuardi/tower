@@ -171,7 +171,7 @@ func (d Discord) PostWebhookJSON(ctx context.Context, web *WebhookContext) error
 
 func (d Discord) PostWebhookMultipart(ctx context.Context, web *WebhookContext) error {
 	ctx = d.hook.PreMessageHook(ctx, web)
-	requestBody, contentType, err := d.buildMultipartWebhookBody(ctx, web)
+	requestBody, contentType, err := d.buildMultipartWebhookBody(web)
 	if err != nil {
 		return fmt.Errorf("failed to build multipart webhook body: %w", err)
 	}
@@ -212,7 +212,7 @@ func (d Discord) PostWebhookMultipart(ctx context.Context, web *WebhookContext) 
 	return nil
 }
 
-func (d Discord) buildMultipartWebhookBody(ctx context.Context, web *WebhookContext) (body *bytes.Buffer, contentType string, err error) {
+func (d Discord) buildMultipartWebhookBody(web *WebhookContext) (body *bytes.Buffer, contentType string, err error) {
 	body = &bytes.Buffer{}
 	multipartWriter := multipart.NewWriter(body)
 	defer func(multipartWriter *multipart.Writer) {

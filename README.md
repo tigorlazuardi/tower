@@ -32,9 +32,9 @@ Tower is an _**opinionated**_ Error, Logging, and Notification _framework_ for G
 
 Tower's main goal is to improve developer experience when handling errors and logging.
 
-Tower's main goal is to provide a common API interface for error handling, logging, and notification. It also aims to
-provide more information about the error, such as where the error occurred. It also optionally provides a way to enrich
-the error with additional information, such as a message, data, error code, and so on.
+Tower does so by providing a common API interface for error handling, logging, and notification. It also aims to provide
+more information about the error, such as where the error occurred or the context of how it happens. It also optionally
+provides a way to enrich the error with additional information, such as a message, data, error code, and so on.
 
 Tower does not stop there, it goes one step further by providing a way to log and send the error to a notification in
 one single flow.

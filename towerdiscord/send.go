@@ -2,7 +2,6 @@ package towerdiscord
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -60,16 +59,35 @@ func (d Discord) deleteGlobalCacheKeyAfter2Seconds(ctx context.Context) {
 	d.cache.Delete(ctx, d.globalKey)
 }
 
+func buildIntro(service tower.Service, err error) string {
+	var s strings.Builder
+	if err != nil {
+		s.WriteString("@here an error has occurred")
+	} else {
+		s.WriteString("@here message")
+	}
+	if service.Name != "" {
+		s.WriteString(" on service **")
+		s.WriteString(service.Name)
+		s.WriteString("**")
+	}
+	if service.Type != "" {
+		s.WriteString(" on type **")
+		s.WriteString(service.Type)
+		s.WriteString("**")
+	}
+	if service.Environment != "" {
+		s.WriteString(" on environment **")
+		s.WriteString(service.Environment)
+		s.WriteString("**")
+	}
+	return s.String()
+}
+
 func (d Discord) postMessage(ctx context.Context, msg tower.MessageContext, extra *ExtraInformation) error {
-	var intro string
 	service := msg.Service()
 	err := msg.Err()
-	if err != nil {
-		intro = fmt.Sprintf("@here an error has occurred on service **%s** of type **%s** on environment **%s**", service.Name, service.Type, service.Environment)
-	} else {
-		intro = fmt.Sprintf("@here message from service **%s** of type **%s** on environment **%s**", service.Name, service.Type, service.Environment)
-	}
-
+	intro := buildIntro(service, err)
 	if extra.ThreadID == 0 {
 		extra.ThreadID = d.snowflake.Generate()
 	}

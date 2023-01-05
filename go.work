@@ -3,6 +3,7 @@ go 1.19
 use (
 	.
 	./bucket
+	./bucket/minio/v7
 	./cache
 	./cache/gomemcache
 	./cache/goredis/v8

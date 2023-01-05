@@ -1,6 +1,9 @@
 package bucket
 
-import "io"
+import (
+	"context"
+	"io"
+)
 
 type File interface {
 	Data() io.Reader
@@ -9,7 +12,6 @@ type File interface {
 	Read(p []byte) (n int, err error)
 	Pretext() string
 	Size() int
-	DataSource() io.Reader
 	Close() error
 }
 
@@ -45,15 +47,6 @@ func (f implFile) Size() int {
 	return f.size
 }
 
-func (f *implFile) DataSource() io.Reader {
-	return f.data
-}
-
-// SetPretext Sets the pretext of the file. Depending on the bucket implementation, this may or may not be used.
-func (f *implFile) SetPretext(pretext string) {
-	f.pretext = pretext
-}
-
 func (f *implFile) Close() error {
 	if closer, ok := f.data.(io.Closer); ok {
 		return closer.Close()
@@ -77,4 +70,52 @@ func NewFile(data io.Reader, mimetype string, opts ...FileOption) File {
 		opt.apply(f)
 	}
 	return f
+}
+
+type UploadResult struct {
+	// The URL of the uploaded file, if successful.
+	URL string
+	// The file instance used to upload the file.
+	// The body of this file may have already been garbage collected.
+	// So do not consume this file content again and only use the remaining metadata.
+	File File
+	// If Error is not nil, the upload is considered failed.
+	Error error
+}
+
+type Bucket interface {
+	// Upload File(s) to the bucket.
+	// If File.data implements io.Closer, the close method will be called after upload is done.
+	// Whether the Upload operation is successful or not.
+	//
+	// The number of result will be the same as the number of files uploaded.
+	Upload(ctx context.Context, files []File) []UploadResult
+}
+
+type FileOption interface {
+	apply(*implFile)
+}
+
+type FileOptionFunc func(*implFile)
+
+func (f FileOptionFunc) apply(file *implFile) {
+	f(file)
+}
+
+func WithPretext(pretext string) FileOption {
+	return FileOptionFunc(func(file *implFile) {
+		file.pretext = pretext
+	})
+}
+
+func WithFilesize(size int) FileOption {
+	return FileOptionFunc(func(file *implFile) {
+		file.size = size
+	})
+}
+
+func WithFilename(filename string) FileOption {
+	return FileOptionFunc(func(file *implFile) {
+		file.filename = filename
+	})
 }

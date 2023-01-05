@@ -64,7 +64,16 @@ func TestMinio_Upload(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer clean()
-	wc := Wrap(client, test)
+	wc := Wrap(client, test,
+		WithMakeBucketOption(minio.MakeBucketOptions{}),
+		WithPutObjectOption(func(ctx context.Context, file bucket.File) minio.PutObjectOptions {
+			return minio.PutObjectOptions{
+				ContentType: file.ContentType(),
+			}
+		}),
+		WithFilePrefixStringer(StringerFunc(func() string {
+			return "prefix/"
+		})))
 	f := bucket.NewFile(strings.NewReader(test), "text/plain; charset=utf-8",
 		bucket.WithFilename("test.txt"),
 		bucket.WithFilesize(len(test)),
@@ -78,7 +87,7 @@ func TestMinio_Upload(t *testing.T) {
 			if result.Error != nil {
 				t.Fatalf("unexpected error: %v", result.Error)
 			}
-			obj, err := client.GetObject(context.Background(), "test", result.File.Filename(), minio.GetObjectOptions{})
+			obj, err := client.GetObject(context.Background(), "test", "prefix/"+result.File.Filename(), minio.GetObjectOptions{})
 			if err != nil {
 				t.Fatalf("could not get object: %v", err)
 			}
@@ -105,6 +114,59 @@ func TestMinio_Upload(t *testing.T) {
 			if !strings.Contains(result.URL, "test.txt") {
 				t.Errorf("unexpected url: %s", result.URL)
 			}
+		}(result)
+	}
+	wc = Wrap(client, test, WithFilePrefix("test/"))
+	f = bucket.NewFile(strings.NewReader(test), "text/plain; charset=utf-8",
+		bucket.WithFilename("test.txt"),
+		bucket.WithFilesize(len(test)),
+	)
+	results = wc.Upload(context.Background(), []bucket.File{f})
+	if len(results) == 0 {
+		t.Fatal("expected results")
+	}
+	for _, result := range results {
+		func(result bucket.UploadResult) {
+			if result.Error != nil {
+				t.Fatalf("unexpected error: %v", result.Error)
+			}
+			obj, err := client.GetObject(context.Background(), "test", "test/"+result.File.Filename(), minio.GetObjectOptions{})
+			if err != nil {
+				t.Fatalf("could not get object: %v", err)
+			}
+			defer func(obj *minio.Object) {
+				err := obj.Close()
+				if err != nil {
+					t.Fatalf("could not close object: %v", err)
+				}
+			}(obj)
+		}(result)
+	}
+
+	wc = Wrap(client, test)
+	f = bucket.NewFile(strings.NewReader(test), "text/plain; charset=utf-8",
+		bucket.WithFilename("test.txt"),
+		bucket.WithFilesize(len(test)),
+	)
+	results = wc.Upload(context.Background(), []bucket.File{f})
+	if len(results) == 0 {
+		t.Fatal("expected results")
+	}
+	for _, result := range results {
+		func(result bucket.UploadResult) {
+			if result.Error != nil {
+				t.Fatalf("unexpected error: %v", result.Error)
+			}
+			obj, err := client.GetObject(context.Background(), "test", result.File.Filename(), minio.GetObjectOptions{})
+			if err != nil {
+				t.Fatalf("could not get object: %v", err)
+			}
+			defer func(obj *minio.Object) {
+				err := obj.Close()
+				if err != nil {
+					t.Fatalf("could not close object: %v", err)
+				}
+			}(obj)
 		}(result)
 	}
 }

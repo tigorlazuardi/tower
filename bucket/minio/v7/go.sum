@@ -108,8 +108,7 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
-github.com/tigorlazuardi/tower/bucket v0.6.1 h1:NoGPK5kLInwkzBTvjdSXHFuSgl6D8ggg77V1GWZ2XCw=
-github.com/tigorlazuardi/tower/bucket v0.6.1/go.mod h1:Asy1Uq8SCgfgyssqqTGlTaSQXJ4eF8sJ8iR1i4GCk/Q=
+github.com/tigorlazuardi/tower/bucket v0.7.0 h1:WL8+3RX9Rt9LtWzL9zX8Dpm7X3osSezN3LFvDCcFhy0=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
 github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df/go.mod h1:JP3t17pCcGlemwknint6hfoeCVQrEMVwxRLRjXpq+BU=

@@ -3,6 +3,7 @@ RAWTAG=$(git describe --abbrev=0 --tags)
 CURTAG=${RAWTAG##*/}
 CURTAG="${CURTAG/v/}"
 
+# shellcheck disable=SC2162
 IFS='.' read -a vers <<<"$CURTAG"
 
 MAJ=${vers[0]}
@@ -37,27 +38,23 @@ FILES=$(find . -name go.mod | grep -v '^\./go.mod$')
 
 for f in $FILES; do
   # --- Go Mod Tidy ---
-	PACKAGE=$(echo $f | cut -d/ -f2- | xargs dirname)
-  echo "== INFO: go mod tidy $PACKAGE"
-	cd $PACKAGE
-	GOSUMDB=off go mod tidy
-	git add go.mod go.sum || true
-	echo "== INFO: finished go mod tidy $PACKAGE"
-	cd -
+	PACKAGE=$(echo "$f" | cut -d/ -f2- | xargs dirname)
+  echo "== INFO: running 'go mod tidy' for $PACKAGE"
+  (cd "$PACKAGE" && GOSUMDB=off go mod tidy && (git add go.mod go.sum || true))
+	echo "== INFO: finished running 'go mod tidy' for $PACKAGE"
 	# --- Update Tag in go.mod ---
 	echo "== INFO: Updating $PACKAGE to $NEWTAG"
-	sed -i -r "s#(\s+github\.com/tigorlazuardi/tower.*\sv).*#\1$NEWTAG#" $f
-	echo "== INFO: finished updating $PACKAGE to $NEWTAG"
-	git add $f
+	sed -i -r "s#(\s+github\.com/tigorlazuardi/tower.*\sv).*#\1$NEWTAG#" "$f"
+	git add "$f"
 done
 
 git commit -m "Bump Version to v$NEWTAG [CI SKIP]"
 
 for f in $FILES; do
-	PACKAGE=$(echo $f | cut -d/ -f2- | xargs dirname)
+	PACKAGE=$(echo "$f" | cut -d/ -f2- | xargs dirname)
 	PACKAGE_TAG="$PACKAGE/v$NEWTAG"
 	echo "== INFO: Adding Tag: $PACKAGE_TAG"
-	git tag $PACKAGE_TAG
+	git tag "$PACKAGE_TAG"
 done
 
 echo "== INFO: Adding Tag: v$NEWTAG"

@@ -5,7 +5,8 @@ go 1.19
 require (
 	github.com/minio/minio-go/v7 v7.0.45
 	github.com/ory/dockertest/v3 v3.9.1
-	github.com/tigorlazuardi/tower/bucket v0.7.1
+	github.com/tigorlazuardi/tower/bucket v0.7.2
+	github.com/tigorlazuardi/tower/loader v0.7.2
 )
 
 require (

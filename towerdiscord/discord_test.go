@@ -341,6 +341,39 @@ func TestDiscord(t *testing.T) {
 				}
 			}())},
 		},
+		{
+			name: "with custom embed builder",
+			test: func(t *testing.T) callback {
+				return func(r *http.Request) {
+					if r.Method != http.MethodPost {
+						t.Errorf("expected method to be %s, got %s", http.MethodPost, r.Method)
+					}
+					if r.Header.Get("Content-Type") != "application/json" {
+						t.Errorf("expected content type to be application/json, got %s", r.Header.Get("Content-Type"))
+					}
+					body, err := io.ReadAll(r.Body)
+					if err != nil {
+						t.Fatalf("failed to read body: %v", err)
+					}
+					j := jsonassert.New(t)
+					want := `
+					{
+						"content": "@here an error has occurred on service **test** on type **test** on environment **test**"
+					}`
+					j.Assertf(string(body), want)
+					if t.Failed() {
+						fmt.Println(formatJSON(body))
+					}
+				}
+			},
+			wantCount: 1,
+			context:   []any{tower.F{"foo": "bar"}, "1000"},
+			error:     errors.New("bar"),
+			message:   "foo",
+			extraOpts: []DiscordOption{WithEmbedBuilder(EmbedBuilderFunc(func(ctx context.Context, msg tower.MessageContext, info *ExtraInformation) ([]*Embed, []bucket.File) {
+				return []*Embed{}, []bucket.File{}
+			}))},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

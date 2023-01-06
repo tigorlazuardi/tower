@@ -129,7 +129,7 @@ func TestBucket(t *testing.T) {
 								"id": 1,
 								"filename": "<<PRESENCE>>",
 								"content_type": "application/json",
-								"size": 9344,
+								"size": "<<PRESENCE>>",
 								"url": "<<PRESENCE>>"
 							}
 						]

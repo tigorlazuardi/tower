@@ -9,6 +9,7 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/tigorlazuardi/tower/bucket"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -57,6 +58,8 @@ func createClient() (*minio.Client, func(), error) {
 	return client, cleanup, nil
 }
 
+const policy = `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetBucketLocation","s3:ListBucket"],"Resource":["arn:aws:s3:::test"]},{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::test/*"]}]}`
+
 func TestMinio_Upload(t *testing.T) {
 	const test = "test"
 	client, clean, err := createClient()
@@ -78,6 +81,10 @@ func TestMinio_Upload(t *testing.T) {
 		bucket.WithFilename("test.txt"),
 		bucket.WithFilesize(len(test)),
 	)
+	err = client.SetBucketPolicy(context.Background(), test, policy)
+	if err != nil {
+		t.Fatalf("could not set bucket policy: %v", err)
+	}
 	results := wc.Upload(context.Background(), []bucket.File{f})
 	if len(results) == 0 {
 		t.Fatal("expected results")
@@ -87,32 +94,27 @@ func TestMinio_Upload(t *testing.T) {
 			if result.Error != nil {
 				t.Fatalf("unexpected error: %v", result.Error)
 			}
-			obj, err := client.GetObject(context.Background(), "test", "prefix/"+result.File.Filename(), minio.GetObjectOptions{})
+			resp, err := http.Get(result.URL)
 			if err != nil {
-				t.Fatalf("could not get object: %v", err)
+				t.Fatalf("unexpected error: %v", err)
 			}
-			defer func(obj *minio.Object) {
-				err := obj.Close()
-				if err != nil {
-					t.Fatalf("could not close object: %v", err)
+			defer func(Body io.ReadCloser) {
+				if err := Body.Close(); err != nil {
+					t.Fatalf("unexpected error: %v", err)
 				}
-			}(obj)
-			stats, err := obj.Stat()
-			if err != nil {
-				t.Fatalf("could not stat object: %v", err)
+			}(resp.Body)
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("unexpected status code: %d", resp.StatusCode)
 			}
-			if stats.ContentType != result.File.ContentType() {
-				t.Errorf("expected content type '%s' but got '%s'", result.File.ContentType(), stats.ContentType)
+			if resp.Header.Get("Content-Type") != "text/plain; charset=utf-8" {
+				t.Fatalf("unexpected content type: %s", resp.Header.Get("Content-Type"))
 			}
-			content, err := io.ReadAll(obj)
+			content, err := io.ReadAll(resp.Body)
 			if err != nil {
 				t.Fatalf("could not read object: %v", err)
 			}
 			if string(content) != "test" {
 				t.Fatalf("unexpected content: %s", content)
-			}
-			if !strings.Contains(result.URL, "test.txt") {
-				t.Errorf("unexpected url: %s", result.URL)
 			}
 		}(result)
 	}

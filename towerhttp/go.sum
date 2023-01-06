@@ -1,6 +1,6 @@
 github.com/kinbiko/jsonassert v1.1.1 h1:DB12divY+YB+cVpHULLuKePSi6+ui4M/shHSzJISkSE=
 github.com/kinbiko/jsonassert v1.1.1/go.mod h1:NO4lzrogohtIdNUNzx8sdzB55M4R4Q1bsrWVdqQ7C+A=
-github.com/tigorlazuardi/tower v0.7.1 h1:LE/aTZSnI80s8i3n70mxIlZf6b+gfFjnM9xsleoaZiI=
-github.com/tigorlazuardi/tower v0.7.1/go.mod h1:UcUlah/CdoNBA7ZTbkXVY1LtJydwVsk1Hnttg7Qcq/M=
-github.com/tigorlazuardi/tower/pool v0.7.1 h1:xv6e3DmCy/uM3Uh6XORATN11fkBKk8ebJ0r1QrvPppM=
-github.com/tigorlazuardi/tower/pool v0.7.1/go.mod h1:UcixaGIjnGHZWCKbW/GRBN78lp1xcmyqIzmHEAAAER8=
+github.com/tigorlazuardi/tower v0.7.2 h1:ud4XIIbOTMRJyiuYI1gV1NCbM/sCb3a49IjgzOx90Dk=
+github.com/tigorlazuardi/tower v0.7.2/go.mod h1:UcUlah/CdoNBA7ZTbkXVY1LtJydwVsk1Hnttg7Qcq/M=
+github.com/tigorlazuardi/tower/pool v0.7.2 h1:v6iHuPWTp7/ZX72v9q80cLrm1d2FqN9f7NacJbBmxyM=
+github.com/tigorlazuardi/tower/pool v0.7.2/go.mod h1:UcixaGIjnGHZWCKbW/GRBN78lp1xcmyqIzmHEAAAER8=

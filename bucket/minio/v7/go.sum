@@ -114,10 +114,10 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
-github.com/tigorlazuardi/tower/bucket v0.7.2 h1:Za9mHsz6U67K5MbvfY+H6ozyrqlts4fm0covUItiGwU=
-github.com/tigorlazuardi/tower/bucket v0.7.2/go.mod h1:SqB4TtATv8CjHGfmZCBYgT2kshoj5H0YmByujA+73b0=
-github.com/tigorlazuardi/tower/loader v0.7.2 h1:OV8zv8Prex4qsy9+FSQ3f7U2FBniMuCNHh9DW1Lm2+g=
-github.com/tigorlazuardi/tower/loader v0.7.2/go.mod h1:PPIxoOuLRELnBuUMuKP/210oQ2l6r8cZA9Jq7ToQRGI=
+github.com/tigorlazuardi/tower/bucket v0.7.3 h1:OLl2RQQy8ZprjFKXIdrOvm6cC//pvrDczEBFeNFBEAI=
+github.com/tigorlazuardi/tower/bucket v0.7.3/go.mod h1:SqB4TtATv8CjHGfmZCBYgT2kshoj5H0YmByujA+73b0=
+github.com/tigorlazuardi/tower/loader v0.7.3 h1:sDabfbpPNx+BJtI0rJXAWW67R0kJra25xB0qsIAEoTo=
+github.com/tigorlazuardi/tower/loader v0.7.3/go.mod h1:PPIxoOuLRELnBuUMuKP/210oQ2l6r8cZA9Jq7ToQRGI=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
 github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df/go.mod h1:JP3t17pCcGlemwknint6hfoeCVQrEMVwxRLRjXpq+BU=

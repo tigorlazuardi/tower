@@ -11,14 +11,20 @@ import (
 	"testing"
 )
 
+func checkEnvs(t *testing.T, envs ...string) {
+	for _, env := range envs {
+		if os.Getenv(env) == "" {
+			t.Skip(env + " env not found. skipping integration test")
+		}
+	}
+}
+
 func TestIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 	loader.LoadEnv()
-	if os.Getenv("MINIO_TEST_ENDPOINT") == "" {
-		t.Skip("skipping integration test")
-	}
+	checkEnvs(t, "MINIO_TEST_ENDPOINT", "MINIO_TEST_ACCESS_KEY", "MINIO_TEST_SECRET_KEY", "MINIO_TEST_BUCKET")
 	client, err := minio.New(os.Getenv("MINIO_TEST_ENDPOINT"), &minio.Options{
 		Creds:  credentials.NewStaticV4(os.Getenv("MINIO_TEST_ACCESS_KEY"), os.Getenv("MINIO_TEST_SECRET_KEY"), ""),
 		Secure: true,

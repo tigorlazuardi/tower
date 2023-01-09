@@ -42,6 +42,8 @@ func TestIntegration(t *testing.T) {
 		if result.URL != url {
 			t.Fatalf("unexpected url: %s", result.URL)
 		}
-		fmt.Println(result.URL)
+		if t.Failed() {
+			t.Logf("failed to upload file: %s to %s", result.File.Filename(), result.URL)
+		}
 	}
 }

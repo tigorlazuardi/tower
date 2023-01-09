@@ -4,6 +4,7 @@ use (
 	.
 	./bucket
 	./bucket/minio/v7
+	./bucket/s3/v2
 	./cache
 	./cache/gomemcache
 	./cache/goredis/v8

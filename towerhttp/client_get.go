@@ -46,6 +46,9 @@ func (t TowerClient) get(url string) (*http.Response, error) {
 }
 
 func (t TowerClient) getExtended(client ExtendedClient, url string) (*http.Response, error) {
+	if t.useRoundTripper {
+		return client.Get(url)
+	}
 	ctx := context.Background()
 	resp, err := client.Get(url)
 	var req *http.Request

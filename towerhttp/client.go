@@ -1,10 +1,11 @@
 package towerhttp
 
 import (
-	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 type bodyCloseHook struct {
@@ -30,12 +31,16 @@ type ExtendedClient interface {
 }
 
 type TowerClient struct {
-	inner Client
-	tower *tower.Tower
-	hook  ClientHook
+	inner           Client
+	tower           *tower.Tower
+	hook            ClientHook
+	useRoundTripper bool
 }
 
 func (t TowerClient) Do(request *http.Request) (*http.Response, error) {
+	if t.useRoundTripper {
+		return t.inner.Do(request)
+	}
 	return t.inner.Do(request)
 }
 

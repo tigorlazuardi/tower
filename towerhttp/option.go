@@ -12,3 +12,7 @@ func (option) Respond() OptionRespondGroup {
 func (option) RespondHook() RespondHookOptionGroup {
 	return RespondHookOptionGroup{}
 }
+
+func (option) ClientHook() ClientHookOptionBuilder {
+	return ClientHookOptionBuilder{}
+}

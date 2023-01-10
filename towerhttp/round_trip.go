@@ -7,8 +7,9 @@ import (
 )
 
 type RoundTripContext struct {
-	Request      *http.Request
-	RequestBody  ClonedBody
+	Request     *http.Request
+	RequestBody ClonedBody
+	// Response is nil if there is an error to get HTTP Response.
 	Response     *http.Response
 	ResponseBody ClonedBody
 	Error        error
@@ -43,38 +44,36 @@ type RoundTripper struct {
 
 func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	var (
-		reqBody ClonedBody
+		reqBody ClonedBody = NoopCloneBody{}
 		resBody ClonedBody = NoopCloneBody{}
 	)
 	req = req.Clone(req.Context())
 	wantReqBody := rt.hook.AcceptRequestBodySize(req)
-	reqBodyClone := wrapBodyCloner(req.Body, wantReqBody)
-	req.Body = reqBodyClone
-	reqBody = reqBodyClone
+	if wantReqBody != 0 {
+		reqBodyClone := wrapBodyCloner(req.Body, wantReqBody)
+		req.Body = reqBodyClone
+		reqBody = reqBodyClone
+	}
 	res, err := rt.inner.RoundTrip(req)
+	ctx := &RoundTripContext{
+		Request:      req,
+		RequestBody:  reqBody,
+		Response:     res,
+		ResponseBody: resBody,
+		Error:        err,
+		Tower:        rt.tower,
+	}
 	if res != nil {
 		wantResBody := rt.hook.AcceptResponseBodySize(req, res)
-		resBodyClone := wrapBodyCloner(res.Body, wantResBody)
-		resBody = resBodyClone
-		res.Body = &bodyCloseHook{ReadCloser: resBodyClone, cb: func() {
-			rt.hook.ExecuteHook(&RoundTripContext{
-				Request:      req,
-				RequestBody:  reqBody,
-				Response:     res,
-				ResponseBody: resBody,
-				Error:        err,
-				Tower:        rt.tower,
-			})
-		}}
+		if wantResBody != 0 {
+			resBodyClone := wrapBodyCloner(res.Body, wantResBody)
+			resBody = resBodyClone
+			res.Body = &bodyCloseHook{ReadCloser: resBodyClone, cb: func() {
+				rt.hook.ExecuteHook(ctx)
+			}}
+		}
 	} else {
-		rt.hook.ExecuteHook(&RoundTripContext{
-			Request:      req,
-			RequestBody:  reqBody,
-			Response:     res,
-			ResponseBody: resBody,
-			Error:        err,
-			Tower:        rt.tower,
-		})
+		rt.hook.ExecuteHook(ctx)
 	}
 
 	return res, err

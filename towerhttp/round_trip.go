@@ -2,6 +2,7 @@ package towerhttp
 
 import (
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 
@@ -26,14 +27,9 @@ type RoundTrip struct {
 	callerDepth int
 }
 
-var srcFile = "/src/net/http/client.go"
+const sep = string(os.PathSeparator)
 
-func init() {
-	if runtime.GOOS == "windows" {
-		// TODO: Need to test this on windows.
-		srcFile = "\\src\\net\\http\\client.go"
-	}
-}
+var srcFile = strings.Join([]string{runtime.GOROOT(), sep, "src", sep, "net", sep, "http", sep, "client.go"}, "")
 
 // RoundTrip implements http.RoundTripper interface.
 func (rt *RoundTrip) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -49,7 +45,7 @@ func (rt *RoundTrip) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	caller := tower.GetCaller(rt.callerDepth)
 	// detect client.Get(), client.Head(), client.Post(), client.PostForm() request.
-	if strings.Contains(caller.File(), srcFile) {
+	if caller.File() == srcFile {
 		caller = tower.GetCaller(rt.callerDepth + 1)
 	}
 	ctx := &RoundTripContext{

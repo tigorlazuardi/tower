@@ -13,6 +13,10 @@ func (option) RespondHook() RespondHookOptionGroup {
 	return RespondHookOptionGroup{}
 }
 
-func (option) ClientHook() ClientHookOptionBuilder {
-	return ClientHookOptionBuilder{}
+func (option) RoundTripHook() RoundTripHookOptionBuilder {
+	return RoundTripHookOptionBuilder{}
+}
+
+func (option) RoundTrip() RoundTripOptionBuilder {
+	return RoundTripOptionBuilder{}
 }

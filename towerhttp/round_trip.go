@@ -1,6 +1,7 @@
 package towerhttp
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/tigorlazuardi/tower"
@@ -16,33 +17,24 @@ type RoundTripContext struct {
 	Tower        *tower.Tower
 }
 
-type RoundTripHook interface {
-	AcceptRequestBodySize(r *http.Request) int
-	AcceptResponseBodySize(req *http.Request, res *http.Response) int
-	ExecuteHook(ctx *RoundTripContext)
-}
-
-type (
-	RoundTripFilterRequest  = func(*http.Request) bool
-	RoundTripFilterResponse = func(*http.Request, *http.Response) bool
-	RoundTripExecuteHook    = func(*RoundTripContext)
-)
-
-type roundTripHook struct {
-	readRespondLimit int
-	readRequestLimit int
-	filterRequest    RoundTripFilterRequest
-	filterResponse   RoundTripFilterResponse
-	log              RoundTripExecuteHook
-}
-
-type RoundTripper struct {
+type RoundTrip struct {
 	inner http.RoundTripper
 	hook  RoundTripHook
 	tower *tower.Tower
 }
 
-func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+type bodyCloseHook struct {
+	io.ReadCloser
+	cb func()
+}
+
+func (bch *bodyCloseHook) Close() error {
+	err := bch.ReadCloser.Close()
+	bch.cb()
+	return err
+}
+
+func (rt *RoundTrip) RoundTrip(req *http.Request) (*http.Response, error) {
 	var (
 		reqBody ClonedBody = NoopCloneBody{}
 		resBody ClonedBody = NoopCloneBody{}
@@ -79,34 +71,52 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return res, err
 }
 
-func (rth *roundTripHook) AcceptRequestBodySize(r *http.Request) int {
-	if rth.filterRequest(r) {
-		return rth.readRequestLimit
+// NewRoundTrip creates a new instance of http.RoundTripper implementation that wraps around the default http.RoundTripper.
+// It provides logging support using tower engine.
+func NewRoundTrip(opts ...RoundTripOption) *RoundTrip {
+	roundtrip := &RoundTrip{inner: http.DefaultTransport, hook: NewRoundTripHook(), tower: tower.Global.Tower()}
+	for _, v := range opts {
+		v.apply(roundtrip)
 	}
-	return 0
+	return roundtrip
 }
 
-func (rth *roundTripHook) AcceptResponseBodySize(req *http.Request, res *http.Response) int {
-	if rth.filterResponse(req, res) {
-		return rth.readRespondLimit
+// WrapRoundTripper wraps the given http.RoundTripper with towerhttp.RoundTrip implementation to support logging with
+// tower engine.
+func WrapRoundTripper(rt http.RoundTripper, opts ...RoundTripOption) *RoundTrip {
+	roundtrip := &RoundTrip{inner: rt, hook: NewRoundTripHook(), tower: tower.Global.Tower()}
+	for _, v := range opts {
+		v.apply(roundtrip)
 	}
-	return 0
+	return roundtrip
 }
 
-func (rth *roundTripHook) ExecuteHook(ctx *RoundTripContext) {
-	rth.log(ctx)
-}
-
-func WrapRoundTripper(rt http.RoundTripper) *RoundTripper {
-	// TODO: make this configurable
-	return &RoundTripper{inner: rt}
-}
-
-func WrapHTTPClient(client *http.Client) *http.Client {
-	// TODO: make this configurable
-	if client.Transport == nil {
-		client.Transport = http.DefaultTransport
+// WrapHTTPClient wraps the given http.Client with towerhttp.RoundTrip implementation to support logging with
+// tower engine.
+func WrapHTTPClient(client *http.Client, opts ...RoundTripOption) *http.Client {
+	transport := client.Transport
+	if transport == nil {
+		transport = http.DefaultTransport
 	}
-	client.Transport = WrapRoundTripper(client.Transport)
+	client.Transport = WrapRoundTripper(transport, opts...)
 	return client
+}
+
+type RoundTripOption interface {
+	apply(*RoundTrip)
+}
+
+type (
+	RoundTripOptionFunc    func(*RoundTrip)
+	RoundTripOptionBuilder []RoundTripOption
+)
+
+func (rto RoundTripOptionFunc) apply(rt *RoundTrip) {
+	rto(rt)
+}
+
+func (rtob RoundTripOptionBuilder) apply(rt *RoundTrip) {
+	for _, v := range rtob {
+		v.apply(rt)
+	}
 }

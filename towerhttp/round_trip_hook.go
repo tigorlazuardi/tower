@@ -116,21 +116,31 @@ func defaultRoundTriptHookOpts() RoundTripHookOptionBuilder {
 
 func defaultRounTripLogFunc(ctx *RoundTripContext) {
 	reqCtx := ctx.Request.Context()
-	fields := tower.F{}
+	fields := buildClientRequestFields(tower.F{}, ctx.Request, ctx.RequestBody)
 	if ctx.Response != nil {
 		fields = buildClientResponseFields(fields, ctx.Response, ctx.ResponseBody)
 	}
 	if ctx.Error != nil {
-		_ = ctx.Tower.Wrap(ctx.Error).Context(fields).Log(reqCtx)
+		builder := ctx.Tower.Wrap(ctx.Error).Context(fields)
+		if ctx.Response != nil {
+			builder.Code(ctx.Response.StatusCode)
+		}
+		_ = builder.Log(reqCtx)
 	} else if ctx.Response != nil && ctx.Response.StatusCode >= 400 {
 		_ = ctx.Tower.Bail("error: %s %s. %s", ctx.Request.Method, ctx.Request.URL, ctx.Response.Status).
+			Caller(ctx.Caller).
+			Code(ctx.Response.StatusCode).
 			Context(fields).
 			Log(reqCtx)
 	} else {
-		ctx.Tower.
+		entry := ctx.Tower.
 			NewEntry("success: %s %s", ctx.Request.Method, ctx.Request.URL).
-			Context(fields).
-			Log(reqCtx)
+			Caller(ctx.Caller).
+			Context(fields)
+		if ctx.Response != nil {
+			entry.Code(ctx.Response.StatusCode)
+		}
+		entry.Log(reqCtx)
 	}
 }
 
@@ -138,18 +148,23 @@ func buildClientRequestFields(f tower.Fields, req *http.Request, body ClonedBody
 	fields := tower.F{
 		"method": req.Method,
 		"url":    req.URL.String(),
-		"header": req.Header,
+	}
+	if len(req.Header) > 0 {
+		fields["headers"] = req.Header
 	}
 
-	if body.Len() > 0 {
+	// the body is already read, so it will always report 0 bytes, because that's how bytes.Buffer works.
+	// but we can still read the inner value because BodyCloner holds the content value.
+	b := body.Bytes()
+	if len(b) > 0 {
 		contentType := req.Header.Get("Content-Type")
 		switch {
 		case body.Truncated():
 			fields["body"] = fmt.Sprintf("%s (truncated)", body.String())
-		case strings.Contains(contentType, "application/json") && isJson(body.Bytes()):
-			fields["body"] = json.RawMessage(body.CloneBytes())
-		case contentType == "" && isJsonLite(body.Bytes()) && isJson(body.Bytes()):
-			fields["body"] = json.RawMessage(body.CloneBytes())
+		case strings.Contains(contentType, "application/json") && isJson(b):
+			fields["body"] = json.RawMessage(b)
+		case contentType == "" && isJsonLite(b) && isJson(b):
+			fields["body"] = json.RawMessage(b)
 		default:
 			fields["body"] = body.String()
 		}
@@ -164,14 +179,17 @@ func buildClientResponseFields(f tower.Fields, res *http.Response, body ClonedBo
 		"status": res.Status,
 		"header": res.Header,
 	}
-	if body.Len() > 0 {
+	// the body is already read, so it will always report 0 bytes, because that's how bytes.Buffer works.
+	// but we can still read the inner value because BodyCloner holds the content value.
+	b := body.Bytes()
+	if len(b) > 0 {
 		contentType := res.Header.Get("Content-Type")
 		switch {
 		case body.Truncated():
 			fields["body"] = fmt.Sprintf("%s (truncated)", body.String())
-		case strings.Contains(contentType, "application/json") && isJson(body.Bytes()):
+		case strings.Contains(contentType, "application/json") && isJson(b):
 			fields["body"] = json.RawMessage(body.CloneBytes())
-		case contentType == "" && isJsonLite(body.Bytes()) && isJson(body.Bytes()):
+		case contentType == "" && isJsonLite(b) && isJson(b):
 			fields["body"] = json.RawMessage(body.CloneBytes())
 		default:
 			fields["body"] = body.String()

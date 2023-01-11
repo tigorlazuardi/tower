@@ -3,8 +3,6 @@ package towerhttp
 import (
 	"bytes"
 	"io"
-
-	"github.com/tigorlazuardi/tower/pool"
 )
 
 type ClonedBody interface {
@@ -53,7 +51,7 @@ func (n NoopCloneBody) Truncated() bool {
 // BufferedReader is an extension around io.Reader that actually already have the values in memory and ready to be consumed.
 type BufferedReader interface {
 	io.Reader
-	// String returns the body as a string. This is very often a copy of the bytes.
+	// String returns the body as a string. This is very often a copy operation of the bytes.
 	String() string
 	// Bytes returns the bytes of the body. This usually is not a copy operation, so the underlying array may be modified
 	// somewhere else or in the future. Use String to ensure an immutable copy.
@@ -83,8 +81,6 @@ func wrapNoopWriter(reader BufferedReader) BufferedReadWriter {
 
 // --------------------------------------------------------------------
 
-var clonePool = pool.New(func() BufferedReadWriter { return &bytes.Buffer{} })
-
 var (
 	_ ClonedBody         = (*bodyCloner)(nil)
 	_ BufferedReadWriter = (*bodyCloner)(nil)
@@ -99,6 +95,13 @@ type bodyCloner struct {
 }
 
 func wrapBodyCloner(r io.Reader, limit int) *bodyCloner {
+	if r == nil {
+		return &bodyCloner{
+			ReadCloser: io.NopCloser(NoopCloneBody{}),
+			clone:      wrapNoopWriter(NoopCloneBody{}),
+			limit:      0,
+		}
+	}
 	var rc io.ReadCloser
 	if rc2, ok := r.(io.ReadCloser); ok {
 		rc = rc2
@@ -109,11 +112,10 @@ func wrapBodyCloner(r io.Reader, limit int) *bodyCloner {
 	if buf, ok := r.(BufferedReader); ok {
 		// Underlying type is already like bytes.Buffer, so no need for copy-like operations effectively. Since the data
 		// is already in memory, we can just point to those arrays directly. We just have to make sure there's no write operations
-		// to those underlying array.
+		// to those underlying array to avoid double writing.
 		cl = wrapNoopWriter(buf)
 	} else {
-		cl = clonePool.Get()
-		cl.Reset()
+		cl = &bytes.Buffer{}
 	}
 	return &bodyCloner{
 		ReadCloser: rc,
@@ -155,6 +157,7 @@ func (c *bodyCloner) Reader() BufferedReader {
 
 func (c *bodyCloner) Read(p []byte) (n int, err error) {
 	n, err = c.ReadCloser.Read(p)
+	// If we have a limit, we have to make sure we don't write more than the limit.
 	if c.limit > 0 && c.clone.Len() >= c.limit {
 		return n, err
 	}
@@ -173,7 +176,6 @@ func (c *bodyCloner) Close() error {
 	if c.cb != nil {
 		c.cb(err)
 	}
-	clonePool.Put(c.clone)
 	return err
 }
 

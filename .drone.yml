@@ -176,6 +176,8 @@ steps:
               from_secret: minio_secret_key
           MINIO_TEST_BUCKET:
               from_secret: minio_bucket
+          DISCORD_WEBHOOK:
+              from_secret: discord_tower_webhook
       commands:
           - apt update && apt install docker -y
           - mv -f build / || true

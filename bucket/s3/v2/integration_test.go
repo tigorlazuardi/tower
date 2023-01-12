@@ -3,11 +3,12 @@ package s3
 import (
 	"context"
 	"fmt"
-	"github.com/tigorlazuardi/tower/bucket"
-	"github.com/tigorlazuardi/tower/loader"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/tigorlazuardi/tower/bucket"
+	"github.com/tigorlazuardi/tower/loader"
 )
 
 func checkEnvs(t *testing.T, envs ...string) {

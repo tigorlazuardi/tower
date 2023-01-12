@@ -164,9 +164,9 @@ steps:
           DOCKER_HOST: unix:///var/run/docker.sock
           AWS_ENDPOINT:
               from_secret: aws_endpoint
-          AWS_ACCESS_KEY:
+          AWS_ACCESS_KEY_ID:
               from_secret: aws_access_key
-          AWS_secret_key:
+          AWS_SECRET_ACCESS_KEY:
               from_secret: aws_secret_key
           MINIO_TEST_ENDPOINT:
               from_secret: minio_endpoint

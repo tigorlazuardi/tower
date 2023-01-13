@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/kinbiko/jsonassert"
-	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kinbiko/jsonassert"
+	"github.com/tigorlazuardi/tower"
 )
 
 type mockNullErrorTransformer struct{}

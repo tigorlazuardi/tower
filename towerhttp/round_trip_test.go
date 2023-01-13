@@ -195,8 +195,10 @@ func TestWrapHTTPClient_Get(t *testing.T) {
 			},
 		},
 		{
-			name:  "400 status code",
-			args:  args{},
+			name: "400 status code",
+			args: args{
+				opts: Option.RoundTrip().CallerDepth(5).AddCallerDepth(1),
+			},
 			tower: tower.NewTower(service),
 			handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				writer.Header().Set("Content-Type", "application/json")

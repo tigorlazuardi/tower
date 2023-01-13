@@ -2,13 +2,14 @@ package towerhttp
 
 import (
 	"bytes"
-	"github.com/kinbiko/jsonassert"
-	"github.com/tigorlazuardi/tower"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/kinbiko/jsonassert"
+	"github.com/tigorlazuardi/tower"
 )
 
 func TestResponder_RespondStream(t *testing.T) {
@@ -199,15 +200,14 @@ func TestResponder_RespondStream(t *testing.T) {
 			args: respond{
 				contentType: "",
 				body:        http.NoBody,
-				opts: []RespondOption{
-					Option.Respond().StatusCode(http.StatusNoContent),
-					Option.Respond().AddCallerSkip(0),
-					Option.Respond().Transformer(NoopBodyTransform{}),
-					Option.Respond().Encoder(NewJSONEncoder()),
-					Option.Respond().Compressor(NoCompression{}),
-					Option.Respond().CallerSkip(2),
-					Option.Respond().ErrorTransformer(SimpleErrorTransformer{}),
-				},
+				opts: Option.Respond().
+					StatusCode(http.StatusNoContent).
+					CallerSkip(1).
+					AddCallerSkip(1).
+					Transformer(NoopBodyTransform{}).
+					Encoder(NewJSONEncoder()).
+					Compressor(NoCompression{}).
+					ErrorTransformer(SimpleErrorTransformer{}),
 			},
 			request: func(server *httptest.Server) *http.Request {
 				req, _ := http.NewRequest(http.MethodGet, server.URL, nil)

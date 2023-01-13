@@ -5,8 +5,8 @@ type option struct{}
 // Option holds all the available options for responding with towerhttp.
 var Option option
 
-func (option) Respond() OptionRespondGroup {
-	return OptionRespondGroup{}
+func (option) Respond() RespondOptionBuilder {
+	return RespondOptionBuilder{}
 }
 
 func (option) RespondHook() RespondHookOptionGroup {

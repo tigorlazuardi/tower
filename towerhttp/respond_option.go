@@ -3,16 +3,23 @@ package towerhttp
 import "github.com/tigorlazuardi/tower"
 
 type RespondOption interface {
-	apply(*RespondContext)
+	Apply(*RespondContext)
 }
 
-type RespondOptionFunc func(*RespondContext)
+type (
+	RespondOptionBuilder []RespondOption
+	RespondOptionFunc    func(*RespondContext)
+)
 
-func (r RespondOptionFunc) apply(o *RespondContext) {
+func (r RespondOptionBuilder) Apply(o *RespondContext) {
+	for _, v := range r {
+		v.Apply(o)
+	}
+}
+
+func (r RespondOptionFunc) Apply(o *RespondContext) {
 	r(o)
 }
-
-type OptionRespondGroup struct{}
 
 type RespondContext struct {
 	Encoder              Encoder
@@ -26,56 +33,56 @@ type RespondContext struct {
 }
 
 // Encoder overrides the Encoder to be used for encoding the response body.
-func (OptionRespondGroup) Encoder(encoder Encoder) RespondOption {
-	return RespondOptionFunc(func(o *RespondContext) {
+func (r RespondOptionBuilder) Encoder(encoder Encoder) RespondOptionBuilder {
+	return append(r, RespondOptionFunc(func(o *RespondContext) {
 		o.Encoder = encoder
-	})
+	}))
 }
 
 // Transformer overrides the transformer to be used for transforming the response body.
-func (OptionRespondGroup) Transformer(transformer BodyTransformer) RespondOption {
-	return RespondOptionFunc(func(o *RespondContext) {
+func (r RespondOptionBuilder) Transformer(transformer BodyTransformer) RespondOptionBuilder {
+	return append(r, RespondOptionFunc(func(o *RespondContext) {
 		o.BodyTransformer = transformer
-	})
+	}))
 }
 
-func (OptionRespondGroup) ErrorTransformer(transformer ErrorBodyTransformer) RespondOption {
-	return RespondOptionFunc(func(o *RespondContext) {
+func (r RespondOptionBuilder) ErrorTransformer(transformer ErrorBodyTransformer) RespondOptionBuilder {
+	return append(r, RespondOptionFunc(func(o *RespondContext) {
 		o.ErrorBodyTransformer = transformer
-	})
+	}))
 }
 
 // Compressor overrides the Compressor to be used for compressing the response body.
-func (OptionRespondGroup) Compressor(compressor Compressor) RespondOption {
-	return RespondOptionFunc(func(o *RespondContext) {
+func (r RespondOptionBuilder) Compressor(compressor Compressor) RespondOptionBuilder {
+	return append(r, RespondOptionFunc(func(o *RespondContext) {
 		o.Compressor = compressor
-	})
+	}))
 }
 
 // StreamCompressor overrides the StreamCompressor to be used for compressing the response body.
-func (OptionRespondGroup) StreamCompressor(compressor StreamCompressor) RespondOption {
-	return RespondOptionFunc(func(o *RespondContext) {
+func (r RespondOptionBuilder) StreamCompressor(compressor StreamCompressor) RespondOptionBuilder {
+	return append(r, RespondOptionFunc(func(o *RespondContext) {
 		o.StreamCompressor = compressor
-	})
+	}))
 }
 
 // StatusCode overrides the status code to be used for the response.
-func (OptionRespondGroup) StatusCode(i int) RespondOption {
-	return RespondOptionFunc(func(o *RespondContext) {
-		o.StatusCode = i
-	})
+func (r RespondOptionBuilder) StatusCode(code int) RespondOptionBuilder {
+	return append(r, RespondOptionFunc(func(o *RespondContext) {
+		o.StatusCode = code
+	}))
 }
 
 // CallerSkip overrides the caller skip to be used for the response to get the caller information.
-func (OptionRespondGroup) CallerSkip(i int) RespondOption {
-	return RespondOptionFunc(func(o *RespondContext) {
+func (r RespondOptionBuilder) CallerSkip(i int) RespondOptionBuilder {
+	return append(r, RespondOptionFunc(func(o *RespondContext) {
 		o.CallerDepth = i
-	})
+	}))
 }
 
 // AddCallerSkip adds the caller skip value to be used for the response to get the caller information.
-func (OptionRespondGroup) AddCallerSkip(i int) RespondOption {
-	return RespondOptionFunc(func(o *RespondContext) {
-		o.CallerDepth += i
-	})
+func (r RespondOptionBuilder) AddCallerSkip(i int) RespondOptionBuilder {
+	return append(r, RespondOptionFunc(func(o *RespondContext) {
+		o.CallerDepth += 1
+	}))
 }

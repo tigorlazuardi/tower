@@ -72,7 +72,7 @@ func buildLoggerFields(hook *baseHook, respBody []byte, truncated bool) tower.F 
 		contentType := hook.Request.Header.Get("Content-Type")
 		switch {
 		case hook.RequestBody.Truncated():
-			requestFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String())
+			requestFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String()[0:hook.RequestBody.Limit()])
 		case strings.Contains(contentType, "application/json") && isJson(hook.RequestBody.Bytes()):
 			requestFields["body"] = json.RawMessage(hook.RequestBody.CloneBytes())
 		case contentType == "" && isJsonLite(hook.RequestBody.Bytes()) && isJson(hook.RequestBody.Bytes()):
@@ -92,7 +92,7 @@ func buildLoggerFields(hook *baseHook, respBody []byte, truncated bool) tower.F 
 		contentType := hook.ResponseHeader.Get("Content-Type")
 		switch {
 		case truncated:
-			responseFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String())
+			responseFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String()[0:hook.RequestBody.Limit()])
 		case strings.Contains(contentType, "application/json") && isJson(respBody):
 			responseFields["body"] = json.RawMessage(respBody)
 		case contentType == "" && isJsonLite(respBody) && isJson(respBody):

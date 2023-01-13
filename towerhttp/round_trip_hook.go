@@ -160,7 +160,7 @@ func buildClientRequestFields(f tower.Fields, req *http.Request, body ClonedBody
 		contentType := req.Header.Get("Content-Type")
 		switch {
 		case body.Truncated():
-			fields["body"] = fmt.Sprintf("%s (truncated)", body.String())
+			fields["body"] = fmt.Sprintf("%s (truncated)", body.String()[0:body.Limit()])
 		case strings.Contains(contentType, "application/json") && isJson(b):
 			fields["body"] = json.RawMessage(b)
 		case contentType == "" && isJsonLite(b) && isJson(b):
@@ -186,7 +186,7 @@ func buildClientResponseFields(f tower.Fields, res *http.Response, body ClonedBo
 		contentType := res.Header.Get("Content-Type")
 		switch {
 		case body.Truncated():
-			fields["body"] = fmt.Sprintf("%s (truncated)", body.String())
+			fields["body"] = fmt.Sprintf("%s (truncated)", body.String()[0:body.Limit()])
 		case strings.Contains(contentType, "application/json") && isJson(b):
 			fields["body"] = json.RawMessage(body.CloneBytes())
 		case contentType == "" && isJsonLite(b) && isJson(b):

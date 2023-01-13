@@ -16,7 +16,11 @@ type ClonedBody interface {
 	// Every call creates a new fresh cursor to the same underlying array. So multiple Readers created from this method
 	// all have it's own read position.
 	Reader() BufferedReader
+	// Limit returns the se limit for this cloned body.
+	Limit() int
 }
+
+var _ ClonedBody = (*NoopCloneBody)(nil)
 
 type NoopCloneBody struct{}
 
@@ -46,6 +50,10 @@ func (n NoopCloneBody) Len() int {
 
 func (n NoopCloneBody) Truncated() bool {
 	return false
+}
+
+func (n NoopCloneBody) Limit() int {
+	return 0
 }
 
 // BufferedReader is an extension around io.Reader that actually already have the values in memory and ready to be consumed.
@@ -185,4 +193,8 @@ func (c *bodyCloner) Write(p []byte) (n int, err error) {
 
 func (c *bodyCloner) Reset() {
 	c.clone.Reset()
+}
+
+func (c *bodyCloner) Limit() int {
+	return c.limit
 }

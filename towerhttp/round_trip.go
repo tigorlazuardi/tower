@@ -177,3 +177,9 @@ func (rtob RoundTripOptionBuilder) AddCallerDepth(depth int) RoundTripOptionBuil
 		rt.callerDepth += depth
 	}))
 }
+
+func (rtob RoundTripOptionBuilder) Hook(hook RoundTripHook) RoundTripOptionBuilder {
+	return append(rtob, RoundTripOptionFunc(func(rt *RoundTrip) {
+		rt.hook = hook
+	}))
+}

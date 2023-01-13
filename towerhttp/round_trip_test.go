@@ -2,9 +2,11 @@ package towerhttp
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -139,7 +141,7 @@ func TestWrapHTTPClient_Get(t *testing.T) {
 			name:  "200 status code",
 			args:  args{},
 			tower: tower.NewTower(service),
-			handler: http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			handler: http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
 				writer.Header().Set("Content-Type", "application/json")
 				writer.WriteHeader(http.StatusOK)
 				_, err := writer.Write([]byte(`{"hello":"world"}`))
@@ -191,6 +193,74 @@ func TestWrapHTTPClient_Get(t *testing.T) {
 				}
 				if !strings.Contains(got, "round_trip_test.go:") {
 					t.Error("expected to contain this file as caller")
+				}
+			},
+		},
+		{
+			name: "limited body",
+			args: args{
+				opts: Option.RoundTrip().Hook(NewRoundTripHook(Option.RoundTripHook().ReadResponseBodyLimit(1024))),
+			},
+			tower: tower.NewTower(service),
+			handler: http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+				writer.Header().Set("Content-Type", "application/json")
+				world := strings.Repeat("world ", 3000)
+				world = world[0 : len(world)-1]
+				content := fmt.Sprintf(`{"hello":"%s"}`, world)
+				writer.Header().Set("Content-Length", strconv.Itoa(len(content)))
+				writer.WriteHeader(http.StatusOK)
+				_, err := writer.Write([]byte(fmt.Sprintf(`{"hello":"%s"}`, world)))
+				if err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				}
+			}),
+			test: func(t *testing.T, lg *tower.TestingJSONLogger) {
+				j := jsonassert.New(t)
+				want := `
+				{
+					"time": "<<PRESENCE>>",
+					"code": 200,
+					"message": "<<PRESENCE>>",
+					"caller": "<<PRESENCE>>",
+					"level": "info",
+					"service": {
+						"name": "TestNewRoundTrip",
+						"environment": "testing",
+						"type": "testing",
+						"version": "v0.1.0"
+					},
+					"context": {
+						"request": {
+							"method": "GET",
+							"url": "<<PRESENCE>>"
+						},
+						"response": {
+							"body": "<<PRESENCE>>",
+							"header": {
+								"Content-Length": [
+									"<<PRESENCE>>"
+								],
+								"Content-Type": [
+									"application/json"
+								],
+								"Date": [
+									"<<PRESENCE>>"
+								]
+							},
+							"status": "200 OK"
+						}
+					}
+				}`
+				got := lg.String()
+				j.Assertf(got, want)
+				if !strings.Contains(got, "success: GET http://127.0.0.1:") {
+					t.Errorf("expected message to contain success text, http method, and target url, got: %s", got)
+				}
+				if !strings.Contains(got, "round_trip_test.go:") {
+					t.Error("expected to contain this file as caller")
+				}
+				if !strings.Contains(got, "world  (truncated)") {
+					t.Error("exected body to contain 'world  (truncated)'")
 				}
 			},
 		},

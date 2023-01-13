@@ -4,126 +4,105 @@ import (
 	"net/http"
 )
 
-type RespondHookOptionGroup struct{}
-
 type RespondHookOption interface {
 	apply(*respondHook)
 }
 
-type RespondHookOptionFunc func(*respondHook)
+type (
+	RespondHookOptionBuilder []RespondHookOption
+	respondHookOptionFunc    func(*respondHook)
+)
 
-func (r RespondHookOptionFunc) apply(hook *respondHook) {
+func (r respondHookOptionFunc) apply(hook *respondHook) {
 	r(hook)
+}
+
+func (r RespondHookOptionBuilder) apply(hook *respondHook) {
+	for _, v := range r {
+		v.apply(hook)
+	}
 }
 
 type FilterRequest = func(*http.Request) bool
 
 type FilterRespond = func(respondContentType string, r *http.Request) bool
 
-var _ RespondHook = (*respondHook)(nil)
-
-type respondHook struct {
-	readRequestLimit    int
-	readRespondLimit    int
-	filterRequest       FilterRequest
-	filterRespondStream FilterRespond
-	beforeRespond       BeforeRespondFunc
-	onRespond           ResponseHookFunc
-	onRespondError      ResponseErrorHookFunc
-	onRespondStream     ResponseStreamHookFunc
-}
-
-func NewRespondHook(opts ...RespondHookOption) RespondHook {
-	r := &respondHook{}
-	for _, opt := range opts {
-		opt.apply(r)
-	}
-	return r
-}
-
-func (r2 respondHook) AcceptRequestBodySize(r *http.Request) int {
-	if r2.filterRequest != nil && r2.filterRequest(r) {
-		return r2.readRequestLimit
-	}
-	return 0
-}
-
-func (r2 respondHook) AcceptResponseBodyStreamSize(contentType string, request *http.Request) int {
-	if r2.filterRequest != nil && r2.filterRespondStream(contentType, request) {
-		return r2.readRespondLimit
-	}
-	return 0
-}
-
-func (r2 respondHook) BeforeRespond(ctx *RespondContext, request *http.Request) *RespondContext {
-	if r2.beforeRespond == nil {
-		return ctx
-	}
-	return r2.beforeRespond(ctx, request)
-}
-
-func (r2 respondHook) RespondHook(ctx *RespondHookContext) {
-	if r2.onRespond != nil {
-		r2.onRespond(ctx)
-	}
-}
-
-func (r2 respondHook) RespondErrorHookContext(ctx *RespondErrorHookContext) {
-	if r2.onRespondError != nil {
-		r2.onRespondError(ctx)
-	}
-}
-
-func (r2 respondHook) RespondStreamHookContext(ctx *RespondStreamHookContext) {
-	if r2.onRespondStream != nil {
-		r2.onRespondStream(ctx)
-	}
-}
-
-func (RespondHookOptionGroup) ReadRequestBodyLimit(limit int) RespondHookOption {
-	return RespondHookOptionFunc(func(r *respondHook) {
+// ReadRequestBodyLimit limits the number of bytes body being cloned. Defaults to 1MB.
+//
+// Negative value will make the hook clones all the body.
+//
+// Body will not be read if FilterRequest returns false.
+func (hook RespondHookOptionBuilder) ReadRequestBodyLimit(limit int) RespondHookOptionBuilder {
+	return append(hook, respondHookOptionFunc(func(r *respondHook) {
 		r.readRequestLimit = limit
-	})
+	}))
 }
 
-func (RespondHookOptionGroup) ReadRespondBodyStreamLimit(limit int) RespondHookOption {
-	return RespondHookOptionFunc(func(r *respondHook) {
+// ReadRespondBodyStreamLimit limits the number of bytes of respond body being cloned. Defaults to 1MB.
+//
+// Negative value will make the hook clones all the body.
+//
+// Body will not be read if FilterResponds returns false.
+func (hook RespondHookOptionBuilder) ReadRespondBodyStreamLimit(limit int) RespondHookOptionBuilder {
+	return append(hook, respondHookOptionFunc(func(r *respondHook) {
 		r.readRespondLimit = limit
-	})
+	}))
 }
 
-func (RespondHookOptionGroup) FilterRequest(filter FilterRequest) RespondHookOption {
-	return RespondHookOptionFunc(func(r *respondHook) {
+// FilterRequest filter requests whose body are going to be cloned. Defaults to filter only human readable content type.
+func (hook RespondHookOptionBuilder) FilterRequest(filter FilterRequest) RespondHookOptionBuilder {
+	return append(hook, respondHookOptionFunc(func(r *respondHook) {
 		r.filterRequest = filter
-	})
+	}))
 }
 
-func (RespondHookOptionGroup) FilterRespondStream(filter FilterRespond) RespondHookOption {
-	return RespondHookOptionFunc(func(r *respondHook) {
+// FilterRespondStream filter http server responds to clone. Defaults to filter only human readable content type.
+func (hook RespondHookOptionBuilder) FilterRespondStream(filter FilterRespond) RespondHookOptionBuilder {
+	return append(hook, respondHookOptionFunc(func(r *respondHook) {
 		r.filterRespondStream = filter
-	})
+	}))
 }
 
-func (RespondHookOptionGroup) BeforeRespond(before BeforeRespondFunc) RespondHookOption {
-	return RespondHookOptionFunc(func(r *respondHook) {
+// BeforeRespond provides callback to be run before Responder calls transform on the body. You have full access on how to modify how towerhttp.Responder behave by using this api.
+//
+// You may change the transformers, compressions to use, etc.
+//
+// Do be careful when using this api, especially when working with other people in a team. Their responds may change suddenly without their knowing.
+func (hook RespondHookOptionBuilder) BeforeRespond(before BeforeRespondFunc) RespondHookOptionBuilder {
+	return append(hook, respondHookOptionFunc(func(r *respondHook) {
 		r.beforeRespond = before
-	})
+	}))
 }
 
-func (RespondHookOptionGroup) OnRespond(on ResponseHookFunc) RespondHookOption {
-	return RespondHookOptionFunc(func(r *respondHook) {
+// OnRespond provides callback to be run after Responder writes the body.
+//
+// OnRespond callback is executed when towerhttp.Responder.Respond() is called.
+//
+// By default, the hook will use this api to call tower to log the request and respond.
+func (hook RespondHookOptionBuilder) OnRespond(on ResponseHookFunc) RespondHookOptionBuilder {
+	return append(hook, respondHookOptionFunc(func(r *respondHook) {
 		r.onRespond = on
-	})
+	}))
 }
 
-func (RespondHookOptionGroup) OnRespondError(on ResponseErrorHookFunc) RespondHookOption {
-	return RespondHookOptionFunc(func(r *respondHook) {
+// OnRespondError provides callback to be run after Responder writes the body.
+//
+// OnRespondError callback is executed when towerhttp.Responder.RespondError() is called.
+//
+// By default, the hook will use this api to call tower to log the request and respond.
+func (hook RespondHookOptionBuilder) OnRespondError(on ResponseErrorHookFunc) RespondHookOptionBuilder {
+	return append(hook, respondHookOptionFunc(func(r *respondHook) {
 		r.onRespondError = on
-	})
+	}))
 }
 
-func (RespondHookOptionGroup) OnRespondStream(on ResponseStreamHookFunc) RespondHookOption {
-	return RespondHookOptionFunc(func(r *respondHook) {
+// OnRespondStream provides callback to be run after Responder writes the body.
+//
+// OnRespondStream callback is executed when towerhttp.Responder.RespondStream() is called.
+//
+// By default, the hook will use this api to call tower to log the request and respond.
+func (hook RespondHookOptionBuilder) OnRespondStream(on ResponseStreamHookFunc) RespondHookOptionBuilder {
+	return append(hook, respondHookOptionFunc(func(r *respondHook) {
 		r.onRespondStream = on
-	})
+	}))
 }

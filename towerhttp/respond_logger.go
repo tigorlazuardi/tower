@@ -3,29 +3,29 @@ package towerhttp
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tigorlazuardi/tower"
 	"net/http"
 	"strings"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 func NewLoggerHook(opts ...RespondHookOption) RespondHook {
 	return NewRespondHook(append(defaultLoggerOptions(), opts...)...)
 }
 
-func defaultLoggerOptions() []RespondHookOption {
-	opts := make([]RespondHookOption, 0, 8)
-	opts = append(opts, Option.RespondHook().FilterRequest(func(r *http.Request) bool {
-		return isHumanReadable(r.Header.Get("Content-Type"))
-	}))
-	opts = append(opts, Option.RespondHook().ReadRequestBodyLimit(1024*1024))       // 1mb
-	opts = append(opts, Option.RespondHook().ReadRespondBodyStreamLimit(1024*1024)) // 1mb
-	opts = append(opts, Option.RespondHook().FilterRespondStream(func(respondContentType string, r *http.Request) bool {
-		return isHumanReadable(respondContentType)
-	}))
-	opts = append(opts, Option.RespondHook().OnRespond(defaultLoggerRespond))
-	opts = append(opts, Option.RespondHook().OnRespondError(defaultLoggerRespondError))
-	opts = append(opts, Option.RespondHook().OnRespondStream(defaultLoggerRespondStream))
-	return opts
+func defaultLoggerOptions() RespondHookOptionBuilder {
+	return Option.RespondHook().
+		FilterRequest(func(r *http.Request) bool {
+			return isHumanReadable(r.Header.Get("Content-Type"))
+		}).
+		ReadRequestBodyLimit(1024 * 1024).
+		ReadRespondBodyStreamLimit(1024 * 1024).
+		FilterRespondStream(func(respondContentType string, r *http.Request) bool {
+			return isHumanReadable(respondContentType)
+		}).
+		OnRespond(defaultLoggerRespond).
+		OnRespondError(defaultLoggerRespondError).
+		OnRespondStream(defaultLoggerRespondStream)
 }
 
 func defaultLoggerRespond(ctx *RespondHookContext) {

@@ -9,8 +9,8 @@ func (option) Respond() RespondOptionBuilder {
 	return RespondOptionBuilder{}
 }
 
-func (option) RespondHook() RespondHookOptionGroup {
-	return RespondHookOptionGroup{}
+func (option) RespondHook() RespondHookOptionBuilder {
+	return RespondHookOptionBuilder{}
 }
 
 func (option) RoundTripHook() RoundTripHookOptionBuilder {

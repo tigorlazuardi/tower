@@ -94,9 +94,6 @@ func (f foo) Error() string {
 }
 
 func TestIntegration(t *testing.T) {
-	if os.Getenv("DISCORD_TEST_INTEGRATION") == "" {
-		t.Skip("DISCORD_TEST_INTEGRATION is not set")
-	}
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
@@ -104,7 +101,7 @@ func TestIntegration(t *testing.T) {
 	defer cancel()
 	loader.LoadEnv()
 	webhook := os.Getenv("DISCORD_WEBHOOK")
-	if os.Getenv("DISCORD_WEBHOOK") == "" {
+	if webhook == "" {
 		t.Skip("DISCORD_WEBHOOK env is not set. Skipping integration test")
 	}
 	tow := tower.NewTower(tower.Service{

@@ -3,29 +3,29 @@ package towerhttp
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tigorlazuardi/tower"
 	"net/http"
 	"strings"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 func NewLoggerHook(opts ...RespondHookOption) RespondHook {
 	return NewRespondHook(append(defaultLoggerOptions(), opts...)...)
 }
 
-func defaultLoggerOptions() []RespondHookOption {
-	opts := make([]RespondHookOption, 0, 8)
-	opts = append(opts, Option.RespondHook().FilterRequest(func(r *http.Request) bool {
-		return isHumanReadable(r.Header.Get("Content-Type"))
-	}))
-	opts = append(opts, Option.RespondHook().ReadRequestBodyLimit(1024*1024))       // 1mb
-	opts = append(opts, Option.RespondHook().ReadRespondBodyStreamLimit(1024*1024)) // 1mb
-	opts = append(opts, Option.RespondHook().FilterRespondStream(func(respondContentType string, r *http.Request) bool {
-		return isHumanReadable(respondContentType)
-	}))
-	opts = append(opts, Option.RespondHook().OnRespond(defaultLoggerRespond))
-	opts = append(opts, Option.RespondHook().OnRespondError(defaultLoggerRespondError))
-	opts = append(opts, Option.RespondHook().OnRespondStream(defaultLoggerRespondStream))
-	return opts
+func defaultLoggerOptions() RespondHookOptionBuilder {
+	return Option.RespondHook().
+		FilterRequest(func(r *http.Request) bool {
+			return isHumanReadable(r.Header.Get("Content-Type"))
+		}).
+		ReadRequestBodyLimit(1024 * 1024).
+		ReadRespondBodyStreamLimit(1024 * 1024).
+		FilterRespondStream(func(respondContentType string, r *http.Request) bool {
+			return isHumanReadable(respondContentType)
+		}).
+		OnRespond(defaultLoggerRespond).
+		OnRespondError(defaultLoggerRespondError).
+		OnRespondStream(defaultLoggerRespondStream)
 }
 
 func defaultLoggerRespond(ctx *RespondHookContext) {
@@ -72,7 +72,7 @@ func buildLoggerFields(hook *baseHook, respBody []byte, truncated bool) tower.F 
 		contentType := hook.Request.Header.Get("Content-Type")
 		switch {
 		case hook.RequestBody.Truncated():
-			requestFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String())
+			requestFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String()[0:hook.RequestBody.Limit()])
 		case strings.Contains(contentType, "application/json") && isJson(hook.RequestBody.Bytes()):
 			requestFields["body"] = json.RawMessage(hook.RequestBody.CloneBytes())
 		case contentType == "" && isJsonLite(hook.RequestBody.Bytes()) && isJson(hook.RequestBody.Bytes()):
@@ -92,7 +92,7 @@ func buildLoggerFields(hook *baseHook, respBody []byte, truncated bool) tower.F 
 		contentType := hook.ResponseHeader.Get("Content-Type")
 		switch {
 		case truncated:
-			responseFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String())
+			responseFields["body"] = fmt.Sprintf("%s (truncated)", hook.RequestBody.String()[0:hook.RequestBody.Limit()])
 		case strings.Contains(contentType, "application/json") && isJson(respBody):
 			responseFields["body"] = json.RawMessage(respBody)
 		case contentType == "" && isJsonLite(respBody) && isJson(respBody):

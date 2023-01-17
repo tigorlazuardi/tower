@@ -2,8 +2,9 @@ package towerhttp
 
 import (
 	"context"
-	"github.com/tigorlazuardi/tower"
 	"net/http"
+
+	"github.com/tigorlazuardi/tower"
 )
 
 // Responder handles the response and writing to http.ResponseWriter.
@@ -90,7 +91,7 @@ func (r Responder) buildOption(statusCode int, request *http.Request, opts ...Re
 		StreamCompressor:     r.streamCompressor,
 	}
 	for _, o := range opts {
-		o.apply(opt)
+		o.Apply(opt)
 	}
 	opt.Caller = tower.GetCaller(opt.CallerDepth + 1)
 	for _, hook := range r.hooks {

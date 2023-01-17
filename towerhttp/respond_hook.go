@@ -101,3 +101,63 @@ type (
 func (r *Responder) RegisterHook(hook RespondHook) {
 	r.hooks = append(r.hooks, hook)
 }
+
+var _ RespondHook = (*respondHook)(nil)
+
+type respondHook struct {
+	readRequestLimit    int
+	readRespondLimit    int
+	filterRequest       FilterRequest
+	filterRespondStream FilterRespond
+	beforeRespond       BeforeRespondFunc
+	onRespond           ResponseHookFunc
+	onRespondError      ResponseErrorHookFunc
+	onRespondStream     ResponseStreamHookFunc
+}
+
+func NewRespondHook(opts ...RespondHookOption) RespondHook {
+	r := &respondHook{}
+	for _, opt := range opts {
+		opt.apply(r)
+	}
+	return r
+}
+
+func (r2 respondHook) AcceptRequestBodySize(r *http.Request) int {
+	if r2.filterRequest != nil && r2.filterRequest(r) {
+		return r2.readRequestLimit
+	}
+	return 0
+}
+
+func (r2 respondHook) AcceptResponseBodyStreamSize(contentType string, request *http.Request) int {
+	if r2.filterRequest != nil && r2.filterRespondStream(contentType, request) {
+		return r2.readRespondLimit
+	}
+	return 0
+}
+
+func (r2 respondHook) BeforeRespond(ctx *RespondContext, request *http.Request) *RespondContext {
+	if r2.beforeRespond == nil {
+		return ctx
+	}
+	return r2.beforeRespond(ctx, request)
+}
+
+func (r2 respondHook) RespondHook(ctx *RespondHookContext) {
+	if r2.onRespond != nil {
+		r2.onRespond(ctx)
+	}
+}
+
+func (r2 respondHook) RespondErrorHookContext(ctx *RespondErrorHookContext) {
+	if r2.onRespondError != nil {
+		r2.onRespondError(ctx)
+	}
+}
+
+func (r2 respondHook) RespondStreamHookContext(ctx *RespondStreamHookContext) {
+	if r2.onRespondStream != nil {
+		r2.onRespondStream(ctx)
+	}
+}

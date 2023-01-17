@@ -9,8 +9,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.47
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.30.0
 	github.com/ory/dockertest/v3 v3.9.1
-	github.com/tigorlazuardi/tower/bucket v0.8.0
-	github.com/tigorlazuardi/tower/loader v0.8.0
+	github.com/tigorlazuardi/tower/bucket v0.8.1
+	github.com/tigorlazuardi/tower/loader v0.8.1
 )
 
 require (

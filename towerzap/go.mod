@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/kinbiko/jsonassert v1.1.1
-	github.com/tigorlazuardi/tower v0.8.0
+	github.com/tigorlazuardi/tower v0.8.1
 	go.uber.org/zap v1.24.0
 )
 
